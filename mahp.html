@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Plan Integral de Marketing y Operaciones – 2026</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      margin: 0;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    #calendar {
+      max-width: 900px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #formulario {
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    input, select {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .grid-semanas {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 40px auto;
+    }
+    .week {
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .week h3 {
+      margin-top: 0;
+      color: #444;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 5px;
+    }
+    .area {
+      margin: 8px 0;
+      padding: 8px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.95em;
+    }
+    /* Colores por categoría */
+    .mk { background: #007BFF; }          /* Azul Marketing */
+    .oper { background: #28A745; }        /* Verde Operatividad */
+    .mant { background: #FF9800; }        /* Naranja Mantenimiento */
+    .inv { background: #DC3545; }         /* Rojo Inversión */
+    .notes {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #555;
+      border-top: 1px solid #ddd;
+      padding-top: 5px;
+    }
+    .kpis {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📅 Calendario Interactivo de Marketing</h1>
+  
+  <div id="formulario">
+    <h3>Agregar nueva actividad</h3>
+    <input type="text" id="titulo" placeholder="Título de la actividad">
+    <input type="text" id="canal" placeholder="Canal o Detalle (Facebook, Instagram, Operaciones...)">
+    <input type="date" id="fecha">
+    <select id="categoria">
+      <option value="#007BFF">Marketing (Azul)</option>
+      <option value="#28A745">Operatividad (Verde)</option>
+      <option value="#FF9800">Mantenimiento (Naranja)</option>
+      <option value="#DC3545">Inversión (Rojo)</option>
+    </select>
+    <button onclick="agregarActividad()">Agregar al calendario</button>
+  </div>
+
+  <div id="calendar"></div>
+
+  <hr style="max-width: 1100px; margin: 40px auto; border: 0; border-top: 1px solid #ccc;">
+
+  <h1>Plan Integral de Marketing y Operaciones</h1>
+  <h2>Resumen por Semanas (Junio – Julio 2026)</h2>
+
+  <div class="grid-semanas">
+    <div class="week">
+      <h3>Semana 22–28 junio</h3>
+      <div class="area mk">
+        <strong>Marketing:</strong> Contenido UGC, 6 videos de proceso, optimización Google Maps.
+      </div>
+      <div class="area oper">
+        <strong>Operatividad:</strong> Checklist de procesos y capacitaciones.
+      </div>
+      <div class="notes">Notas colaboradores: __________________________</div>
+    </div>
+
+    <div class="week">
+      <h3>Semana 29 junio – 06 julio</h3>
+      <div class="area mk">
+        <strong>Marketing:</strong> Testimonios clientes, preparación drive-thru, 20 reseñas Google, anuncios Meta.
+      </div>
+      <div class="area mant">
+        <strong>Mantenimiento:</strong> Pintar línea estacionamiento (29-jun).
+      </div>
+      <div class="notes">Notas colaboradores: __________________________</div>
+    </div>
+
+    <div class="week">
+      <h3>Semana 06–13 julio</h3>
+      <div class="area mk">
+        <strong>Marketing:</strong> Campaña temática, tips de cocina mariscos, reporte métricas MK.
+      </div>
+      <div class="area mant">
+        <strong>Mantenimiento:</strong> Arreglar luz y acomodar cocina (06-jul).
+      </div>
+      <div class="notes">Notas colaboradores: __________________________</div>
+    </div>
+
+    <div class="week">
+      <h3>Semana 13–20 julio</h3>
+      <div class="area mk">
+        <strong>Marketing:</strong> Reel instalación logo, campaña infantil, concurso fotos UGC.
+      </div>
+      <div class="area mant">
+        <strong>Mantenimiento:</strong> Letrero y logo exterior/interior (13-jul).
+      </div>
+      <div class="area inv">
+        <strong>Inversión:</strong> Comprar cafetera, área infantil.
+      </div>
+      <div class="notes">Notas colaboradores: __________________________</div>
+    </div>
+
+    <div class="week">
+      <h3>Semana 20–27 julio</h3>
+      <div class="area mk">
+        <strong>Marketing:</strong> Video agradecimiento clientes, reporte final KPIs.
+      </div>
+      <div class="area mant">
+        <strong>Mantenimiento:</strong> Conseguir vinatera (20-jul), poner cortinas lona (27-jul).
+      </div>
+      <div class="area inv">
+        <strong>Inversión:</strong> Limpiar aljiber, poner azulejos lavabo.
+      </div>
+      <div class="notes">Notas colaboradores: __________________________</div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <h2>Indicadores de Éxito (KPIs)</h2>
+    <ul>
+      <li>+40 reseñas en Google</li>
+      <li>+30,000 personas alcanzadas en Meta</li>
+      <li>+25% engagement en redes</li>
+      <li>100% cumplimiento de mantenimiento en fechas</li>
+      <li>-15% reducción de mermas</li>
+    </ul>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://qahhwfthhvacumeitgan.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_A_bfwD2IAbviuy-r9E5D-A_Opvm6IQ5";
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    let calendar;
+    let actividadIdPorEvento = new Map();
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      let calendarEl = document.getElementById('calendar');
+
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        events: [],
+        eventClick: async function(info) {
+          let accion = prompt(`Actividad: ${info.event.title}\n\nEscribe:\n1 para editar título\n2 para eliminar`);
+
+          if (accion === "1") {
+            let nuevoTitulo = prompt("Nuevo título de la actividad:", info.event.title);
+            if (nuevoTitulo) {
+              let id = actividadIdPorEvento.get(info.event.id);
+              let { error } = await db.from("actividades").update({ titulo: nuevoTitulo }).eq("id", id);
+              if (error) { alert("⚠️ Error al editar: " + error.message); return; }
+              info.event.setProp("title", nuevoTitulo);
+              alert("✅ Actividad editada");
+            }
+          } else if (accion === "2") {
+            if (confirm("¿Seguro que deseas eliminar esta actividad?")) {
+              let id = actividadIdPorEvento.get(info.event.id);
+              let { error } = await db.from("actividades").delete().eq("id", id);
+              if (error) { alert("⚠️ Error al eliminar: " + error.message); return; }
+              info.event.remove();
+              alert("🗑️ Actividad eliminada");
+            }
+          }
+        }
+      });
+
+      calendar.render();
+      await cargarActividades();
+    });
+
+    // Carga todas las actividades desde Supabase y las pinta en el calendario
+    async function cargarActividades() {
+      let { data, error } = await db.from("actividades").select("*").order("fecha");
+      if (error) {
+        alert("⚠️ Error al cargar actividades: " + error.message);
+        return;
+      }
+
+      calendar.removeAllEvents();
+      actividadIdPorEvento.clear();
+
+      data.forEach(fila => {
+        let evento = calendar.addEvent({
+          title: `${fila.titulo} (${fila.canal})`,
+          start: fila.fecha,
+          color: fila.color
+        });
+        actividadIdPorEvento.set(evento.id, fila.id);
+      });
+    }
+
+    // Función para capturar el formulario e insertar una nueva actividad
+    async function agregarActividad() {
+      let titulo = document.getElementById("titulo").value;
+      let canal = document.getElementById("canal").value;
+      let fecha = document.getElementById("fecha").value;
+      let color = document.getElementById("categoria").value;
+
+      if (!titulo || !canal || !fecha) {
+        alert("⚠️ Por favor, completa todos los campos del formulario.");
+        return;
+      }
+
+      let { data, error } = await db.from("actividades")
+        .insert({ titulo, canal, fecha, color })
+        .select()
+        .single();
+
+      if (error) {
+        alert("⚠️ Error al guardar: " + error.message);
+        return;
+      }
+
+      let evento = calendar.addEvent({
+        title: `${data.titulo} (${data.canal})`,
+        start: data.fecha,
+        color: data.color
+      });
+      actividadIdPorEvento.set(evento.id, data.id);
+
+      alert("✅ Actividad agregada: " + titulo);
+
+      document.getElementById("titulo").value = "";
+      document.getElementById("canal").value = "";
+      document.getElementById("fecha").value = "";
+    }
+  </script>
+</body>
+</html>
