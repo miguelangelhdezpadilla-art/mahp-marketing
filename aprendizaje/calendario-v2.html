@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendario de Marketing — v2.0 (aprendizaje)</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    input, select, button { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+    button { background: #3498db; color: white; border: none; cursor: pointer; }
+
+    .dashboard { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    .metrica { flex: 1; min-width: 140px; background: #f4f6fa; border-radius: 8px; padding: 14px; text-align: center; }
+    .metrica .numero { font-size: 1.8em; font-weight: bold; }
+    .metrica .etiqueta { font-size: 0.85em; color: #555; }
+
+    .recordatorios { background: #fff7e6; border: 1px solid #f5cf87; border-radius: 8px; padding: 12px; margin: 16px 0; }
+    .recordatorios.vacio { display: none; }
+
+    #calendar { margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+  <h1>📅 Calendario de Marketing — v2.0</h1>
+  <p><em>Construido sobre la v1.0: mismos módulos, más capacidades (dashboard, filtros, recordatorios, calendario visual).</em></p>
+
+  <!-- MÓDULO: DASHBOARD Y MÉTRICAS -->
+  <div class="dashboard" id="dashboard"></div>
+
+  <!-- MÓDULO: RECORDATORIOS -->
+  <div class="recordatorios" id="recordatorios"></div>
+
+  <h2>Crear actividad</h2>
+  <input type="text" id="inputTitulo" placeholder="Título de la actividad">
+  <input type="date" id="inputFecha">
+  <select id="inputCanal"></select>
+  <select id="inputEstado"></select>
+  <button onclick="manejarCrearActividad()">Guardar actividad</button>
+
+  <!-- MÓDULO: FILTROS -->
+  <h2>Calendario</h2>
+  <label for="filtroCanal">Mostrar solo el canal:</label>
+  <select id="filtroCanal" onchange="manejarCambioFiltro()">
+    <option value="Todos">Todos</option>
+  </select>
+
+  <!-- MÓDULO: CALENDARIO VISUAL -->
+  <div id="calendar"></div>
+
+  <script>
+    // ============================================================
+    // MÓDULO: CONFIGURACIÓN DEL NEGOCIO
+    // (igual que en v1.0 — datos fijos de tu negocio)
+    // ============================================================
+    const NOMBRE_NEGOCIO = "Mi Restaurante";
+    const CANALES_DISPONIBLES = ["Facebook", "Instagram", "TikTok", "Otro"];
+    const ESTADOS_DISPONIBLES = ["Pendiente", "En progreso", "Completado"];
+
+    // Un solo lugar para decidir de qué color se pinta cada estado.
+    // Si en el futuro cambias un color, solo lo tocas aquí.
+    const COLOR_POR_ESTADO = {
+      "Pendiente": "#95a5a6",
+      "En progreso": "#f39c12",
+      "Completado": "#27ae60"
+    };
+
+    // ============================================================
+    // MÓDULO: ARRAYS
+    // (igual que en v1.0 — la lista de actividades en memoria)
+    // ============================================================
+    let actividades = [];
+
+    // ============================================================
+    // MÓDULO: LOCAL STORAGE
+    // (idéntico a v1.0 — no cambia entre versiones)
+    // ============================================================
+    function guardarEnLocalStorage() {
+      localStorage.setItem("actividadesMarketing", JSON.stringify(actividades));
+    }
+
+    function cargarDesdeLocalStorage() {
+      let datosGuardados = localStorage.getItem("actividadesMarketing");
+      actividades = datosGuardados ? JSON.parse(datosGuardados) : [];
+    }
+
+    // ============================================================
+    // MÓDULO: FUNCIONES DE MARKETING
+    // (igual que en v1.0 — crear y eliminar actividades)
+    // ============================================================
+    function crearActividad(titulo, fecha, canal, estado) {
+      let nuevaActividad = { id: Date.now(), titulo, fecha, canal, estado };
+      actividades.push(nuevaActividad);
+      guardarEnLocalStorage();
+    }
+
+    function eliminarActividad(id) {
+      actividades = actividades.filter(function(actividad) {
+        return actividad.id !== id;
+      });
+      guardarEnLocalStorage();
+    }
+
+    // ============================================================
+    // MÓDULO: CICLOS
+    // En v1.0 usamos un ciclo para dibujar la lista completa. En
+    // v2.0 reutilizamos la misma idea (recorrer el array con un
+    // "for") pero para cosas nuevas: armar los recordatorios y
+    // calcular las métricas del dashboard.
+    // ============================================================
+    function obtenerActividadesFiltradas() {
+      let canalElegido = document.getElementById("filtroCanal").value;
+      if (canalElegido === "Todos") return actividades;
+
+      let resultado = [];
+      for (let i = 0; i < actividades.length; i++) {
+        if (actividades[i].canal === canalElegido) {
+          resultado.push(actividades[i]);
+        }
+      }
+      return resultado;
+    }
+
+    // ============================================================
+    // MÓDULO: DASHBOARD Y MÉTRICAS
+    // No guardamos los totales en ningún lado: los calculamos al
+    // vuelo a partir del array `actividades` cada vez que algo
+    // cambia. Así nunca se pueden "desincronizar" del dato real.
+    // ============================================================
+    function renderizarDashboard() {
+      let total = actividades.length;
+      let pendientes = actividades.filter(a => a.estado === "Pendiente").length;
+      let enProgreso = actividades.filter(a => a.estado === "En progreso").length;
+      let completadas = actividades.filter(a => a.estado === "Completado").length;
+
+      document.getElementById("dashboard").innerHTML = `
+        <div class="metrica"><div class="numero">${total}</div><div class="etiqueta">Total actividades</div></div>
+        <div class="metrica"><div class="numero">${pendientes}</div><div class="etiqueta">Pendientes</div></div>
+        <div class="metrica"><div class="numero">${enProgreso}</div><div class="etiqueta">En progreso</div></div>
+        <div class="metrica"><div class="numero">${completadas}</div><div class="etiqueta">Completadas</div></div>
+      `;
+    }
+
+    // ============================================================
+    // MÓDULO: RECORDATORIOS
+    // Recorremos el array buscando actividades con fecha dentro de
+    // los próximos 3 días que todavía no estén completadas.
+    // ============================================================
+    function renderizarRecordatorios() {
+      let hoy = new Date();
+      let limite = new Date();
+      limite.setDate(hoy.getDate() + 3);
+
+      let proximas = [];
+      for (let i = 0; i < actividades.length; i++) {
+        let actividad = actividades[i];
+        let fechaActividad = new Date(actividad.fecha);
+        let esProxima = fechaActividad >= hoy && fechaActividad <= limite;
+        let noCompletada = actividad.estado !== "Completado";
+
+        if (esProxima && noCompletada) {
+          proximas.push(actividad);
+        }
+      }
+
+      let contenedor = document.getElementById("recordatorios");
+      if (proximas.length === 0) {
+        contenedor.classList.add("vacio");
+        contenedor.innerHTML = "";
+        return;
+      }
+
+      contenedor.classList.remove("vacio");
+      let items = proximas.map(a => `<li>${a.titulo} — ${a.fecha} (${a.canal})</li>`).join("");
+      contenedor.innerHTML = `<strong>⏰ Recordatorios (próximos 3 días):</strong><ul>${items}</ul>`;
+    }
+
+    // ============================================================
+    // MÓDULO: CALENDARIO VISUAL
+    // Usamos FullCalendar (la misma librería de la app real) para
+    // dibujar las actividades como una cuadrícula de calendario en
+    // vez de una lista plana.
+    // ============================================================
+    let calendar;
+
+    function inicializarCalendario() {
+      calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+        initialView: "dayGridMonth",
+        locale: "es",
+        events: []
+      });
+      calendar.render();
+    }
+
+    function renderizarCalendario() {
+      let actividadesAMostrar = obtenerActividadesFiltradas();
+
+      calendar.removeAllEvents();
+      for (let i = 0; i < actividadesAMostrar.length; i++) {
+        let actividad = actividadesAMostrar[i];
+        calendar.addEvent({
+          title: `${actividad.titulo} (${actividad.canal})`,
+          start: actividad.fecha,
+          color: COLOR_POR_ESTADO[actividad.estado]
+        });
+      }
+    }
+
+    // ============================================================
+    // FUNCIÓN MAESTRA: cada vez que algo cambia (se crea o elimina
+    // una actividad), volvemos a dibujar TODO lo que depende del
+    // array — así nunca se desincroniza la pantalla con los datos.
+    // ============================================================
+    function actualizarTodaLaPantalla() {
+      renderizarDashboard();
+      renderizarRecordatorios();
+      renderizarCalendario();
+    }
+
+    // ============================================================
+    // CONEXIÓN CON LA PÁGINA (HTML)
+    // ============================================================
+    function llenarSelectsDesdeConfiguracion() {
+      let selectCanal = document.getElementById("inputCanal");
+      let selectFiltro = document.getElementById("filtroCanal");
+      for (let i = 0; i < CANALES_DISPONIBLES.length; i++) {
+        selectCanal.innerHTML += `<option value="${CANALES_DISPONIBLES[i]}">${CANALES_DISPONIBLES[i]}</option>`;
+        selectFiltro.innerHTML += `<option value="${CANALES_DISPONIBLES[i]}">${CANALES_DISPONIBLES[i]}</option>`;
+      }
+
+      let selectEstado = document.getElementById("inputEstado");
+      for (let i = 0; i < ESTADOS_DISPONIBLES.length; i++) {
+        selectEstado.innerHTML += `<option value="${ESTADOS_DISPONIBLES[i]}">${ESTADOS_DISPONIBLES[i]}</option>`;
+      }
+    }
+
+    function manejarCrearActividad() {
+      let titulo = document.getElementById("inputTitulo").value;
+      let fecha = document.getElementById("inputFecha").value;
+      let canal = document.getElementById("inputCanal").value;
+      let estado = document.getElementById("inputEstado").value;
+
+      if (!titulo || !fecha) {
+        alert("Escribe un título y una fecha.");
+        return;
+      }
+
+      crearActividad(titulo, fecha, canal, estado);
+      actualizarTodaLaPantalla();
+
+      document.getElementById("inputTitulo").value = "";
+      document.getElementById("inputFecha").value = "";
+    }
+
+    function manejarCambioFiltro() {
+      renderizarCalendario();
+    }
+
+    // ============================================================
+    // ARRANQUE: esto corre una sola vez, al abrir la página
+    // ============================================================
+    document.title = `Calendario de Marketing — ${NOMBRE_NEGOCIO}`;
+    llenarSelectsDesdeConfiguracion();
+    cargarDesdeLocalStorage();
+    inicializarCalendario();
+    actualizarTodaLaPantalla();
+  </script>
+</body>
+</html>

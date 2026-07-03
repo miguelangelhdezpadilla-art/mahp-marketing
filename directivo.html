@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Directivo – Plan de Marketing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">📊</div>
+      <span class="titulo" id="nombreEmpresaTitulo">Dashboard Directivo</span>
+    </div>
+    <div class="topbar-actions">
+      <a id="enlaceVolverAdmin" href="admin.html" class="volver-link" style="display:none;"><i class="fa-solid fa-arrow-left"></i> Admin</a>
+      <button class="btn-campanita" onclick="toggleNotificaciones()">
+        <i class="fa-solid fa-bell"></i>
+        <span id="contadorNotif" class="contador-notif" style="display:none;"></span>
+      </button>
+      <button class="btn-danger btn-auto" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+    </div>
+  </div>
+
+  <div id="panelNotificaciones" class="card" style="display:none;"></div>
+
+  <div class="contenido con-bottom-nav">
+    <p id="mensajeSinEmpresa" class="mensaje-error" style="display:none;">
+      Abre este panel desde el botón "Ver dashboard" de un directivo en admin.html.
+    </p>
+    <div id="panelOperativo" style="display:none;">
+
+    <div id="tab-resumen" class="tab-panel activo">
+      <div class="resumen-grid" id="resumenGrid"></div>
+    </div>
+
+    <div id="tab-kpis" class="tab-panel">
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </div>
+
+    <div id="tab-desempeno" class="tab-panel">
+      <div class="card">
+        <h2>Avance de campañas</h2>
+        <p style="font-size:0.85em; color:var(--slate-500); margin-top:-8px;">Clic en una campaña para ver sus objetivos y actividades.</p>
+        <table class="tabla">
+          <thead><tr><th>Campaña</th><th>Estado</th><th>Avance promedio</th></tr></thead>
+          <tbody id="tablaCampanias"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Desempeño por colaborador</h2>
+        <table class="tabla">
+          <thead><tr><th>Colaborador</th><th>Tareas asignadas</th><th>Completadas</th><th>Avance promedio</th></tr></thead>
+          <tbody id="tablaColaboradores"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Avance de colaboradores</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Clic en un colaborador para ver el detalle de sus tareas.
+        </p>
+        <div id="avanceColaboradores">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <h2>✅ Tareas completadas</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Actividades marcadas como completadas con sus evidencias.
+        </p>
+        <div id="tareasCompletadas">Cargando...</div>
+      </div>
+    </div>
+
+    <div id="tab-estrategias" class="tab-panel">
+      <div class="card">
+        <h2>Estrategias directivas</h2>
+        <div id="listaEstrategias"><div class="skeleton skeleton-line mid"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-seguidores" class="tab-panel">
+      <div class="card">
+        <h2>Canales de redes sociales</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Define qué redes quieres rastrear. Puedes agregar cualquier canal.
+        </p>
+        <div id="gestionCanales">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <h2>Seguidores actuales</h2>
+        <div id="seguridoresGrid" class="seg-grid">Cargando...</div>
+      </div>
+
+      <div class="card card-estrecha">
+        <h2>Reportar cambio de seguidores</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Vincula el cambio a una actividad para ver el impacto campaña por campaña.
+        </p>
+        <div id="formSeguidores">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <h2>Historial de seguidores</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Registro completo actividad por actividad.
+        </p>
+        <div id="historialSeguidores" style="overflow-x:auto;">Cargando...</div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button onclick="cambiarTab('resumen')" id="navbtn-resumen" class="activo">
+      <i class="fa-solid fa-chart-pie"></i> Resumen
+    </button>
+    <button onclick="cambiarTab('kpis')" id="navbtn-kpis">
+      <i class="fa-solid fa-bullseye"></i> KPIs
+    </button>
+    <button onclick="cambiarTab('desempeno')" id="navbtn-desempeno">
+      <i class="fa-solid fa-chart-line"></i> Desempeño
+    </button>
+    <button onclick="cambiarTab('estrategias')" id="navbtn-estrategias">
+      <i class="fa-solid fa-lightbulb"></i> Estrategias
+    </button>
+    <button onclick="cambiarTab('seguidores')" id="navbtn-seguidores">
+      <i class="fa-solid fa-users"></i> Seguidores
+    </button>
+  </div>
+
+  <script type="module" src="js/directivo.js"></script>
+</body>
+</html>

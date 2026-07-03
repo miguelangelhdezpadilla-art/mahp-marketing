@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mis tareas – Plan de Marketing</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.5/dist/purify.min.js"></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">✅</div>
+      <span class="titulo">Mis tareas</span>
+    </div>
+    <div class="topbar-actions">
+      <a id="enlaceVolverAdmin" href="admin.html" class="volver-link" style="display:none;"><i class="fa-solid fa-arrow-left"></i> Admin</a>
+      <button class="btn-campanita" onclick="toggleNotificaciones()">
+        <i class="fa-solid fa-bell"></i>
+        <span id="contadorNotif" class="contador-notif" style="display:none;"></span>
+      </button>
+      <button class="btn-danger btn-auto" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+    </div>
+  </div>
+
+  <div id="panelNotificaciones" class="card" style="display:none;"></div>
+
+  <div class="contenido con-bottom-nav">
+    <p id="mensajeSinUsuario" class="mensaje-error" style="display:none;">
+      Abre este panel desde el botón "Ver tareas" de un colaborador en admin.html.
+    </p>
+    <div id="seccionCalendario" style="display:none;">
+
+      <div id="tab-tareas" class="tab-panel activo">
+        <h2>Mis tareas</h2>
+        <div id="listaTareas">
+          <div class="skeleton skeleton-stat" style="margin-bottom:8px;"></div>
+          <div class="skeleton skeleton-stat"></div>
+        </div>
+      </div>
+
+      <div id="tab-calendario" class="tab-panel">
+        <div id="calendar"></div>
+      </div>
+
+      <div id="tab-estrategias" class="tab-panel">
+        <div class="card">
+          <h2>Estrategias directivas</h2>
+          <div id="listaEstrategias"><div class="skeleton skeleton-line mid"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button onclick="cambiarTab('tareas')" id="navbtn-tareas" class="activo">
+      <i class="fa-solid fa-list-check"></i> Tareas
+    </button>
+    <button onclick="cambiarTab('calendario')" id="navbtn-calendario">
+      <i class="fa-solid fa-calendar-days"></i> Calendario
+    </button>
+    <button onclick="cambiarTab('estrategias')" id="navbtn-estrategias">
+      <i class="fa-solid fa-lightbulb"></i> Estrategias
+    </button>
+  </div>
+
+  <script type="module" src="js/colaborador.js"></script>
+</body>
+</html>

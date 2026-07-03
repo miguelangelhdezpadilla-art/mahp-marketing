@@ -7,8 +7,8 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Open mahp.html",
-            "file": "c:\\Users\\MIGUEL\\OneDrive\\Desktop\\mkt\\mahp html\\mahp.html"
+            "name": "Open login.html",
+            "file": "c:\\Users\\MIGUEL\\OneDrive\\Desktop\\mkt\\mahp html\\login.html"
         }
     ]
-}
+}   

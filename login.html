@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Iniciar sesión – Plan de Marketing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body class="login-page">
+
+  <div class="login-header">
+    <div class="login-logo">📅</div>
+    <h1>Plan Integral de Marketing</h1>
+    <p>y Operaciones</p>
+  </div>
+
+  <div class="login-card">
+    <h2 id="tituloFormulario">Iniciar sesión</h2>
+
+    <input type="email" id="email" placeholder="Correo electrónico">
+    <input type="password" id="password" placeholder="Contraseña">
+
+    <button id="btnLogin" onclick="iniciarSesion()"><i class="fa-solid fa-right-to-bracket"></i> Iniciar sesión</button>
+    <button id="btnSignup" class="btn-success" onclick="crearCuenta()" style="display:none;"><i class="fa-solid fa-user-plus"></i> Crear cuenta</button>
+
+    <p id="mensaje" style="text-align:center; margin-top:12px;"></p>
+
+    <p style="text-align:center; margin-top:14px;">
+      <a href="#" id="enlaceAlternar" onclick="alternarModo(event)">¿Eres nuevo? Crea tu cuenta aquí</a>
+    </p>
+  </div>
+
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Empresa – Plan de Marketing</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/styles.css">
+
+  <!-- Estilos exclusivos del formulario multi-día (Sprint 4) -->
+  <style>
+    .modo-fecha-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .modo-fecha-tabs button {
+      flex: 1;
+      padding: 7px 6px;
+      font-size: 11px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border, #E2E8F0);
+      background: var(--surface, #fff);
+      color: var(--slate-500, #64748B);
+      cursor: pointer;
+      transition: all .15s;
+      justify-content: center;
+      gap: 4px;
+      width: auto;
+      margin-top: 0;
+    }
+    .modo-fecha-tabs button.activo {
+      background: var(--indigo, #6366F1);
+      border-color: var(--indigo, #6366F1);
+      color: #fff;
+    }
+
+    #panelFechasMultiples { display: none; }
+    #panelFechaDiaria     { display: none; }
+    #panelFechaSimple     { display: block; }
+
+    .fechas-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .fecha-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fecha-row input[type="date"] {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .btn-quitar-fecha {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      padding: 0;
+      border-radius: 50%;
+      background: var(--red-light, #FEF2F2);
+      color: var(--red, #EF4444);
+      border: 1px solid #FECACA;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s;
+      margin-top: 0;
+    }
+    .btn-quitar-fecha:hover { background: #FECACA; }
+
+    .btn-agregar-fecha {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px dashed var(--indigo, #6366F1);
+      background: var(--indigo-light, #EEF2FF);
+      color: var(--indigo, #6366F1);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      justify-content: center;
+      transition: background .15s;
+      margin-bottom: 10px;
+    }
+    .btn-agregar-fecha:hover { background: #E0E7FF; }
+
+    .rango-diaria {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .rango-diaria label { font-size: 11px; }
+
+    .fechas-preview {
+      background: var(--indigo-light, #EEF2FF);
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      color: var(--indigo-dark, #4F46E5);
+      display: none;
+    }
+    .fechas-preview strong { display: block; margin-bottom: 4px; }
+
+    #mensajeActividad {
+      font-size: 12px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: none;
+    }
+    #mensajeActividad.ok  { background: var(--green-light); color: #065F46; border: 1px solid #A7F3D0; display: block; }
+    #mensajeActividad.err { background: var(--red-light);   color: #991B1B; border: 1px solid #FECACA; display: block; }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.5/dist/purify.min.js"></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">🏢</div>
+      <span class="titulo" id="nombreEmpresaTitulo">Panel de Empresa</span>
+    </div>
+    <div class="topbar-actions">
+      <a id="enlaceVolverAdmin" href="admin.html" class="volver-link" style="display:none;"><i class="fa-solid fa-arrow-left"></i> Admin</a>
+      <a id="enlaceDashboardDesempeno" href="#" class="volver-link"><i class="fa-solid fa-chart-line"></i> Desempeño</a>
+      <button class="btn-campanita" onclick="toggleNotificaciones()">
+        <i class="fa-solid fa-bell"></i>
+        <span id="contadorNotif" class="contador-notif" style="display:none;"></span>
+      </button>
+      <button class="btn-danger btn-auto" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+    </div>
+  </div>
+
+  <div id="panelNotificaciones" class="card" style="display:none;"></div>
+
+  <div class="contenido con-bottom-nav">
+    <p id="mensajeSinEmpresa" class="mensaje-error" style="display:none;">
+      Abre este panel desde el botón "Ver panel operativo" de una empresa en admin.html.
+    </p>
+
+    <div id="panelOperativo" style="display:none;">
+
+    <div id="tab-resumen" class="tab-panel activo">
+      <div class="resumen-grid" id="resumenGrid"></div>
+
+      <div class="card">
+        <h2>Actividad reciente</h2>
+        <table class="tabla">
+          <thead><tr><th>Cuándo</th><th>Evento</th><th>Detalle</th></tr></thead>
+          <tbody id="tablaAuditoria"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-calendario" class="tab-panel">
+      <div class="card">
+        <button class="ia-trigger" onclick="toggleSeccionIA()">
+          <span class="ia-trigger-icon">✨</span>
+          <span class="ia-trigger-text">
+            <span class="ia-trigger-title">Generar calendario con IA</span>
+            <span class="ia-trigger-sub">Claude crea el plan del mes basado en tu campaña y canales</span>
+          </span>
+          <span class="ia-trigger-arrow" id="iaArrow">›</span>
+        </button>
+        <div id="seccionIA" style="display:none; margin-top:1rem;">
+          <div id="formIA"></div>
+          <div id="resultadoIA" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+
+      <div id="formulario" class="card card-estrecha">
+        <h3>Agregar nueva actividad</h3>
+        <input type="text" id="titulo" placeholder="Título de la actividad">
+        <input type="text" id="canal" placeholder="Canal (Facebook, Instagram, Operaciones...)">
+        <textarea id="descripcion" rows="2" placeholder="Descripción (opcional)"></textarea>
+        <select id="categoria">
+          <option value="#007BFF">Marketing (Azul)</option>
+          <option value="#28A745">Operatividad (Verde)</option>
+          <option value="#FF9800">Mantenimiento (Naranja)</option>
+          <option value="#DC3545">Inversión (Rojo)</option>
+        </select>
+        <select id="campaniaActividad">
+          <option value="">Sin campaña</option>
+        </select>
+        <select id="asignadoActividad">
+          <option value="">Sin asignar</option>
+        </select>
+
+        <p style="font-size:11px; font-weight:600; color:var(--slate-700,#334155); margin-bottom:6px;">
+          ¿Cuándo se realiza?
+        </p>
+        <div class="modo-fecha-tabs">
+          <button id="modo-simple" class="activo" onclick="cambiarModoFecha('simple')">
+            <i class="fa-solid fa-calendar-day"></i> Un día
+          </button>
+          <button id="modo-multiple" onclick="cambiarModoFecha('multiple')">
+            <i class="fa-solid fa-calendar-days"></i> Varios días
+          </button>
+          <button id="modo-diaria" onclick="cambiarModoFecha('diaria')">
+            <i class="fa-solid fa-rotate"></i> Diaria
+          </button>
+        </div>
+
+        <!-- MODO: Un solo día (comportamiento original, usa agregarActividad() de empresa.js) -->
+        <div id="panelFechaSimple">
+          <input type="date" id="fecha">
+          <button onclick="agregarActividad()">
+            <i class="fa-solid fa-calendar-plus"></i> Agregar al calendario
+          </button>
+        </div>
+
+        <!-- MODO: Varios días específicos -->
+        <div id="panelFechasMultiples">
+          <div class="fechas-lista" id="listaFechas">
+            <div class="fecha-row">
+              <input type="date" class="fecha-multiple">
+            </div>
+          </div>
+          <button class="btn-agregar-fecha" onclick="agregarCampoFecha()">
+            <i class="fa-solid fa-plus"></i> Agregar otro día
+          </button>
+          <button onclick="agregarActividadMulti('multiple')">
+            <i class="fa-solid fa-calendar-plus"></i> Agregar al calendario
+          </button>
+        </div>
+
+        <!-- MODO: Diaria (rango de fechas) -->
+        <div id="panelFechaDiaria">
+          <div class="rango-diaria">
+            <div>
+              <label for="diariaInicio">Desde</label>
+              <input type="date" id="diariaInicio" oninput="actualizarPreviewDiaria()">
+            </div>
+            <div>
+              <label for="diariaFin">Hasta</label>
+              <input type="date" id="diariaFin" oninput="actualizarPreviewDiaria()">
+            </div>
+          </div>
+          <div class="fechas-preview" id="previewDiaria">
+            <strong>Se crearán estas fechas:</strong>
+            <span id="previewDiariaTexto"></span>
+          </div>
+          <button onclick="agregarActividadMulti('diaria')">
+            <i class="fa-solid fa-rotate"></i> Crear tarea diaria
+          </button>
+        </div>
+
+        <p id="mensajeActividad"></p>
+      </div>
+
+      <div id="calendar"></div>
+    </div>
+
+    <div id="tab-campanias" class="tab-panel">
+      <div class="card card-estrecha">
+        <h2>Nueva campaña</h2>
+        <input type="text" id="nombreCampania" placeholder="Nombre de la campaña">
+        <input type="text" id="objetivoCampania" placeholder="Objetivo">
+        <input type="date" id="inicioCampania">
+        <input type="date" id="finCampania">
+        <button onclick="crearCampania()"><i class="fa-solid fa-bullhorn"></i> Crear campaña</button>
+        <p id="mensajeCampania"></p>
+      </div>
+
+      <div class="card">
+        <h2>Campañas activas</h2>
+        <p style="font-size:0.85em; color:var(--slate-500); margin-top:-8px;">Clic en una campaña para ver sus objetivos y actividades.</p>
+        <table class="tabla">
+          <thead><tr><th>Nombre</th><th>Objetivo</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
+          <tbody id="tablaCampanias"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-equipo" class="tab-panel">
+      <div class="card card-estrecha">
+        <h2>Invitar colaborador / directivo</h2>
+        <input type="email" id="emailInvite" placeholder="Correo de la persona">
+        <select id="rolInvite">
+          <option value="collaborator">Colaborador</option>
+          <option value="director">Directivo</option>
+        </select>
+        <button onclick="invitarUsuario()"><i class="fa-solid fa-paper-plane"></i> Generar invitación</button>
+        <p id="mensajeInvite"></p>
+        <p style="font-size:0.85em; color:var(--slate-500);">
+          Esa persona debe crear su cuenta en <strong>login.html</strong> usando exactamente ese correo.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Invitaciones de tu empresa</h2>
+        <table class="tabla">
+          <thead><tr><th>Correo</th><th>Rol</th><th>Usada</th></tr></thead>
+          <tbody id="tablaInvites"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Equipo</h2>
+        <table class="tabla">
+          <thead><tr><th>Nombre / correo</th><th>Rol</th><th>Acceso</th><th></th></tr></thead>
+          <tbody id="tablaEquipo"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Avance de colaboradores</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Clic en un colaborador para ver el detalle de sus tareas.
+        </p>
+        <div id="avanceColaboradores">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <h2>KPIs generales</h2>
+        <div class="kpi-grid" id="kpiGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>✅ Tareas completadas</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Actividades marcadas como completadas con sus evidencias.
+        </p>
+        <div id="tareasCompletadas">Cargando...</div>
+      </div>
+    </div>
+
+    <div id="tab-estrategias" class="tab-panel">
+      <div class="card card-estrecha">
+        <h2>Publicar estrategia directiva</h2>
+        <input type="text" id="tituloEstrategia" placeholder="Título de la estrategia">
+        <textarea id="contenidoEstrategia" rows="4" placeholder="Describe la estrategia o guía para tu equipo"></textarea>
+        <button onclick="publicarEstrategia()"><i class="fa-solid fa-lightbulb"></i> Publicar</button>
+      </div>
+
+      <div class="card">
+        <h2>Estrategias publicadas</h2>
+        <div id="listaEstrategias"><div class="skeleton skeleton-line mid"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-seguidores" class="tab-panel">
+      <div class="card">
+        <h2>Canales de redes sociales</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Define qué redes quieres rastrear. Puedes agregar cualquier canal.
+        </p>
+        <div id="gestionCanales">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <h2>Seguidores actuales</h2>
+        <div id="seguridoresGrid" class="seg-grid">Cargando...</div>
+      </div>
+
+      <div class="card card-estrecha">
+        <h2>Reportar cambio de seguidores</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Vincula el cambio a una actividad para ver el impacto campaña por campaña.
+        </p>
+        <div id="formSeguidores">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <h2>Historial de seguidores</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Registro completo actividad por actividad.
+        </p>
+        <div id="historialSeguidores" style="overflow-x:auto;">Cargando...</div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button onclick="cambiarTab('resumen')" id="navbtn-resumen" class="activo">
+      <i class="fa-solid fa-chart-pie"></i> Resumen
+    </button>
+    <button onclick="cambiarTab('calendario')" id="navbtn-calendario">
+      <i class="fa-solid fa-calendar-days"></i> Calendario
+    </button>
+    <button onclick="cambiarTab('campanias')" id="navbtn-campanias">
+      <i class="fa-solid fa-bullhorn"></i> Campañas
+    </button>
+    <button onclick="cambiarTab('equipo')" id="navbtn-equipo">
+      <i class="fa-solid fa-users"></i> Equipo
+    </button>
+    <button onclick="cambiarTab('estrategias')" id="navbtn-estrategias">
+      <i class="fa-solid fa-lightbulb"></i> Estrategias
+    </button>
+    <button onclick="cambiarTab('seguidores')" id="navbtn-seguidores">
+      <i class="fa-solid fa-users"></i> Seguidores
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       JS Sprint 4 — funciones multi-día
+       No modifica empresa.js. Lee los mismos campos (titulo,
+       canal, descripcion, categoria, campaniaActividad,
+       asignadoActividad) que agregarActividad() original.
+       Inserta directamente en Supabase usando window._supabase,
+       window._empresaId y window._calendar, expuestos por
+       empresa.js en su bootstrap.
+  ════════════════════════════════════════════════════════ -->
+  <script>
+    function cambiarModoFecha(modo) {
+      ['simple', 'multiple', 'diaria'].forEach((m) => {
+        document.getElementById('modo-' + m).classList.remove('activo');
+      });
+      document.getElementById('modo-' + modo).classList.add('activo');
+
+      document.getElementById('panelFechaSimple').style.display = 'none';
+      document.getElementById('panelFechasMultiples').style.display = 'none';
+      document.getElementById('panelFechaDiaria').style.display = 'none';
+
+      if (modo === 'simple') document.getElementById('panelFechaSimple').style.display = 'block';
+      if (modo === 'multiple') document.getElementById('panelFechasMultiples').style.display = 'block';
+      if (modo === 'diaria') document.getElementById('panelFechaDiaria').style.display = 'block';
+
+      let msg = document.getElementById('mensajeActividad');
+      msg.className = '';
+      msg.textContent = '';
+      msg.style.display = 'none';
+    }
+
+    function agregarCampoFecha() {
+      let lista = document.getElementById('listaFechas');
+      let row = document.createElement('div');
+      row.className = 'fecha-row';
+      row.innerHTML = `
+        <input type="date" class="fecha-multiple">
+        <button class="btn-quitar-fecha" onclick="this.parentElement.remove()" title="Quitar este día">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+      lista.appendChild(row);
+    }
+
+    function generarRango(inicio, fin) {
+      let fechas = [];
+      let cur = new Date(inicio + 'T12:00');
+      let end = new Date(fin + 'T12:00');
+      while (cur <= end) {
+        fechas.push(cur.toISOString().slice(0, 10));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return fechas;
+    }
+
+    function actualizarPreviewDiaria() {
+      let inicio = document.getElementById('diariaInicio').value;
+      let fin = document.getElementById('diariaFin').value;
+      let preview = document.getElementById('previewDiaria');
+      let texto = document.getElementById('previewDiariaTexto');
+
+      if (!inicio || !fin || inicio > fin) {
+        preview.style.display = 'none';
+        return;
+      }
+
+      let fechas = generarRango(inicio, fin);
+      let fmt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' });
+
+      texto.textContent = fechas.length > 14
+        ? `${fechas.length} días (del ${fmt.format(new Date(inicio + 'T12:00'))} al ${fmt.format(new Date(fin + 'T12:00'))})`
+        : fechas.map((f) => fmt.format(new Date(f + 'T12:00'))).join(' · ');
+      preview.style.display = 'block';
+    }
+
+    function leerCamposComunes() {
+      return {
+        titulo: document.getElementById('titulo').value.trim(),
+        canal: document.getElementById('canal').value.trim(),
+        descripcion: document.getElementById('descripcion').value.trim(),
+        color: document.getElementById('categoria').value,
+        campaign_id: document.getElementById('campaniaActividad').value || null,
+        assigned_to: document.getElementById('asignadoActividad').value || null,
+      };
+    }
+
+    function validarComunes(campos) {
+      if (!campos.titulo) return 'El título es obligatorio.';
+      if (!campos.canal) return 'El canal es obligatorio.';
+      return null;
+    }
+
+    function mostrarMensajeActividad(texto, tipo) {
+      let el = document.getElementById('mensajeActividad');
+      el.textContent = texto;
+      el.className = tipo;
+    }
+
+    async function agregarActividadMulti(modo) {
+      let campos = leerCamposComunes();
+      let error = validarComunes(campos);
+      if (error) { mostrarMensajeActividad(error, 'err'); return; }
+
+      let fechas = [];
+
+      if (modo === 'multiple') {
+        let inputs = document.querySelectorAll('.fecha-multiple');
+        fechas = Array.from(inputs).map((i) => i.value).filter(Boolean);
+        if (fechas.length === 0) { mostrarMensajeActividad('Agrega al menos una fecha.', 'err'); return; }
+        fechas = [...new Set(fechas)].sort();
+      }
+
+      if (modo === 'diaria') {
+        let inicio = document.getElementById('diariaInicio').value;
+        let fin = document.getElementById('diariaFin').value;
+        if (!inicio || !fin) { mostrarMensajeActividad('Selecciona la fecha de inicio y fin.', 'err'); return; }
+        if (inicio > fin) { mostrarMensajeActividad('La fecha de inicio debe ser antes que la de fin.', 'err'); return; }
+        fechas = generarRango(inicio, fin);
+      }
+
+      let companyId = window._empresaId ?? null;
+
+      let filas = fechas.map((fecha) => ({
+        titulo: DOMPurify.sanitize(campos.titulo),
+        canal: DOMPurify.sanitize(campos.canal),
+        descripcion: DOMPurify.sanitize(campos.descripcion),
+        color: campos.color,
+        fecha,
+        company_id: companyId,
+        campaign_id: campos.campaign_id ? Number(campos.campaign_id) : null,
+        assigned_to: campos.assigned_to || null,
+        progress_pct: 0,
+        status: 'pendiente',
+      }));
+
+      let sb = window._supabase;
+      if (!sb) { mostrarMensajeActividad('Error: cliente Supabase no disponible. Recarga la página.', 'err'); return; }
+
+      let btn = event?.target;
+      if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+      let { error: sbError } = await sb.from('actividades').insert(filas);
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = modo === 'diaria'
+          ? '<i class="fa-solid fa-rotate"></i> Crear tarea diaria'
+          : '<i class="fa-solid fa-calendar-plus"></i> Agregar al calendario';
+      }
+
+      if (sbError) {
+        console.error(sbError);
+        mostrarMensajeActividad('Error al guardar: ' + sbError.message, 'err');
+        return;
+      }
+
+      mostrarMensajeActividad(`${filas.length} actividad${filas.length > 1 ? 'es creadas' : ' creada'} correctamente.`, 'ok');
+
+      // El calendario de empresa.js no usa una fuente de eventos dinámica
+      // (los eventos se agregan a mano en cargarActividades()), así que hay
+      // que volver a llamarla para que las fechas nuevas aparezcan.
+      if (window._recargarActividades) await window._recargarActividades();
+    }
+  </script>
+
+  <script type="module" src="js/empresa.js"></script>
+</body>
+</html>

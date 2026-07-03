@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendario de Marketing — v1.0 (aprendizaje)</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    input, select, button { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+    button { background: #3498db; color: white; border: none; cursor: pointer; }
+    .actividad { border: 1px solid #ccc; border-radius: 6px; padding: 10px; margin: 8px 0; }
+    .actividad button { width: auto; background: #e74c3c; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <h1>📅 Calendario de Marketing — v1.0</h1>
+  <p><em>Versión de aprendizaje: código organizado en módulos para entender cada parte.</em></p>
+
+  <h2>Crear actividad</h2>
+  <input type="text" id="inputTitulo" placeholder="Título de la actividad">
+  <input type="date" id="inputFecha">
+  <select id="inputCanal"></select>
+  <select id="inputEstado"></select>
+  <button onclick="manejarCrearActividad()">Guardar actividad</button>
+
+  <h2>Mis actividades</h2>
+  <div id="listaActividades"></div>
+
+  <script>
+    // ============================================================
+    // MÓDULO: CONFIGURACIÓN DEL NEGOCIO
+    // Aquí van los datos fijos de tu negocio. Si cambian, solo
+    // tocas esta sección — el resto del código no se entera.
+    // ============================================================
+    const NOMBRE_NEGOCIO = "Mi Restaurante";
+    const CANALES_DISPONIBLES = ["Facebook", "Instagram", "TikTok", "Otro"];
+    const ESTADOS_DISPONIBLES = ["Pendiente", "En progreso", "Completado"];
+
+    // ============================================================
+    // MÓDULO: ARRAYS
+    // Un array es una lista. Aquí guardamos TODAS las actividades
+    // mientras la página está abierta (luego se sincroniza con
+    // Local Storage para que no se pierdan al cerrar el navegador).
+    // ============================================================
+    let actividades = [];
+
+    // ============================================================
+    // MÓDULO: LOCAL STORAGE
+    // Local Storage es como una "libreta" que el navegador guarda
+    // en tu computadora. Sirve para que tus actividades sigan ahí
+    // aunque cierres la pestaña o reinicies el equipo.
+    // ============================================================
+    function guardarEnLocalStorage() {
+      // JSON.stringify convierte el array de JavaScript en texto,
+      // porque Local Storage solo puede guardar texto.
+      localStorage.setItem("actividadesMarketing", JSON.stringify(actividades));
+    }
+
+    function cargarDesdeLocalStorage() {
+      let datosGuardados = localStorage.getItem("actividadesMarketing");
+      // JSON.parse hace lo contrario: convierte el texto guardado
+      // de vuelta en un array que JavaScript puede usar.
+      actividades = datosGuardados ? JSON.parse(datosGuardados) : [];
+    }
+
+    // ============================================================
+    // MÓDULO: FUNCIONES DE MARKETING
+    // Las acciones que un usuario de marketing necesita hacer:
+    // crear y eliminar actividades de su calendario.
+    // ============================================================
+    function crearActividad(titulo, fecha, canal, estado) {
+      let nuevaActividad = {
+        id: Date.now(), // un número único basado en la hora actual, sirve como identificador
+        titulo: titulo,
+        fecha: fecha,
+        canal: canal,
+        estado: estado
+      };
+
+      actividades.push(nuevaActividad); // agrega la nueva actividad al final del array
+      guardarEnLocalStorage();          // la guarda inmediatamente, sin que el usuario haga nada extra
+    }
+
+    function eliminarActividad(id) {
+      // filter() crea un array nuevo con todo MENOS la actividad que coincide con ese id
+      actividades = actividades.filter(function(actividad) {
+        return actividad.id !== id;
+      });
+      guardarEnLocalStorage();
+    }
+
+    // ============================================================
+    // MÓDULO: CICLOS
+    // Un ciclo ("for") repite una acción una vez por cada elemento
+    // del array. Aquí lo usamos para dibujar todas las actividades
+    // en pantalla, una por una.
+    // ============================================================
+    function renderizarActividades() {
+      let contenedor = document.getElementById("listaActividades");
+      let html = "";
+
+      for (let i = 0; i < actividades.length; i++) {
+        let actividad = actividades[i];
+        html += `
+          <div class="actividad">
+            <strong>${actividad.titulo}</strong><br>
+            📅 ${actividad.fecha} · 📣 ${actividad.canal} · 📌 ${actividad.estado}
+            <br>
+            <button onclick="manejarEliminarActividad(${actividad.id})">Eliminar</button>
+          </div>
+        `;
+      }
+
+      contenedor.innerHTML = html || "<p>Todavía no hay actividades. ¡Crea la primera arriba! 👆</p>";
+    }
+
+    // ============================================================
+    // CONEXIÓN CON LA PÁGINA (HTML)
+    // Estas funciones leen lo que el usuario escribió en el
+    // formulario y llaman a las funciones de los módulos de arriba.
+    // ============================================================
+    function llenarSelectsDesdeConfiguracion() {
+      let selectCanal = document.getElementById("inputCanal");
+      for (let i = 0; i < CANALES_DISPONIBLES.length; i++) {
+        selectCanal.innerHTML += `<option value="${CANALES_DISPONIBLES[i]}">${CANALES_DISPONIBLES[i]}</option>`;
+      }
+
+      let selectEstado = document.getElementById("inputEstado");
+      for (let i = 0; i < ESTADOS_DISPONIBLES.length; i++) {
+        selectEstado.innerHTML += `<option value="${ESTADOS_DISPONIBLES[i]}">${ESTADOS_DISPONIBLES[i]}</option>`;
+      }
+    }
+
+    function manejarCrearActividad() {
+      let titulo = document.getElementById("inputTitulo").value;
+      let fecha = document.getElementById("inputFecha").value;
+      let canal = document.getElementById("inputCanal").value;
+      let estado = document.getElementById("inputEstado").value;
+
+      if (!titulo || !fecha) {
+        alert("Escribe un título y una fecha.");
+        return;
+      }
+
+      crearActividad(titulo, fecha, canal, estado);
+      renderizarActividades();
+
+      document.getElementById("inputTitulo").value = "";
+      document.getElementById("inputFecha").value = "";
+    }
+
+    function manejarEliminarActividad(id) {
+      eliminarActividad(id);
+      renderizarActividades();
+    }
+
+    // ============================================================
+    // ARRANQUE: esto corre una sola vez, al abrir la página
+    // ============================================================
+    document.title = `Calendario de Marketing — ${NOMBRE_NEGOCIO}`;
+    llenarSelectsDesdeConfiguracion();
+    cargarDesdeLocalStorage();
+    renderizarActividades();
+  </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Super Admin – Plan de Marketing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">🛠️</div>
+      <span class="titulo">Panel Super Admin</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-campanita" onclick="toggleNotificaciones()">
+        <i class="fa-solid fa-bell"></i>
+        <span id="contadorNotif" class="contador-notif" style="display:none;"></span>
+      </button>
+      <button class="btn-danger btn-auto" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+    </div>
+  </div>
+
+  <div id="panelNotificaciones" class="card" style="display:none;"></div>
+
+  <div class="contenido con-bottom-nav">
+    <div id="tab-empresas" class="tab-panel activo">
+      <div class="card card-estrecha">
+        <h2>Crear nueva empresa</h2>
+        <input type="text" id="nombreEmpresa" placeholder="Nombre de la empresa">
+        <button onclick="crearEmpresa()"><i class="fa-solid fa-building-circle-check"></i> Crear empresa</button>
+        <p id="mensajeEmpresa"></p>
+      </div>
+
+      <div class="card">
+        <h2>Empresas</h2>
+        <table class="tabla">
+          <thead>
+            <tr><th>Nombre</th><th>Activa</th><th>Creada</th><th></th></tr>
+          </thead>
+          <tbody id="tablaEmpresas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-invitaciones" class="tab-panel">
+      <div class="card card-estrecha">
+        <h2>Invitar Admin de Empresa</h2>
+        <input type="email" id="emailInvite" placeholder="Correo del nuevo Admin de Empresa">
+        <select id="empresaInvite"></select>
+        <button onclick="invitarAdminEmpresa()"><i class="fa-solid fa-paper-plane"></i> Generar invitación</button>
+        <p id="mensajeInvite"></p>
+        <p style="font-size:0.85em; color:#555;">
+          Comparte con esa persona el correo que pusiste aquí: deberá crear su cuenta en
+          <strong>login.html</strong> usando exactamente ese correo.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Invitaciones</h2>
+        <table class="tabla">
+          <thead>
+            <tr><th>Correo</th><th>Rol</th><th>Empresa</th><th>Usada</th></tr>
+          </thead>
+          <tbody id="tablaInvites"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-usuarios" class="tab-panel">
+      <div class="card">
+        <h2>Usuarios operativos</h2>
+        <table class="tabla">
+          <thead>
+            <tr><th>Nombre / correo</th><th>Rol</th><th>Empresa</th><th>Acceso</th><th></th><th></th></tr>
+          </thead>
+          <tbody id="tablaUsuarios"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-actividad" class="tab-panel">
+      <div class="card">
+        <h2>Actividad reciente</h2>
+        <table class="tabla">
+          <thead>
+            <tr><th>Cuándo</th><th>Empresa</th><th>Evento</th><th>Detalle</th></tr>
+          </thead>
+          <tbody id="tablaAuditoria"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button onclick="cambiarTab('empresas')" id="navbtn-empresas" class="activo">
+      <i class="fa-solid fa-building"></i> Empresas
+    </button>
+    <button onclick="cambiarTab('invitaciones')" id="navbtn-invitaciones">
+      <i class="fa-solid fa-paper-plane"></i> Invitaciones
+    </button>
+    <button onclick="cambiarTab('usuarios')" id="navbtn-usuarios">
+      <i class="fa-solid fa-users"></i> Usuarios
+    </button>
+    <button onclick="cambiarTab('actividad')" id="navbtn-actividad">
+      <i class="fa-solid fa-clock-rotate-left"></i> Actividad
+    </button>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
