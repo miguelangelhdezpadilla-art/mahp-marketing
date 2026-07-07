@@ -5,7 +5,7 @@ import { renderizarGridKpis, cargarSeguidoresParaKpis } from './shared/kpis.js';
 import { toggleCampania } from './shared/campanias.js';
 import { cargarEstrategias } from './shared/estrategias.js';
 import { renderizarAvanceColaboradores } from './shared/colaboradores.js';
-import { renderTareasCompletadas } from './shared/evidencias.js';
+import { renderHistorialTareas } from './shared/historialTareas.js';
 import {
   cargarTotalesSeguidores,
   cargarHistorialSeguidores,
@@ -106,6 +106,6 @@ window.toggleCampania = (campaignId) => toggleCampania(supabaseClient, campaignI
       await cargarHistorialSeguidores(supabaseClient, companyId);
     }),
     cargarHistorialSeguidores(supabaseClient, companyId),
-    renderTareasCompletadas(supabaseClient, companyId, 'tareasCompletadas'),
+    renderHistorialTareas(supabaseClient, companyId, 'historialTareas'),
   ]);
 })();

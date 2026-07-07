@@ -1413,46 +1413,6 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   padding: .5rem 0;
 }
 
-/* Tarjetas completadas (admin/directivo) */
-.completadas-section { display: flex; flex-direction: column; gap: 8px; }
-
-.comp-card {
-  background: var(--surface-2);
-  border: 0.5px solid #bbf7d0;
-  border-radius: 12px;
-  padding: .875rem 1.1rem;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-.comp-check {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: #dcfce7;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  font-size: 14px;
-}
-.comp-info { flex: 1; min-width: 0; }
-.comp-titulo { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.comp-meta   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-.comp-ev-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.comp-ev-thumb {
-  width: 48px; height: 48px;
-  border-radius: 6px;
-  border: 0.5px solid var(--border);
-  overflow: hidden;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  background: #e0e7ff;
-  font-size: 20px;
-}
-.comp-ev-thumb img {
-  width: 100%; height: 100%; object-fit: cover;
-}
-.comp-ev-thumb.video { background: #fce7f3; }
-
 /* ── Slider de avance ───────────────────────────────── */
 .avance-section { padding: .875rem 1.1rem; border-bottom: 0.5px solid var(--border); }
 .avance-section-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
@@ -1742,3 +1702,177 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   gap: 6px;
 }
 .btn-seg-tarea:hover { background: var(--indigo-light); color: var(--indigo-dark); }
+
+/* ── Completar tarea ────────────────────────────────── */
+
+.completar-section {
+  padding: .875rem 1.1rem;
+  border-top: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.completar-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.5;
+}
+.completar-hint i { margin-top: 1px; flex-shrink: 0; }
+
+.btn-completar {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  font-family: var(--font-sans);
+}
+.btn-completar:hover { background: #15803d; }
+
+.completada-banner {
+  padding: .875rem 1.1rem;
+  border-top: 0.5px solid #bbf7d0;
+  background: #f0fdf4;
+  font-size: 13px;
+  font-weight: 500;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Historial de tareas completadas (admin/director) */
+
+.historial-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historial-card {
+  background: var(--surface-2);
+  border: 0.5px solid #bbf7d0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.historial-header {
+  padding: .875rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.historial-header:hover { background: var(--surface-1); }
+
+.historial-check {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #dcfce7;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.historial-info { flex: 1; min-width: 0; }
+.historial-titulo {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.historial-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.historial-body {
+  border-top: 0.5px solid #bbf7d0;
+  padding: .875rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historial-subtitulo {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 6px;
+}
+
+.historial-ev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+
+.historial-ev-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e0e7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border: 0.5px solid var(--border);
+  cursor: pointer;
+}
+.historial-ev-thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.historial-ev-thumb.video { background: #fce7f3; }
+
+.historial-avances {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.historial-avance-item {
+  background: var(--surface-1);
+  border-radius: 8px;
+  padding: .625rem .875rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.historial-avance-pct {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6366f1;
+  min-width: 40px;
+}
+.historial-avance-info { flex: 1; min-width: 0; }
+.historial-avance-nota {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.historial-avance-fecha {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+@media (max-width: 600px) {
+  .historial-ev-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

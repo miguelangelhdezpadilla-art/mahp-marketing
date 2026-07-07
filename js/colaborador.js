@@ -1,5 +1,5 @@
     import { supabaseClient, requireSession, logout, resolveUserId } from './supabaseClient.js';
-    import { showToast, showPrompt, configurarNotificaciones, configurarTabs, sHtml, claseBadgeEstado, claseNivelAvance } from './ui.js';
+    import { showToast, showPrompt, showConfirm, configurarNotificaciones, configurarTabs, sHtml, claseBadgeEstado, claseNivelAvance } from './ui.js';
     import { cargarEstrategias } from './shared/estrategias.js';
     import { renderFormSeguidores } from './shared/seguidores.js';
     import { renderZonaEvidencias, subirEvidencias } from './shared/evidencias.js';
@@ -25,6 +25,24 @@
             <div class="skeleton skeleton-line mid"></div>
             <div class="skeleton skeleton-line short" style="margin-top:8px;"></div>
           </div>
+
+          ${t.status !== 'completada' ? `
+          <div class="completar-section">
+            <div class="completar-hint">
+              <i class="fa-solid fa-circle-info"></i>
+              Cuando termines todos los pasos, marca la tarea como completada. Esta acción no se puede deshacer.
+            </div>
+            <button
+              onclick="window.completarTarea(${t.id})"
+              class="btn-completar">
+              <i class="fa-solid fa-circle-check"></i>
+              Marcar como completada
+            </button>
+          </div>` : `
+          <div class="completada-banner">
+            <i class="fa-solid fa-circle-check"></i>
+            Tarea completada — ya no puedes editarla
+          </div>`}
 
           <div class="seg-tarea-section">
             <div id="avance-seg-${t.id}">
@@ -64,8 +82,42 @@
       );
     };
 
+    window.completarTarea = async function(activityId) {
+      const confirmado = await showConfirm(
+        '¿Marcar esta tarea como completada? Se guardará con progreso al 100% y no podrás editarla después.'
+      );
+      if (!confirmado) return;
+
+      const { error } = await supabaseClient
+        .from('actividades')
+        .update({
+          status: 'completada',
+          progress_pct: 100
+        })
+        .eq('id', activityId)
+        .eq('assigned_to', miPerfil.id); // seguridad extra
+
+      if (error) {
+        showToast('Error al completar la tarea: ' + error.message, 'error');
+        return;
+      }
+
+      // Registrar el avance final como 100%
+      await supabaseClient.from('activity_updates').insert({
+        activity_id: activityId,
+        user_id: miPerfil.id,
+        progress_pct: 100,
+        note: 'Tarea marcada como completada'
+      });
+
+      showToast('✅ Tarea completada');
+
+      // Recargar: la tarea desaparecerá de la lista
+      await cargarTareas();
+    };
+
     async function cargarTareas() {
-      let { data, error } = await supabaseClient.from('actividades').select('*').eq('assigned_to', tareasUserId).order('fecha');
+      let { data, error } = await supabaseClient.from('actividades').select('*').eq('assigned_to', tareasUserId).neq('status', 'completada').order('fecha');
       if (error) { showToast('Error al cargar tus tareas: ' + error.message, 'error'); return; }
 
       document.getElementById('listaTareas').innerHTML = data.length

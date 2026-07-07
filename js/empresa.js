@@ -12,7 +12,7 @@ import {
 import { renderFormMetas, cargarListaMetas } from './shared/metasSeguidores.js';
 import { cargarTablaAvances } from './shared/avances.js';
 import { renderFormIA } from './shared/ia.js';
-import { renderTareasCompletadas } from './shared/evidencias.js';
+import { renderHistorialTareas } from './shared/historialTareas.js';
 import { renderizarGridKpis, cargarSeguidoresParaKpis } from './shared/kpis.js';
 import { renderizarAvanceColaboradores } from './shared/colaboradores.js';
 
@@ -357,6 +357,6 @@ window.toggleSeccionIA = function() {
     cargarKpis(),
     renderizarAvanceColaboradores(supabaseClient, companyId, 'avanceColaboradores', miPerfil),
     cargarTablaAvances(supabaseClient, companyId, 'tablaAvances'),
-    renderTareasCompletadas(supabaseClient, companyId, 'tareasCompletadas'),
+    renderHistorialTareas(supabaseClient, companyId, 'historialTareas'),
   ]);
 })();
