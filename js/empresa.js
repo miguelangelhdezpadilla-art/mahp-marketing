@@ -9,6 +9,8 @@ import {
   renderFormSeguidores,
   renderGestionCanales
 } from './shared/seguidores.js';
+import { renderFormMetas, cargarListaMetas } from './shared/metasSeguidores.js';
+import { cargarTablaAvances } from './shared/avances.js';
 import { renderFormIA } from './shared/ia.js';
 import { renderTareasCompletadas } from './shared/evidencias.js';
 import { renderizarGridKpis, cargarSeguidoresParaKpis } from './shared/kpis.js';
@@ -192,7 +194,8 @@ async function cargarActividades() {
     let evento = calendar.addEvent({
       title: `${fila.titulo} (${fila.canal})`,
       start: fila.fecha,
-      color: fila.color
+      color: fila.color,
+      classNames: fila.status === 'en_progreso' ? ['fc-event-en-progreso'] : []
     });
     actividadIdPorEvento.set(evento.id, fila.id);
   });
@@ -343,6 +346,7 @@ window.toggleSeccionIA = function() {
     cargarEstrategiasCompartido(supabaseClient, companyId, 'listaEstrategias'),
     configurarNotificaciones(supabaseClient, miPerfil.id),
     renderGestionCanales(supabaseClient, companyId, showToast),
+    renderFormMetas(supabaseClient, companyId, miPerfil.id, showToast),
     cargarTotalesSeguidores(supabaseClient, companyId),
     renderFormSeguidores(supabaseClient, companyId, null, async () => {
       await cargarTotalesSeguidores(supabaseClient, companyId);
@@ -352,6 +356,7 @@ window.toggleSeccionIA = function() {
     renderFormIA(supabaseClient, companyId, showToast),
     cargarKpis(),
     renderizarAvanceColaboradores(supabaseClient, companyId, 'avanceColaboradores', miPerfil),
+    cargarTablaAvances(supabaseClient, companyId, 'tablaAvances'),
     renderTareasCompletadas(supabaseClient, companyId, 'tareasCompletadas'),
   ]);
 })();

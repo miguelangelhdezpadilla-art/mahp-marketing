@@ -4,6 +4,7 @@
     import { renderFormSeguidores } from './shared/seguidores.js';
     import { renderZonaEvidencias, subirEvidencias } from './shared/evidencias.js';
     import { renderDetalleTarea, solicitarAutorizacion } from './shared/detalleTarea.js';
+    import { renderAvanceSeguidoresColaborador } from './shared/metasSeguidores.js';
 
     window.cerrarSesion = logout;
     configurarTabs();
@@ -23,6 +24,22 @@
           <div id="detalle-tarea-${t.id}">
             <div class="skeleton skeleton-line mid"></div>
             <div class="skeleton skeleton-line short" style="margin-top:8px;"></div>
+          </div>
+
+          <div class="seg-tarea-section">
+            <div id="avance-seg-${t.id}">
+              <div class="skeleton skeleton-line mid"></div>
+              <div class="skeleton skeleton-line short" style="margin-top:6px;"></div>
+            </div>
+
+            <button
+              onclick="window.abrirFormSeguidores(${t.id})"
+              class="btn-seg-tarea"
+              style="margin-top:10px;">
+              <i class="fa-solid fa-plus"></i>
+              Reportar nuevo conteo
+            </button>
+            <div id="seg-form-${t.id}" style="margin-top:10px;"></div>
           </div>
         </div>`;
     }
@@ -63,6 +80,15 @@
 
       for (const t of data) {
         await renderDetalleTarea(supabaseClient, t, miPerfil, `detalle-tarea-${t.id}`);
+      }
+
+      for (const t of data) {
+        await renderAvanceSeguidoresColaborador(
+          supabaseClient,
+          miPerfil.company_id,
+          t.id,
+          `avance-seg-${t.id}`
+        );
       }
 
       calendar.removeAllEvents();

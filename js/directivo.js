@@ -12,6 +12,8 @@ import {
   renderFormSeguidores,
   renderGestionCanales
 } from './shared/seguidores.js';
+import { renderFormMetas, cargarListaMetas } from './shared/metasSeguidores.js';
+import { cargarTablaAvances } from './shared/avances.js';
 
 window.cerrarSesion = logout;
 configurarTabs();
@@ -95,7 +97,9 @@ window.toggleCampania = (campaignId) => toggleCampania(supabaseClient, campaignI
     cargarEstrategias(supabaseClient, companyId, 'listaEstrategias'),
     configurarNotificaciones(supabaseClient, resultado.profile.id),
     renderizarAvanceColaboradores(supabaseClient, companyId, 'avanceColaboradores', resultado.profile),
+    cargarTablaAvances(supabaseClient, companyId, 'tablaAvances'),
     renderGestionCanales(supabaseClient, companyId, showToast),
+    renderFormMetas(supabaseClient, companyId, resultado.profile.id, showToast),
     cargarTotalesSeguidores(supabaseClient, companyId),
     renderFormSeguidores(supabaseClient, companyId, null, async () => {
       await cargarTotalesSeguidores(supabaseClient, companyId);
