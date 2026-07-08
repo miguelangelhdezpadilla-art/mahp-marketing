@@ -23,6 +23,14 @@ function canalStyle(canal) {
     : 'background:var(--surface-1); color:var(--text-secondary);';
 }
 
+const RANGO_ACTIVIDADES_POR_FRECUENCIA = {
+  '1 por semana': [4, 5],
+  '2 por semana': [8, 10],
+  '3 por semana': [12, 14],
+  '5 por semana': [20, 22],
+  'Diario':       [28, 31],
+};
+
 function mesFormateado(yyyymm) {
   const [y, m] = yyyymm.split('-');
   return new Date(+y, +m - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
@@ -80,6 +88,7 @@ export async function renderFormIA(supabase, companyId, showToast) {
       <div class="ia-form-group">
         <label class="ia-form-label">Frecuencia de publicación</label>
         <select id="iaFrecuencia" class="ia-form-select">
+          <option value="1 por semana">1 por semana</option>
           <option value="2 por semana">2 por semana</option>
           <option value="3 por semana" selected>3 por semana</option>
           <option value="5 por semana">5 por semana</option>
@@ -125,6 +134,8 @@ export async function generarCalendarioIA(supabase, companyId, showToast) {
     nombreCampania = sel?.options[sel.selectedIndex]?.text || 'Sin campaña';
   }
 
+  const rangoActividades = RANGO_ACTIVIDADES_POR_FRECUENCIA[frecuencia] ?? [12, 14];
+
   const prompt = `Eres un experto en marketing digital.
 Genera un calendario de actividades para el mes de ${mesFormateado(mes)} para la campaña "${nombreCampania}".
 
@@ -145,7 +156,7 @@ Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin bloques de c�
   ]
 }
 
-Genera entre 8 y 16 actividades distribuidas en el mes de ${mes}.
+Genera entre ${rangoActividades[0]} y ${rangoActividades[1]} actividades distribuidas en el mes de ${mes}.
 Usa fechas reales del mes solicitado (formato YYYY-MM-DD).
 Los títulos deben ser concretos y accionables.`;
 
