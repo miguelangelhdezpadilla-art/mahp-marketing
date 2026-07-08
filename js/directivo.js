@@ -19,6 +19,22 @@ import { cargarTablaAvances } from './shared/avances.js';
 window.cerrarSesion = logout;
 configurarTabs();
 let companyId;
+let calendar;
+
+async function cargarActividadesCalendario() {
+  let { data, error } = await supabaseClient.from('actividades').select('*').eq('company_id', companyId).order('fecha');
+  if (error) { showToast('Error al cargar el calendario: ' + error.message, 'error'); return; }
+
+  calendar.removeAllEvents();
+  data.forEach(fila => {
+    calendar.addEvent({
+      title: `${fila.titulo} (${fila.canal})`,
+      start: fila.fecha,
+      color: fila.color,
+      classNames: fila.status === 'en_progreso' ? ['fc-event-en-progreso'] : []
+    });
+  });
+}
 
 async function cargarKpis() {
   let { data, error } = await supabaseClient.from('kpis').select('*').eq('company_id', companyId).is('campaign_id', null).order('created_at');
@@ -91,8 +107,23 @@ window.toggleCampania = (campaignId) => toggleCampania(supabaseClient, campaignI
   let { data: empresa } = await supabaseClient.from('companies').select('name').eq('id', companyId).single();
   if (empresa) document.getElementById('nombreEmpresaTitulo').textContent = empresa.name;
 
+  calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+    initialView: 'dayGridMonth',
+    locale: 'es',
+    events: [],
+    editable: false,
+  });
+  calendar.render();
+
+  let cambiarTabBase = window.cambiarTab;
+  window.cambiarTab = function(nombre) {
+    cambiarTabBase(nombre);
+    if (nombre === 'calendario') calendar.updateSize();
+  };
+
   await Promise.all([
     renderizarResumen(supabaseClient, companyId, 'resumenGrid'),
+    cargarActividadesCalendario(),
     cargarKpis(),
     cargarCampaniasYColaboradores(),
     cargarEstrategias(supabaseClient, companyId, 'listaEstrategias'),
