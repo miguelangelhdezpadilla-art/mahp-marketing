@@ -181,7 +181,45 @@ async function cargarColaboradores() {
 
   document.getElementById('asignadoActividad').innerHTML = '<option value="">Sin asignar</option>' +
     data.map(c => `<option value="${c.id}">${c.full_name || c.id}</option>`).join('');
+
+  let selectPendientes = document.getElementById('asignarPendientesColaborador');
+  if (selectPendientes) {
+    selectPendientes.innerHTML = '<option value="">Selecciona un colaborador</option>' +
+      data.map(c => `<option value="${c.id}">${c.full_name || c.id}</option>`).join('');
+  }
 }
+
+window.asignarPendientes = async function() {
+  let colaboradorId = document.getElementById('asignarPendientesColaborador')?.value;
+  let mensaje = document.getElementById('mensajeAsignarPendientes');
+
+  if (!colaboradorId) {
+    if (mensaje) { mensaje.textContent = 'Selecciona un colaborador primero.'; mensaje.style.color = 'var(--red)'; }
+    return;
+  }
+
+  let { data, error } = await supabaseClient
+    .from('actividades')
+    .update({ assigned_to: colaboradorId })
+    .eq('company_id', companyId)
+    .is('assigned_to', null)
+    .neq('status', 'completada')
+    .select('id');
+
+  if (error) {
+    if (mensaje) { mensaje.textContent = 'Error: ' + error.message; mensaje.style.color = 'var(--red)'; }
+    return;
+  }
+
+  let cantidad = data?.length ?? 0;
+  if (mensaje) {
+    mensaje.textContent = cantidad
+      ? `✅ ${cantidad} actividad${cantidad !== 1 ? 'es' : ''} asignada${cantidad !== 1 ? 's' : ''}.`
+      : 'No había actividades pendientes de asignar.';
+    mensaje.style.color = cantidad ? 'var(--green)' : 'var(--text-muted)';
+  }
+  showToast(cantidad ? `${cantidad} actividad${cantidad !== 1 ? 'es' : ''} asignada${cantidad !== 1 ? 's' : ''}` : 'No había pendientes');
+};
 
 async function cargarActividades() {
   let { data, error } = await supabaseClient.from('actividades').select('*').eq('company_id', companyId).order('fecha');
@@ -251,7 +289,7 @@ async function manejarArrastrarActividad(info) {
 
 async function manejarClickEvento(info) {
   let id = actividadIdPorEvento.get(info.event.id);
-  let accion = await showPrompt(`${info.event.title}\n\nEscribe 1 para editar el título, 2 para eliminar, o 3 para ver observaciones:`);
+  let accion = await showPrompt(`${info.event.title}\n\nEscribe 1 para editar el título, 2 para eliminar, 3 para ver observaciones, o 4 para asignar a un colaborador:`);
 
   if (accion === '1') {
     let nuevoTitulo = await showPrompt('Nuevo título de la actividad:', info.event.title);
@@ -280,6 +318,25 @@ async function manejarClickEvento(info) {
       : '<p style="color:#888;">Sin observaciones todavía.</p>';
 
     showInfo(sHtml(info.event.title), html);
+  } else if (accion === '4') {
+    let { data: colaboradores, error: errColab } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name')
+      .eq('company_id', companyId)
+      .eq('role', 'collaborator');
+
+    if (errColab) { showToast('Error al cargar colaboradores: ' + errColab.message, 'error'); return; }
+    if (!colaboradores?.length) { showToast('No hay colaboradores en esta empresa todavía.', 'error'); return; }
+
+    let lista = colaboradores.map((c, i) => `${i + 1}. ${c.full_name || c.id}`).join('\n');
+    let seleccion = await showPrompt(`¿A quién asignar "${info.event.title}"?\n\n${lista}\n\nEscribe el número:`);
+    let idx = parseInt(seleccion, 10) - 1;
+
+    if (isNaN(idx) || !colaboradores[idx]) { showToast('Selección inválida.', 'error'); return; }
+
+    let { error } = await supabaseClient.from('actividades').update({ assigned_to: colaboradores[idx].id }).eq('id', id);
+    if (error) { showToast('Error al asignar: ' + error.message, 'error'); return; }
+    showToast('Actividad asignada a ' + (colaboradores[idx].full_name || 'colaborador'));
   }
 }
 

@@ -181,7 +181,7 @@ Los títulos deben ser concretos y accionables.`;
     const actividades = parsed.actividades ?? [];
     if (!actividades.length) throw new Error('El modelo no generó actividades.');
 
-    renderResultadoIA(actividades, campaignId, mes, supabase, companyId, showToast);
+    await renderResultadoIA(actividades, campaignId, mes, supabase, companyId, showToast);
   } catch (err) {
     showToast('Error al generar: ' + err.message, 'error');
     if (resultado) resultado.innerHTML = '';
@@ -191,9 +191,20 @@ Los títulos deben ser concretos y accionables.`;
 }
 
 // ── Mostrar resultado ─────────────────────────────────────────
-export function renderResultadoIA(actividades, campaignId, mes, supabase, companyId, showToast) {
+export async function renderResultadoIA(actividades, campaignId, mes, supabase, companyId, showToast) {
   const cont = document.getElementById('resultadoIA');
   if (!cont) return;
+
+  const { data: colaboradores } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .eq('company_id', companyId)
+    .eq('role', 'collaborator');
+
+  const optsColaboradores = [
+    '<option value="">Sin asignar</option>',
+    ...(colaboradores ?? []).map(c => `<option value="${c.id}">${s(c.full_name || c.id)}</option>`)
+  ].join('');
 
   cont.innerHTML = `
     <div class="ia-resultado-box">
@@ -203,6 +214,10 @@ export function renderResultadoIA(actividades, campaignId, mes, supabase, compan
           <button class="btn-regenerar" onclick="window._generarCalendario()">↺ Regenerar</button>
           <button class="btn-publicar" onclick="window._publicarCalendario()">Publicar al equipo →</button>
         </div>
+      </div>
+      <div class="ia-form-group" style="margin-bottom:12px;">
+        <label class="ia-form-label">Asignar todas las actividades a</label>
+        <select id="iaAsignarA" class="ia-form-select">${optsColaboradores}</select>
       </div>
       <div class="ia-act-list">
         ${actividades.map(a => `
@@ -214,18 +229,22 @@ export function renderResultadoIA(actividades, campaignId, mes, supabase, compan
       </div>
       <p class="ia-nota">
         Al publicar, estas actividades se agregan al calendario de tu empresa
-        y quedan asignables a tus colaboradores.
+        y aparecerán en "Mis tareas" del colaborador asignado.
       </p>
     </div>`;
 
-  window._publicarCalendario = () => publicarCalendario(actividades, campaignId, companyId, supabase, showToast);
+  window._publicarCalendario = () => {
+    const assigned_to = document.getElementById('iaAsignarA')?.value || null;
+    publicarCalendario(actividades, campaignId, companyId, supabase, showToast, assigned_to);
+  };
 }
 
 // ── Publicar en Supabase ──────────────────────────────────────
-export async function publicarCalendario(actividades, campaignId, companyId, supabase, showToast) {
+export async function publicarCalendario(actividades, campaignId, companyId, supabase, showToast, assigned_to = null) {
   const filas = actividades.map(a => ({
     company_id:   companyId,
     campaign_id:  campaignId || null,
+    assigned_to,
     titulo:       a.titulo,
     canal:        a.canal,
     descripcion:  a.descripcion,

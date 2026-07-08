@@ -267,6 +267,20 @@
         <p id="mensajeActividad"></p>
       </div>
 
+      <div class="card card-estrecha">
+        <h3>Asignar actividades pendientes</h3>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Actividades sin colaborador asignado (por ejemplo, generadas con IA) no aparecen en "Mis tareas" de nadie. Elige un colaborador y asígnaselas todas de un jalón.
+        </p>
+        <select id="asignarPendientesColaborador">
+          <option value="">Selecciona un colaborador</option>
+        </select>
+        <button onclick="window.asignarPendientes()">
+          <i class="fa-solid fa-user-check"></i> Asignar pendientes
+        </button>
+        <p id="mensajeAsignarPendientes" style="font-size:0.85em; margin-top:6px;"></p>
+      </div>
+
       <div id="calendar"></div>
     </div>
 
