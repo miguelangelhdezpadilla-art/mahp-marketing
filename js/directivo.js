@@ -6,6 +6,7 @@ import { toggleCampania } from './shared/campanias.js';
 import { cargarEstrategias } from './shared/estrategias.js';
 import { renderizarAvanceColaboradores } from './shared/colaboradores.js';
 import { renderHistorialTareas } from './shared/historialTareas.js';
+import { renderRanking, renderTablaPuntos } from './shared/gamificacion.js';
 import {
   cargarTotalesSeguidores,
   cargarHistorialSeguidores,
@@ -107,5 +108,7 @@ window.toggleCampania = (campaignId) => toggleCampania(supabaseClient, campaignI
     }),
     cargarHistorialSeguidores(supabaseClient, companyId),
     renderHistorialTareas(supabaseClient, companyId, 'historialTareas'),
+    renderTablaPuntos('tablaPuntos'),
+    renderRanking(supabaseClient, companyId, 'rankingColaboradores'),
   ]);
 })();
