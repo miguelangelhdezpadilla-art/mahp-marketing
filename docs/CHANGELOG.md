@@ -10,8 +10,13 @@
 
 ---
 
+## 2026-07-09 — Documentación (MDS-005)
+
+- **[Docs]** MDS-005 — creados 5 documentos de diseño: `04-DESIGN-SYSTEM.md` (20 capítulos: filosofía, principios UX/UI, arquitectura visual, responsive, grid, espaciados, tipografía, color, iconografía, sombras/bordes/elevaciones, animaciones, estados, accesibilidad WCAG, modo claro/oscuro), `04A-DESIGN-TOKENS.md` (valores exactos citados del código real, más 4 escalas nuevas formalizadas: espaciado, breakpoints, z-index, duraciones), `04B-COMPONENT-LIBRARY.md` (23 componentes, cada uno marcado **[EXISTE]** o **[FUTURO]** — 6 de ellos aspiracionales: switch, sidebar, breadcrumbs, gráficas, buscadores/filtros, paginación), `04C-UX-GUIDELINES.md` (flujos, jerarquía, experiencia por rol incluyendo 2 roles futuros que requieren cambio de modelo de datos), `04D-DESIGN-PRINCIPLES.md` (15 principios + estrategia de evolución visual V1→V10). Brecha de accesibilidad de mayor prioridad detectada: el foco no se gestiona al abrir/cerrar modales. Ningún cambio de código — solo diseño.
+
 ## 2026-07-09 — Producto
 
+- **[Fix]** `follower_logs_insert` (`supabase_schema_v17.sql`) agregó el rol `director` a la política de inserción — el formulario "Reportar cambio de seguidores" ya existía en `directivo.html` pero la política de RLS nunca incluyó ese rol, causando `new row violates row-level security policy` al intentar guardarlo. Diagnosticado corriendo consultas de solo lectura contra `pg_policies` (confirmamos también que las 16 migraciones anteriores, incluida `v16`, ya estaban aplicadas). `DATABASE.md` §5 actualizado con la política real verificada.
 - **[Feat/Sec]** Soft delete implementado en `actividades` y `evidencias` (`supabase_schema_v16.sql`), primera brecha cerrada de las detectadas en MDS-003/MDS-004. Columna `deleted_at`, políticas de lectura filtran filas borradas para todos los roles, y el borrado físico quedó restringido únicamente a `super_admin` (no expuesto en la interfaz). `js/empresa.js`: "Eliminar actividad" ahora hace un `update` (pone `deleted_at`) en vez de un `delete` físico. El trigger `lock_campos_actividad_colaborador` se actualizó para que un colaborador tampoco pueda soft-borrar sus propias tareas a través de su permiso de edición. Pendiente de tu parte: correr `supabase_schema_v16.sql` en el SQL Editor de Supabase.
 
 ## 2026-07-09 — Documentación

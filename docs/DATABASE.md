@@ -87,6 +87,10 @@ Estas tablas/vistas **no existen en ningún `supabase_schema_vN.sql`** — se cr
 ### `follower_logs`
 `id` (PK) · `company_id` → `companies` · `channel_id` → `social_channels` · `activity_id` → `actividades` (nullable) · `reported_by` → `profiles` · `before_count` · `after_count` · `delta` (calculada — no se inserta desde el cliente) · `note` (nullable) · `created_at`.
 
+**RLS confirmada directamente (única tabla de este grupo con política verificada, no solo inferida por uso):**
+- `follower_logs_select`: `super_admin` o `company_id = my_company_id()` (toda la empresa, cualquier rol).
+- `follower_logs_insert` (`v17`): `super_admin`, `company_admin`, `director` (agregado en `v17` — antes causaba `new row violates row-level security policy` al reportar desde `directivo.html`, ya tenía el formulario en pantalla pero la política nunca lo permitió), y `collaborator` solo sobre actividades que tiene asignadas.
+
 ### `follower_totals` *(vista)*
 Columnas usadas: `channel_id`, `channel_name`, `channel_icon`, `total_actual`, `company_id`. Muy probablemente el último `after_count` por canal desde `follower_logs`.
 
