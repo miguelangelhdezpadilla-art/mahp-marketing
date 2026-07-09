@@ -2,10 +2,583 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=login.html">
-  <title>Redirigiendo...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing Activity Hub Pro — Plataforma de marketing impulsada por IA</title>
+  <meta name="description" content="Marketing Activity Hub Pro centraliza calendario, campañas, equipo, KPIs y reportes de marketing en un solo lugar, con generación de contenido asistida por IA.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://miguelangelhdezpadilla-art.github.io/mahp-marketing/">
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- Open Graph / redes sociales -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Marketing Activity Hub Pro">
+  <meta property="og:title" content="Marketing Activity Hub Pro — Plataforma de marketing impulsada por IA">
+  <meta property="og:description" content="Centraliza calendario, campañas, equipo, KPIs y reportes de marketing en un solo lugar, con generación de contenido asistida por IA.">
+  <meta property="og:url" content="https://miguelangelhdezpadilla-art.github.io/mahp-marketing/">
+  <!-- TODO: reemplazar por una imagen real de 1200x630px cuando exista (assets/og-cover.png) -->
+  <meta property="og:image" content="https://miguelangelhdezpadilla-art.github.io/mahp-marketing/assets/og-cover.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Marketing Activity Hub Pro — Plataforma de marketing impulsada por IA">
+  <meta name="twitter:description" content="Centraliza calendario, campañas, equipo, KPIs y reportes de marketing en un solo lugar, con generación de contenido asistida por IA.">
+  <meta name="twitter:image" content="https://miguelangelhdezpadilla-art.github.io/mahp-marketing/assets/og-cover.png">
+
+  <!-- Favicon / PWA -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/landing.css">
 </head>
 <body>
-  <p>Redirigiendo a <a href="login.html">login.html</a>...</p>
+
+  <a href="#contenido-principal" class="skip-link">Saltar al contenido</a>
+
+  <header class="site-header">
+    <nav class="navbar" aria-label="Navegación principal">
+      <a href="#inicio" class="navbar-logo">
+        <span class="navbar-logo-icon" aria-hidden="true">📊</span>
+        <span class="navbar-logo-text">Marketing Activity Hub Pro</span>
+      </a>
+
+      <button class="navbar-toggle" id="navbarToggle" type="button"
+              aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="navbarMenu">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+
+      <ul class="navbar-menu" id="navbarMenu">
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#caracteristicas">Características</a></li>
+        <li><a href="#modulos">Módulos</a></li>
+        <li><a href="#planes">Planes</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+        <li><a href="login.html" class="navbar-btn-login">Iniciar sesión</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="contenido-principal">
+    <section id="inicio" class="section hero" aria-labelledby="inicio-titulo">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="hero-eyebrow">Plataforma de marketing todo-en-uno</p>
+          <h1 id="inicio-titulo" class="hero-titulo">
+            Organiza, ejecuta y mide el marketing de tu empresa en un solo lugar
+          </h1>
+          <p class="hero-subtitulo">
+            Marketing Activity Hub Pro centraliza tu calendario de contenido, campañas,
+            equipo y resultados — para que dejes de perseguir información en hojas de
+            cálculo y chats dispersos.
+          </p>
+          <div class="hero-acciones">
+            <a href="#contacto" class="btn-hero btn-hero-primario">Solicitar una demo</a>
+            <a href="#caracteristicas" class="btn-hero btn-hero-secundario">Ver características</a>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-blob"></div>
+          <div class="hero-mockup">
+            <div class="mockup-topbar">
+              <span class="mockup-dot dot-red"></span>
+              <span class="mockup-dot dot-amber"></span>
+              <span class="mockup-dot dot-green"></span>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-sidebar">
+                <span class="mockup-pill"></span>
+                <span class="mockup-pill"></span>
+                <span class="mockup-pill"></span>
+                <span class="mockup-pill"></span>
+              </div>
+              <div class="mockup-content">
+                <div class="mockup-cards">
+                  <div class="mockup-card card-indigo"></div>
+                  <div class="mockup-card card-green"></div>
+                  <div class="mockup-card card-amber"></div>
+                </div>
+                <div class="mockup-calendar">
+                  <span></span><span></span><span class="filled indigo"></span><span></span>
+                  <span class="filled green"></span><span></span><span></span><span></span>
+                  <span></span><span class="filled amber"></span><span></span><span></span>
+                  <span></span><span></span><span></span><span class="filled indigo"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="caracteristicas" class="section que-es" aria-labelledby="caracteristicas-titulo">
+      <div class="que-es-inner">
+        <div class="que-es-intro reveal">
+          <p class="section-eyebrow">¿Qué es Marketing Activity Hub Pro?</p>
+          <h2 id="caracteristicas-titulo" class="section-titulo">
+            Mucho más que un calendario de contenido
+          </h2>
+          <p class="section-subtitulo">
+            Marketing Activity Hub Pro es un <strong>sistema operativo empresarial impulsado por IA</strong>
+            que conecta planeación, ejecución, equipo y resultados en un solo lugar — para que tu
+            marketing deje de vivir repartido entre hojas de cálculo, chats y la memoria de las personas.
+          </p>
+        </div>
+
+        <div class="beneficios-grid">
+          <article class="beneficio-card reveal">
+            <div class="beneficio-icono icono-indigo" aria-hidden="true">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <h3>Planeación con IA</h3>
+            <p>Genera calendarios completos de contenido en segundos, listos para asignar a tu equipo.</p>
+          </article>
+
+          <article class="beneficio-card reveal">
+            <div class="beneficio-icono icono-green" aria-hidden="true">
+              <i class="fa-solid fa-people-arrows"></i>
+            </div>
+            <h3>Equipo alineado</h3>
+            <p>Roles, permisos y tareas asignadas — cada colaborador sabe exactamente qué le toca.</p>
+          </article>
+
+          <article class="beneficio-card reveal">
+            <div class="beneficio-icono icono-amber" aria-hidden="true">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <h3>Resultados medibles</h3>
+            <p>KPIs, avances y evidencias en tiempo real — sin perseguir reportes al final del mes.</p>
+          </article>
+
+          <article class="beneficio-card reveal">
+            <div class="beneficio-icono icono-purple" aria-hidden="true">
+              <i class="fa-solid fa-building"></i>
+            </div>
+            <h3>Pensado para empresas</h3>
+            <p>Multi-empresa, multi-rol y con permisos claros desde el primer día.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="modulos" class="section modulos" aria-labelledby="modulos-titulo">
+      <div class="modulos-inner">
+        <div class="section-intro reveal">
+          <p class="section-eyebrow">Módulos de la plataforma</p>
+          <h2 id="modulos-titulo" class="section-titulo">Todo lo que tu operación de marketing necesita</h2>
+          <p class="section-subtitulo">
+            Cada módulo funciona por separado o en conjunto, conectado al mismo calendario,
+            al mismo equipo y a los mismos resultados.
+          </p>
+        </div>
+
+        <div class="modulos-grid">
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-indigo" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></div>
+            <h3>Calendario Inteligente</h3>
+            <p>Planea y visualiza toda tu actividad de marketing en un calendario compartido con tu equipo.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-purple" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <h3>IA</h3>
+            <p>Genera calendarios de contenido completos con inteligencia artificial en segundos.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-amber" aria-hidden="true"><i class="fa-solid fa-bullhorn"></i></div>
+            <h3>Campañas</h3>
+            <p>Organiza objetivos, fechas y actividades por campaña, con avance medible.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-green" aria-hidden="true"><i class="fa-solid fa-bullseye"></i></div>
+            <h3>KPIs</h3>
+            <p>Define metas numéricas y da seguimiento a resultados en tiempo real.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-blue" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></div>
+            <h3>Dashboard</h3>
+            <p>Una vista clara del estado de tu operación de marketing, siempre actualizada.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-pink" aria-hidden="true"><i class="fa-solid fa-building"></i></div>
+            <h3>Multiempresa</h3>
+            <p>Administra varias empresas o marcas desde una sola cuenta, con datos aislados.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-indigo" aria-hidden="true"><i class="fa-solid fa-users"></i></div>
+            <h3>Colaboradores</h3>
+            <p>Asigna tareas, controla permisos y da seguimiento al trabajo de tu equipo.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-purple" aria-hidden="true"><i class="fa-solid fa-chart-column"></i></div>
+            <h3>Reportes</h3>
+            <p>Historial completo de avances, evidencias y resultados por actividad.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-amber" aria-hidden="true"><i class="fa-solid fa-gears"></i></div>
+            <h3>Automatizaciones</h3>
+            <p>Reglas y disparadores que ahorran trabajo manual repetitivo.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-green" aria-hidden="true"><i class="fa-solid fa-diagram-project"></i></div>
+            <h3>Operaciones</h3>
+            <p>Coordina tareas operativas junto con las de marketing, todo en un solo lugar.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-blue" aria-hidden="true"><i class="fa-solid fa-hashtag"></i></div>
+            <h3>Marketing</h3>
+            <p>Gestiona canales, publicaciones y seguidores desde un mismo panel.</p>
+          </article>
+
+          <article class="modulo-card reveal">
+            <div class="beneficio-icono icono-pink" aria-hidden="true"><i class="fa-solid fa-bell"></i></div>
+            <h3>Notificaciones</h3>
+            <p>Mantén a tu equipo al tanto de cambios, asignaciones y avances.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="section como-funciona" aria-labelledby="como-funciona-titulo">
+      <div class="como-funciona-inner">
+        <div class="section-intro reveal">
+          <p class="section-eyebrow">Cómo funciona</p>
+          <h2 id="como-funciona-titulo" class="section-titulo">De la idea al resultado, en un solo flujo</h2>
+          <p class="section-subtitulo">
+            Todo en Marketing Activity Hub Pro sigue el mismo camino claro, desde que configuras
+            tu empresa hasta que mides los resultados.
+          </p>
+        </div>
+
+        <ol class="timeline">
+          <li class="timeline-item reveal">
+            <div class="timeline-icono" aria-hidden="true"><i class="fa-solid fa-building"></i></div>
+            <div class="timeline-texto">
+              <h3>Empresa</h3>
+              <p>Configura tu empresa y sus roles.</p>
+            </div>
+          </li>
+          <li class="timeline-item reveal">
+            <div class="timeline-icono" aria-hidden="true"><i class="fa-solid fa-users"></i></div>
+            <div class="timeline-texto">
+              <h3>Equipo</h3>
+              <p>Invita a tus colaboradores y directores.</p>
+            </div>
+          </li>
+          <li class="timeline-item reveal">
+            <div class="timeline-icono" aria-hidden="true"><i class="fa-solid fa-bullhorn"></i></div>
+            <div class="timeline-texto">
+              <h3>Campañas</h3>
+              <p>Define objetivos y campañas activas.</p>
+            </div>
+          </li>
+          <li class="timeline-item reveal">
+            <div class="timeline-icono" aria-hidden="true"><i class="fa-solid fa-list-check"></i></div>
+            <div class="timeline-texto">
+              <h3>Actividades</h3>
+              <p>Planea y asigna el trabajo diario.</p>
+            </div>
+          </li>
+          <li class="timeline-item reveal">
+            <div class="timeline-icono" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="timeline-texto">
+              <h3>IA</h3>
+              <p>Genera y optimiza contenido automáticamente.</p>
+            </div>
+          </li>
+          <li class="timeline-item reveal">
+            <div class="timeline-icono" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="timeline-texto">
+              <h3>Resultados</h3>
+              <p>Mide avances, KPIs y evidencias.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="ia" class="section ia-section" aria-labelledby="ia-titulo">
+      <div class="ia-glow ia-glow-1" aria-hidden="true"></div>
+      <div class="ia-glow ia-glow-2" aria-hidden="true"></div>
+
+      <div class="ia-inner">
+        <div class="section-intro reveal ia-intro">
+          <p class="section-eyebrow ia-eyebrow"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> Inteligencia Artificial</p>
+          <h2 id="ia-titulo" class="section-titulo ia-titulo">
+            La IA no es un extra. Es el motor de tu operación de marketing.
+          </h2>
+          <p class="section-subtitulo ia-subtitulo">
+            Desde generar una campaña completa hasta escribir el copy y detectar qué está
+            funcionando, la inteligencia artificial de Marketing Activity Hub Pro trabaja
+            contigo en cada paso.
+          </p>
+        </div>
+
+        <div class="ia-grid">
+          <div class="ia-item reveal"><i class="fa-solid fa-rocket" aria-hidden="true"></i><span>Generación de campañas</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><span>Calendarios automáticos</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-bullseye" aria-hidden="true"></i><span>KPIs</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-terminal" aria-hidden="true"></i><span>Prompts</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i><span>Copywriting</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i><span>Reels</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-chess" aria-hidden="true"></i><span>Estrategias</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-gears" aria-hidden="true"></i><span>Automatizaciones</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>Reportes</span></div>
+          <div class="ia-item reveal"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i><span>Insights</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="capturas" class="section capturas" aria-labelledby="capturas-titulo">
+      <div class="capturas-inner">
+        <div class="section-intro reveal">
+          <p class="section-eyebrow">Capturas del sistema</p>
+          <h2 id="capturas-titulo" class="section-titulo">Así se ve por dentro</h2>
+          <p class="section-subtitulo">
+            Un vistazo real a los paneles que tu equipo usa todos los días.
+          </p>
+        </div>
+
+        <div class="capturas-grid">
+          <!-- Reemplazar cada .captura-placeholder por <img src="ruta-real.png" alt="..."> cuando existan las capturas finales -->
+          <figure class="captura-card reveal">
+            <div class="captura-frame">
+              <div class="captura-topbar">
+                <span class="mockup-dot dot-red"></span><span class="mockup-dot dot-amber"></span><span class="mockup-dot dot-green"></span>
+              </div>
+              <div class="captura-placeholder ph-indigo"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></div>
+            </div>
+            <figcaption><h3>Dashboard</h3><p>Resumen general de tu operación de marketing.</p></figcaption>
+          </figure>
+
+          <figure class="captura-card reveal">
+            <div class="captura-frame">
+              <div class="captura-topbar">
+                <span class="mockup-dot dot-red"></span><span class="mockup-dot dot-amber"></span><span class="mockup-dot dot-green"></span>
+              </div>
+              <div class="captura-placeholder ph-purple"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></div>
+            </div>
+            <figcaption><h3>Calendario</h3><p>Toda la actividad planeada, en un solo lugar.</p></figcaption>
+          </figure>
+
+          <figure class="captura-card reveal">
+            <div class="captura-frame">
+              <div class="captura-topbar">
+                <span class="mockup-dot dot-red"></span><span class="mockup-dot dot-amber"></span><span class="mockup-dot dot-green"></span>
+              </div>
+              <div class="captura-placeholder ph-green"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></div>
+            </div>
+            <figcaption><h3>KPIs</h3><p>Metas y resultados medidos en tiempo real.</p></figcaption>
+          </figure>
+
+          <figure class="captura-card reveal">
+            <div class="captura-frame">
+              <div class="captura-topbar">
+                <span class="mockup-dot dot-red"></span><span class="mockup-dot dot-amber"></span><span class="mockup-dot dot-green"></span>
+              </div>
+              <div class="captura-placeholder ph-amber"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i></div>
+            </div>
+            <figcaption><h3>Campañas</h3><p>Objetivos, fechas y avance de cada campaña.</p></figcaption>
+          </figure>
+
+          <figure class="captura-card reveal">
+            <div class="captura-frame">
+              <div class="captura-topbar">
+                <span class="mockup-dot dot-red"></span><span class="mockup-dot dot-amber"></span><span class="mockup-dot dot-green"></span>
+              </div>
+              <div class="captura-placeholder ph-blue"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+            </div>
+            <figcaption><h3>Colaboradores</h3><p>Tareas asignadas y avance de todo el equipo.</p></figcaption>
+          </figure>
+
+          <figure class="captura-card reveal">
+            <div class="captura-frame">
+              <div class="captura-topbar">
+                <span class="mockup-dot dot-red"></span><span class="mockup-dot dot-amber"></span><span class="mockup-dot dot-green"></span>
+              </div>
+              <div class="captura-placeholder ph-pink"><i class="fa-solid fa-chart-column" aria-hidden="true"></i></div>
+            </div>
+            <figcaption><h3>Reportes</h3><p>Historial de avances, evidencias y resultados.</p></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="planes" class="section planes" aria-labelledby="planes-titulo">
+      <div class="planes-inner">
+        <div class="section-intro reveal">
+          <p class="section-eyebrow">Planes</p>
+          <h2 id="planes-titulo" class="section-titulo">Un plan para cada etapa de tu equipo</h2>
+          <p class="section-subtitulo">
+            Empieza simple y crece sin cambiar de sistema. Sin contratos forzosos.
+          </p>
+        </div>
+
+        <!-- Precios marcados como $XXX: reemplazar por el precio real definido antes de publicar -->
+        <div class="planes-grid">
+          <article class="plan-card reveal">
+            <h3 class="plan-nombre">Starter</h3>
+            <p class="plan-desc">Para equipos pequeños que están ordenando su marketing por primera vez.</p>
+            <div class="plan-precio">
+              <span class="plan-precio-monto">$XXX</span><span class="plan-precio-periodo">/mes</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> 1 empresa</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Hasta 5 colaboradores</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Calendario y campañas</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Soporte por correo</li>
+            </ul>
+            <a href="#contacto" class="btn-hero btn-hero-secundario plan-btn">Solicitar demo</a>
+          </article>
+
+          <article class="plan-card plan-destacado reveal">
+            <span class="plan-badge">Más popular</span>
+            <h3 class="plan-nombre">Profesional</h3>
+            <p class="plan-desc">Para equipos en crecimiento que quieren IA, KPIs y reportes.</p>
+            <div class="plan-precio">
+              <span class="plan-precio-monto">$XXX</span><span class="plan-precio-periodo">/mes</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Todo lo de Starter</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Generación de calendarios con IA</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> KPIs y reportes</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Colaboradores ilimitados</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Soporte prioritario</li>
+            </ul>
+            <a href="#contacto" class="btn-hero btn-hero-primario plan-btn">Solicitar demo</a>
+          </article>
+
+          <article class="plan-card reveal">
+            <h3 class="plan-nombre">Empresa</h3>
+            <p class="plan-desc">Para organizaciones con varias marcas u operaciones.</p>
+            <div class="plan-precio">
+              <span class="plan-precio-monto">Cotización</span><span class="plan-precio-periodo">personalizada</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Todo lo de Profesional</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Multiempresa</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Roles y permisos avanzados</li>
+              <li><i class="fa-solid fa-check" aria-hidden="true"></i> Onboarding dedicado</li>
+            </ul>
+            <a href="#contacto" class="btn-hero btn-hero-secundario plan-btn">Contactar ventas</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section faq" aria-labelledby="faq-titulo">
+      <div class="faq-inner">
+        <div class="section-intro reveal">
+          <p class="section-eyebrow">Preguntas frecuentes</p>
+          <h2 id="faq-titulo" class="section-titulo">Resolvemos tus dudas</h2>
+        </div>
+
+        <div class="faq-lista">
+          <details class="faq-item reveal">
+            <summary>¿Necesito instalar algo para usar Marketing Activity Hub Pro?</summary>
+            <p>No. Funciona 100% desde el navegador, sin instalaciones ni actualizaciones manuales.</p>
+          </details>
+
+          <details class="faq-item reveal">
+            <summary>¿Puedo usarlo si mi empresa maneja varias marcas?</summary>
+            <p>Sí. El plan Empresa incluye soporte multiempresa, con datos e información separados por marca.</p>
+          </details>
+
+          <details class="faq-item reveal">
+            <summary>¿Cómo funciona la generación de calendarios con IA?</summary>
+            <p>Describes tu campaña, canales y frecuencia deseada, y la IA genera un calendario de actividades listo para revisar, editar y asignar a tu equipo.</p>
+          </details>
+
+          <details class="faq-item reveal">
+            <summary>¿Mis datos están seguros?</summary>
+            <p>Sí. Cada empresa tiene sus datos aislados, con permisos definidos por rol para cada usuario.</p>
+          </details>
+
+          <details class="faq-item reveal">
+            <summary>¿Puedo cambiar de plan más adelante?</summary>
+            <p>Sí, puedes subir o bajar de plan cuando lo necesites según el tamaño de tu equipo.</p>
+          </details>
+
+          <details class="faq-item reveal">
+            <summary>¿Ofrecen soporte en español?</summary>
+            <p>Sí, todo el sistema y el soporte están disponibles en español.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="contacto" class="section" aria-labelledby="contacto-titulo">
+      <!-- Contenido a diseñar en la siguiente fase -->
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#inicio" class="navbar-logo footer-logo">
+            <span class="navbar-logo-icon" aria-hidden="true">📊</span>
+            <span class="navbar-logo-text">Marketing Activity Hub Pro</span>
+          </a>
+          <p class="footer-tagline">
+            El sistema operativo empresarial impulsado por IA para tu marketing.
+          </p>
+          <!-- Reemplazar "#" por los perfiles reales cuando existan -->
+          <div class="footer-social" aria-label="Redes sociales">
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a>
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook" aria-hidden="true"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>
+            <a href="#" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i></a>
+          </div>
+        </div>
+
+        <nav class="footer-col" aria-label="Producto">
+          <h4>Producto</h4>
+          <ul>
+            <li><a href="#inicio">Inicio</a></li>
+            <li><a href="#caracteristicas">Características</a></li>
+            <li><a href="#modulos">Módulos</a></li>
+            <li><a href="#planes">Planes</a></li>
+          </ul>
+        </nav>
+
+        <nav class="footer-col" aria-label="Empresa">
+          <h4>Empresa</h4>
+          <ul>
+            <li><a href="#contacto">Contacto</a></li>
+            <li><a href="login.html">Iniciar sesión</a></li>
+          </ul>
+        </nav>
+
+        <!-- Enlaces legales sin destino todavía: conectar cuando exista el contenido real -->
+        <nav class="footer-col" aria-label="Legal">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacidad</a></li>
+            <li><a href="#">Términos</a></li>
+            <li><a href="#">Políticas</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Marketing Activity Hub Pro. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/landing.js" defer></script>
 </body>
 </html>

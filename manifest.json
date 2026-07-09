@@ -1,0 +1,13 @@
+{
+  "name": "Marketing Activity Hub Pro",
+  "short_name": "MAHP",
+  "description": "Plataforma integral de planeación y operación de marketing.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "lang": "es",
+  "icons": [
+    { "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
