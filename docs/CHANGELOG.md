@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-09 — Producto
+
+- **[Feat]** Herramienta de soporte para `super_admin`: card "Eliminar actividades pendientes" en la pestaña Calendario de `empresa.html`, visible solo para ese rol. Selección múltiple por checkbox + soft delete en lote (`update deleted_at`, mismo criterio que el resto del sistema desde `v16`) — nunca borrado físico, consistente con `DATABASE.md` §2. Corregido en el mismo cambio: sanitización con `sHtml()` de título/canal antes de insertarlos en `innerHTML` (se detectó el riesgo de XSS al escribir el componente, no llegó a publicarse sin corregir).
+
 ## 2026-07-09 — Documentación (MDS-007)
 
 - **[Docs]** MDS-007 — creados 11 documentos de especificación funcional: `06-PRODUCT-BLUEPRINT.md` (visión funcional, mapa de módulos, flujos principales) + catálogo de **53 módulos** distribuidos en `06A-CORE-MODULES.md` (8), `06B-MARKETING-MODULES.md` (8), `06C-OPERATIONS-MODULES.md` (5), `06D-ANALYTICS-MODULES.md` (5), `06E-AI-MODULES.md` (5, enmarca funcionalmente los agentes ya diseñados en MDS-006), `06F-INTEGRATIONS.md` (6), `06J-FUTURE-MODULES.md` (10, explícitamente fuera de alcance) — 15 módulos marcados **[EXISTE]**, 2 **[PARCIAL]**, 36 **[FUTURO]**. Más `06G-BUSINESS-RULES.md` (24 reglas de negocio, la mayoría ya aplicadas como RLS/trigger real), `06H-PERMISSIONS-MATRIX.md` (matriz funcional por rol, documenta que "Aprobar" y "Exportar" no existen como capacidad en casi todo el sistema — brecha honesta, no inventada), `06I-USER-JOURNEYS.md` (8 recorridos, 2 son roles futuros bloqueados, 2 son el mismo rol en distinto momento de madurez). Ningún cambio de código — solo diseño.

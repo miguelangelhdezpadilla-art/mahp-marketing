@@ -281,6 +281,20 @@
         <p id="mensajeAsignarPendientes" style="font-size:0.85em; margin-top:6px;"></p>
       </div>
 
+      <div class="card" id="cardEliminarPendientes" style="display:none;">
+        <h3>🛠️ Eliminar actividades pendientes (Super Admin)</h3>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Selecciona las actividades pendientes que quieras eliminar. Es un borrado reversible (queda marcado como eliminado, no se pierde el dato) — solo visible para soporte de la plataforma.
+        </p>
+        <div id="listaPendientesEliminar" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
+          <p style="color:var(--slate-400); font-size:13px;">Cargando...</p>
+        </div>
+        <button onclick="window.eliminarPendientesSeleccionadas()" style="background:var(--red);">
+          <i class="fa-solid fa-trash"></i> Eliminar seleccionadas
+        </button>
+        <p id="mensajeEliminarPendientes" style="font-size:0.85em; margin-top:6px;"></p>
+      </div>
+
       <div id="calendar"></div>
     </div>
 

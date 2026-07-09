@@ -222,6 +222,61 @@ window.asignarPendientes = async function() {
   showToast(cantidad ? `${cantidad} actividad${cantidad !== 1 ? 'es' : ''} asignada${cantidad !== 1 ? 's' : ''}` : 'No había pendientes');
 };
 
+// Solo para super_admin — herramienta de soporte, no visible para company_admin.
+async function cargarPendientesEliminar() {
+  if (!miPerfil || miPerfil.role !== 'super_admin') return;
+
+  let contenedor = document.getElementById('listaPendientesEliminar');
+  if (!contenedor) return;
+
+  let { data, error } = await supabaseClient
+    .from('actividades')
+    .select('id, titulo, canal, fecha')
+    .eq('company_id', companyId)
+    .eq('status', 'pendiente')
+    .order('fecha');
+
+  if (error) { contenedor.innerHTML = '<p style="color:var(--red); font-size:13px;">Error al cargar.</p>'; return; }
+
+  contenedor.innerHTML = data.length
+    ? data.map(a => `
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 0;">
+          <input type="checkbox" class="chk-pendiente-eliminar" value="${a.id}">
+          <span>${a.fecha} — ${sHtml(a.titulo)} <span style="color:var(--slate-400);">(${sHtml(a.canal)})</span></span>
+        </label>`).join('')
+    : '<p style="color:var(--slate-400); font-size:13px;">Sin actividades pendientes.</p>';
+}
+
+window.eliminarPendientesSeleccionadas = async function() {
+  let seleccionadas = [...document.querySelectorAll('.chk-pendiente-eliminar:checked')].map(el => el.value);
+  let mensaje = document.getElementById('mensajeEliminarPendientes');
+
+  if (!seleccionadas.length) {
+    if (mensaje) { mensaje.textContent = 'Selecciona al menos una actividad.'; mensaje.style.color = 'var(--red)'; }
+    return;
+  }
+
+  if (!(await showConfirm(`¿Eliminar ${seleccionadas.length} actividad${seleccionadas.length !== 1 ? 'es' : ''} pendiente${seleccionadas.length !== 1 ? 's' : ''}? Queda marcada como eliminada, no se pierde el dato.`))) {
+    return;
+  }
+
+  let { error } = await supabaseClient
+    .from('actividades')
+    .update({ deleted_at: new Date().toISOString() })
+    .in('id', seleccionadas);
+
+  if (error) {
+    if (mensaje) { mensaje.textContent = 'Error: ' + error.message; mensaje.style.color = 'var(--red)'; }
+    return;
+  }
+
+  if (mensaje) { mensaje.textContent = `✅ ${seleccionadas.length} eliminada${seleccionadas.length !== 1 ? 's' : ''}.`; mensaje.style.color = 'var(--green)'; }
+  showToast(`${seleccionadas.length} actividad${seleccionadas.length !== 1 ? 'es' : ''} eliminada${seleccionadas.length !== 1 ? 's' : ''}`);
+
+  await cargarPendientesEliminar();
+  await cargarActividades();
+};
+
 async function cargarActividades() {
   let { data, error } = await supabaseClient.from('actividades').select('*').eq('company_id', companyId).order('fecha');
   if (error) { showToast('Error al cargar actividades: ' + error.message, 'error'); return; }
@@ -368,6 +423,7 @@ window.toggleSeccionIA = function() {
 
   if (miPerfil.role === 'super_admin') {
     document.getElementById('enlaceVolverAdmin').style.display = 'inline';
+    document.getElementById('cardEliminarPendientes').style.display = 'block';
   }
 
   if (!companyId) {
@@ -418,5 +474,6 @@ window.toggleSeccionIA = function() {
     renderHistorialTareas(supabaseClient, companyId, 'historialTareas'),
     renderTablaPuntos('tablaPuntos'),
     renderRanking(supabaseClient, companyId, 'rankingColaboradores'),
+    cargarPendientesEliminar(),
   ]);
 })();
