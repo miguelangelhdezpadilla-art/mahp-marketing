@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-09 — Documentación (MDS-006)
+
+- **[Docs]** MDS-006 — creados 6 documentos del ecosistema de IA: `05-AI-ECOSYSTEM.md` (arquitectura general, relación con usuarios/módulos, riesgos, evolución 3/5/10 años, escalabilidad del ecosistema), `05A-AI-AGENTS.md` (**catálogo de 24 agentes**, cada uno con perfil completo — solo 1 marcado **[EXISTE]**: Calendar Planner; 2 bloqueados por completo hasta que existan prerequisitos de modelo de datos: Franchise Operations Advisor y Restaurant Marketing Specialist), `05B-AI-WORKFLOWS.md` (7 flujos colaborativos con diagramas, 3 de ellos explícitamente bloqueados hoy), `05C-AI-GOVERNANCE.md` (11 capítulos de gobernanza, incluye cumplimiento normativo señalado como pendiente sin evaluación legal), `05D-AI-PROMPT-STANDARDS.md` (estructura de 5 bloques derivada del prompt real ya en producción, no inventada), `05E-AI-MEMORY-AND-CONTEXT.md` (100% diseño futuro — hoy no existe ninguna memoria entre invocaciones). Ningún cambio de código, ninguna integración de IA nueva — solo diseño.
+
 ## 2026-07-09 — Documentación (MDS-005)
 
 - **[Docs]** MDS-005 — creados 5 documentos de diseño: `04-DESIGN-SYSTEM.md` (20 capítulos: filosofía, principios UX/UI, arquitectura visual, responsive, grid, espaciados, tipografía, color, iconografía, sombras/bordes/elevaciones, animaciones, estados, accesibilidad WCAG, modo claro/oscuro), `04A-DESIGN-TOKENS.md` (valores exactos citados del código real, más 4 escalas nuevas formalizadas: espaciado, breakpoints, z-index, duraciones), `04B-COMPONENT-LIBRARY.md` (23 componentes, cada uno marcado **[EXISTE]** o **[FUTURO]** — 6 de ellos aspiracionales: switch, sidebar, breadcrumbs, gráficas, buscadores/filtros, paginación), `04C-UX-GUIDELINES.md` (flujos, jerarquía, experiencia por rol incluyendo 2 roles futuros que requieren cambio de modelo de datos), `04D-DESIGN-PRINCIPLES.md` (15 principios + estrategia de evolución visual V1→V10). Brecha de accesibilidad de mayor prioridad detectada: el foco no se gestiona al abrir/cerrar modales. Ningún cambio de código — solo diseño.
