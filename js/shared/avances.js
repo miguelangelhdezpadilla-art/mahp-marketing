@@ -10,7 +10,7 @@ export async function cargarTablaAvances(supabase, companyId, idContenedor) {
     .select(`
       id, progress_pct, note, created_at,
       actividades!inner ( id, titulo, canal, company_id ),
-      profiles ( full_name )
+      profiles!user_id ( full_name )
     `)
     .eq('actividades.company_id', companyId)
     .order('created_at', { ascending: false })
