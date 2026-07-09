@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-09 — Documentación (MDS-007)
+
+- **[Docs]** MDS-007 — creados 11 documentos de especificación funcional: `06-PRODUCT-BLUEPRINT.md` (visión funcional, mapa de módulos, flujos principales) + catálogo de **53 módulos** distribuidos en `06A-CORE-MODULES.md` (8), `06B-MARKETING-MODULES.md` (8), `06C-OPERATIONS-MODULES.md` (5), `06D-ANALYTICS-MODULES.md` (5), `06E-AI-MODULES.md` (5, enmarca funcionalmente los agentes ya diseñados en MDS-006), `06F-INTEGRATIONS.md` (6), `06J-FUTURE-MODULES.md` (10, explícitamente fuera de alcance) — 15 módulos marcados **[EXISTE]**, 2 **[PARCIAL]**, 36 **[FUTURO]**. Más `06G-BUSINESS-RULES.md` (24 reglas de negocio, la mayoría ya aplicadas como RLS/trigger real), `06H-PERMISSIONS-MATRIX.md` (matriz funcional por rol, documenta que "Aprobar" y "Exportar" no existen como capacidad en casi todo el sistema — brecha honesta, no inventada), `06I-USER-JOURNEYS.md` (8 recorridos, 2 son roles futuros bloqueados, 2 son el mismo rol en distinto momento de madurez). Ningún cambio de código — solo diseño.
+
 ## 2026-07-09 — Documentación (MDS-006)
 
 - **[Docs]** MDS-006 — creados 6 documentos del ecosistema de IA: `05-AI-ECOSYSTEM.md` (arquitectura general, relación con usuarios/módulos, riesgos, evolución 3/5/10 años, escalabilidad del ecosistema), `05A-AI-AGENTS.md` (**catálogo de 24 agentes**, cada uno con perfil completo — solo 1 marcado **[EXISTE]**: Calendar Planner; 2 bloqueados por completo hasta que existan prerequisitos de modelo de datos: Franchise Operations Advisor y Restaurant Marketing Specialist), `05B-AI-WORKFLOWS.md` (7 flujos colaborativos con diagramas, 3 de ellos explícitamente bloqueados hoy), `05C-AI-GOVERNANCE.md` (11 capítulos de gobernanza, incluye cumplimiento normativo señalado como pendiente sin evaluación legal), `05D-AI-PROMPT-STANDARDS.md` (estructura de 5 bloques derivada del prompt real ya en producción, no inventada), `05E-AI-MEMORY-AND-CONTEXT.md` (100% diseño futuro — hoy no existe ninguna memoria entre invocaciones). Ningún cambio de código, ninguna integración de IA nueva — solo diseño.
