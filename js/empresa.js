@@ -302,7 +302,7 @@ async function manejarClickEvento(info) {
     }
   } else if (accion === '2') {
     if (await showConfirm('¿Seguro que deseas eliminar esta actividad?')) {
-      let { error } = await supabaseClient.from('actividades').delete().eq('id', id);
+      let { error } = await supabaseClient.from('actividades').update({ deleted_at: new Date().toISOString() }).eq('id', id);
       if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
       info.event.remove();
       showToast('Actividad eliminada');
