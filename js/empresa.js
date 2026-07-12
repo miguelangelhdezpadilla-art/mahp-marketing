@@ -261,9 +261,7 @@ window.eliminarPendientesSeleccionadas = async function() {
   }
 
   let { error } = await supabaseClient
-    .from('actividades')
-    .update({ deleted_at: new Date().toISOString() })
-    .in('id', seleccionadas);
+    .rpc('soft_delete_actividades', { p_ids: seleccionadas });
 
   if (error) {
     if (mensaje) { mensaje.textContent = 'Error: ' + error.message; mensaje.style.color = 'var(--red)'; }
@@ -357,7 +355,7 @@ async function manejarClickEvento(info) {
     }
   } else if (accion === '2') {
     if (await showConfirm('¿Seguro que deseas eliminar esta actividad?')) {
-      let { error } = await supabaseClient.from('actividades').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+      let { error } = await supabaseClient.rpc('soft_delete_actividades', { p_ids: [id] });
       if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
       info.event.remove();
       showToast('Actividad eliminada');

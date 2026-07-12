@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-12 — Producto
+
+- **[Fix]** `v18`: corregido bug de RLS que impedía marcar `deleted_at` mediante `.update()` directo del cliente para **cualquier rol, incluido `super_admin`** — Postgres exige que la fila resultante de un `UPDATE` siga satisfaciendo las políticas de SELECT aplicables (`actividades_select` exige `deleted_at IS NULL`), así que el propio soft delete se autobloqueaba. Afectaba tanto a la opción "Eliminar" del calendario (desde `v16`, sin detectarse hasta ahora) como a la herramienta de borrado en lote del Super Admin agregada el 2026-07-09. Solución: función `security definer` `soft_delete_actividades(p_ids bigint[])`; ambos flujos ahora usan `.rpc()` en vez de `.update()` directo. Diagnóstico hecho con acceso temporal y explícitamente autorizado del usuario vía Management API token (revocado al terminar) — ver `CLAUDE.md` §4.
+
 ## 2026-07-09 — Producto
 
 - **[Feat]** Herramienta de soporte para `super_admin`: card "Eliminar actividades pendientes" en la pestaña Calendario de `empresa.html`, visible solo para ese rol. Selección múltiple por checkbox + soft delete en lote (`update deleted_at`, mismo criterio que el resto del sistema desde `v16`) — nunca borrado físico, consistente con `DATABASE.md` §2. Corregido en el mismo cambio: sanitización con `sHtml()` de título/canal antes de insertarlos en `innerHTML` (se detectó el riesgo de XSS al escribir el componente, no llegó a publicarse sin corregir).
