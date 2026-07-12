@@ -132,8 +132,8 @@ Suman `points_log.points` por usuario (global y por campaña respectivamente), c
 ### `notifications` (`v5`, disparadores en `v5`/`v9`)
 `id` (PK) · `company_id` → `companies` · `recipient_id` → `profiles` · `message` · `read` (default `false`) · `created_at`. Se llena vía trigger cuando se asigna/reasigna una actividad, o cuando se reporta/edita un avance — nunca insertada manualmente desde el cliente.
 
-### `audit_log` (`v3`)
-`id` (PK) · `actor_id` → `profiles` (nullable) · `company_id` → `companies` · `action` · `target_type` · `target_id` (texto) · `details` (jsonb) · `created_at`. Eventos cubiertos: empresa creada, invitación creada/cancelada, acceso revocado/restaurado.
+### `audit_log` (`v3`, extendida en `v19`)
+`id` (PK) · `actor_id` → `profiles` (nullable) · `company_id` → `companies` · `action` · `target_type` · `target_id` (texto) · `details` (jsonb) · `created_at`. Eventos cubiertos: empresa creada, invitación creada/cancelada, acceso revocado/restaurado, y desde `v19` **impersonación de `super_admin`** (`impersonacion_iniciada`) — vía la función `security definer` `log_impersonation_start(p_company_id)`, invocada por `empresa.js` cuando un `super_admin` carga el panel operativo de una empresa (`?company_id=`). Catálogo completo de eventos de auditoría, incluidos los todavía pendientes de implementar, en `CCEC-001A-AUDIT-EVENT-CATALOG.md`.
 
 ---
 

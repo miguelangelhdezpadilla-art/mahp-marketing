@@ -422,6 +422,9 @@ window.toggleSeccionIA = function() {
   if (miPerfil.role === 'super_admin') {
     document.getElementById('enlaceVolverAdmin').style.display = 'inline';
     document.getElementById('cardEliminarPendientes').style.display = 'block';
+    if (companyId) {
+      supabaseClient.rpc('log_impersonation_start', { p_company_id: companyId });
+    }
   }
 
   if (!companyId) {

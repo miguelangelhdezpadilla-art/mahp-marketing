@@ -5,11 +5,15 @@
 > uno, con aprobación previa; los que aún no tienen contenido quedan marcados
 > como pendientes en el propio índice.
 >
-> Estado: capítulos 1–5 desarrollados (MDS-002, "Identidad del Producto").
-> Capítulos 6–8 pendientes (MDS-003). Resto de la Parte I en adelante:
-> ver tabla de "Documentos relacionados" para lo ya desarrollado en archivos
-> propios.
-> Última actualización: 2026-07-08.
+> Estado: los 32 capítulos tienen desarrollo completo en al menos un
+> documento propio — ver tabla de "Documentos relacionados" actualizada.
+> La serie MDS-001 a MDS-012 (más `CCEC-001`/`CCEC-004` y los primeros
+> `ADR-001` a `ADR-008`) se completó el 2026-07-12; este índice se
+> actualizó en el mismo cambio para dejar de estar desactualizado desde
+> MDS-005, inconsistencia señalada en `07-ENTERPRISE-DATA-PLATFORM.md`,
+> `08-ENTERPRISE-INTEGRATION-PLATFORM.md`, `09-ENTERPRISE-AUTOMATION-
+> PLATFORM.md` y resuelta en `11-ENTERPRISE-PRODUCT-STRATEGY.md`.
+> Última actualización: 2026-07-12.
 
 ---
 
@@ -71,58 +75,65 @@ Reglas de diseño que guían toda decisión técnica y de producto, derivadas de
 
 #### 6. Problemas que resuelve
 
-Dolencias reales: marketing disperso en hojas de cálculo y chats, falta de visibilidad para dirección, trabajo no auditable. *(Desarrollo pendiente — MDS-003)*
+Dolencias reales: marketing disperso en hojas de cálculo y chats, falta de visibilidad para dirección, trabajo no auditable. *(Desarrollo completo en `VISION.md`, sección "El problema de fondo")*
 
 #### 7. Público Objetivo
 
-Perfil de empresas cliente y los 4 roles que operan dentro de cada una (super admin, admin de empresa, directivo, colaborador). *(Desarrollo pendiente — MDS-003)*
+Perfil de empresas cliente y los 4 roles que operan dentro de cada una (super admin, admin de empresa, directivo, colaborador). *(Desarrollo completo en `01-IDENTIDAD-DEL-PRODUCTO.md` §9, MDS-002; segmentación priorizada en `11B-BUSINESS-GROWTH.md` §1, MDS-012)*
 
 #### 8. Propuesta de Valor
 
-Por qué una empresa elegiría MAHP sobre una hoja de cálculo, un CRM genérico o un gestor de tareas. *(Desarrollo pendiente — MDS-003)*
+Por qué una empresa elegiría MAHP sobre una hoja de cálculo, un CRM genérico o un gestor de tareas. *(Desarrollo completo en `01-IDENTIDAD-DEL-PRODUCTO.md` §10, MDS-002)*
 
 ### Parte II — Arquitectura
 
-9. **Arquitectura General** — panorama técnico de alto nivel: frontend estático + Supabase (Postgres, Auth, RLS, Storage, Edge Functions) + IA externa.
-10. **Arquitectura SaaS** — modelo de negocio multiempresa, ciclo de vida de una cuenta cliente, planes.
-11. **Arquitectura Multiempresa** — aislamiento por `company_id`, RLS como frontera real de seguridad (no solo interfaz).
-12. **Arquitectura de Base de Datos** — visión de tablas, relaciones, vistas y triggers. *(Referencia detallada y versionada en `DATABASE.md`)*
-13. **Arquitectura Frontend** — HTML + JavaScript vanilla modular (ES modules), estructura de `js/shared/`, patrones de render sin framework.
-14. **Arquitectura Backend** — Supabase como backend completo: Postgres, RLS, Auth, Storage, Edge Functions (proxy de IA).
-15. **Inteligencia Artificial** — estado actual (generación de calendario vía Groq detrás de una Edge Function) y visión de expansión. *(Desarrollo completo en `IA.md`)*
+9. **Arquitectura General** — panorama técnico de alto nivel: frontend estático + Supabase (Postgres, Auth, RLS, Storage, Edge Functions) + IA externa. *(Desarrollo completo en `02-ENTERPRISE-SYSTEM-ARCHITECTURE.md`, MDS-003; decisiones fundacionales en `ADR-002`, `ADR-003`)*
+10. **Arquitectura SaaS** — modelo de negocio multiempresa, ciclo de vida de una cuenta cliente, planes. *(Diseño conceptual en `02-ENTERPRISE-SYSTEM-ARCHITECTURE.md` §4; desarrollo operativo completo en `10-ENTERPRISE-SAAS-PLATFORM.md` + `10A`–`10I`, MDS-011)*
+11. **Arquitectura Multiempresa** — aislamiento por `company_id`, RLS como frontera real de seguridad (no solo interfaz). *(Desarrollo completo en `07H-MULTI-TENANT-DESIGN.md`, MDS-008; `10A-MULTI-TENANT-MODEL.md`, MDS-011; decisión fundacional en `ADR-001`)*
+12. **Arquitectura de Base de Datos** — visión de tablas, relaciones, vistas y triggers. *(Referencia detallada y versionada en `DATABASE.md`; plataforma de datos completa en `07-ENTERPRISE-DATA-PLATFORM.md` + `07A`–`07I`, MDS-008; convención de versionado en `ADR-004`)*
+13. **Arquitectura Frontend** — HTML + JavaScript vanilla modular (ES modules), estructura de `js/shared/`, patrones de render sin framework. *(Decisión fundacional en `ADR-003`)*
+14. **Arquitectura Backend** — Supabase como backend completo: Postgres, RLS, Auth, Storage, Edge Functions (proxy de IA). *(Decisión fundacional en `ADR-002`; patrón de identidad en `ADR-006`)*
+15. **Inteligencia Artificial** — estado actual (generación de calendario vía Groq detrás de una Edge Function) y visión de expansión. *(Desarrollo completo en `IA.md`; ecosistema completo en `05-AI-ECOSYSTEM.md` + `05A`–`05E`, MDS-006; orquestación en `09E-AI-ORCHESTRATION.md`, MDS-010; evolución en 3 horizontes en `11F-AI-EVOLUTION.md`, MDS-012; decisión fundacional en `ADR-007`)*
 
 ### Parte III — Experiencia y Producto
 
-16. **Diseño UX/UI** — sistema visual, componentes reutilizables, convenciones de interfaz por rol. *(Desarrollo completo en `UI-UX.md`)*
-17. **Ecosistema MAHP** — cómo conviven la landing pública (`index.html`) y la aplicación autenticada (4 paneles por rol), y qué piezas futuras se suman (mobile, integraciones).
-18. **Módulos actuales** — inventario completo de lo construido y en producción. *(Desarrollo completo en `MODULOS.md`)*
-19. **Módulos futuros** — backlog priorizado de nuevas capacidades.
+16. **Diseño UX/UI** — sistema visual, componentes reutilizables, convenciones de interfaz por rol. *(Desarrollo completo en `UI-UX.md`; sistema de diseño completo en `04-DESIGN-SYSTEM.md` + `04A`–`04D`, MDS-005)*
+17. **Ecosistema MAHP** — cómo conviven la landing pública (`index.html`) y la aplicación autenticada (4 paneles por rol), y qué piezas futuras se suman (mobile, integraciones). *(Ver `MODULOS.md` introducción; especificación funcional completa en `06-PRODUCT-BLUEPRINT.md` + `06A`–`06J`, MDS-007)*
+18. **Módulos actuales** — inventario completo de lo construido y en producción. *(Desarrollo completo en `MODULOS.md`; catálogo funcional de 53 módulos en `06-PRODUCT-BLUEPRINT.md` + anexos, MDS-007)*
+19. **Módulos futuros** — backlog priorizado de nuevas capacidades. *(Desarrollo completo en `06J-FUTURE-MODULES.md`, MDS-007; secuenciación en `11-ENTERPRISE-PRODUCT-STRATEGY.md` §13/§20, MDS-012)*
 
 ### Parte IV — Seguridad e Integraciones
 
-20. **Seguridad** — RLS por tabla, auditoría (`audit_log`), gestión de accesos/revocación, manejo de secretos (API keys, sin exponer nunca en el cliente).
-21. **Integraciones** — servicios externos actuales (Groq) y candidatos futuros (correo transaccional, redes sociales, pagos).
-22. **API** — superficie de Edge Functions y sus contratos de entrada/salida. *(Desarrollo completo en `API.md`)*
-23. **Automatizaciones** — triggers de base de datos que reaccionan a eventos (puntos de gamificación, notificaciones, sincronización de progreso) sin depender de que el cliente "recuerde" hacerlo.
+20. **Seguridad** — RLS por tabla, auditoría (`audit_log`), gestión de accesos/revocación, manejo de secretos (API keys, sin exponer nunca en el cliente). *(Desarrollo completo en `07F-SECURITY-AND-AUDIT.md`, MDS-008; `08E-SECURITY.md`, MDS-009; capacidad transversal de auditoría en `CCEC-001-ENTERPRISE-AUDIT-PLATFORM.md` + `CCEC-001A`–`C`)*
+21. **Integraciones** — servicios externos actuales (Groq) y candidatos futuros (correo transaccional, redes sociales, pagos). *(Desarrollo completo en `06F-INTEGRATIONS.md`, MDS-007; plataforma completa en `08-ENTERPRISE-INTEGRATION-PLATFORM.md` + `08A`–`08I`, MDS-009; catálogo extendido en `08C-INTEGRATIONS-CATALOG.md`)*
+22. **API** — superficie de Edge Functions y sus contratos de entrada/salida. *(Desarrollo completo en `API.md`; estándares oficiales en `08A-API-STANDARDS.md`, MDS-009; versionado en `08H-VERSIONING.md`)*
+23. **Automatizaciones** — triggers de base de datos que reaccionan a eventos (puntos de gamificación, notificaciones, sincronización de progreso) sin depender de que el cliente "recuerde" hacerlo. *(Estado actual en `DATABASE.md` §6–7; plataforma completa de workflows/reglas/orquestación configurable en `09-ENTERPRISE-AUTOMATION-PLATFORM.md` + `09A`–`09I`, MDS-010; decisión de infraestructura en `ADR-008`)*
 
 ### Parte V — Evolución y Estándares
 
-24. **Roadmap** — plan de evolución por fases, con estado (construido / diseñado / pendiente). *(Desarrollo completo en `ROADMAP.md`)*
-25. **Estándares de Desarrollo** — cómo se escribe código nuevo en este proyecto para que encaje con lo existente.
-26. **Convenciones de Código** — nomenclatura (UI en español, identificadores de código en inglés/español mixto ya establecido), estructura de archivos, estilo.
-27. **Buenas Prácticas** — lecciones aprendidas del propio proyecto (verificar relaciones ambiguas en PostgREST, no asumir columnas sin revisar el schema real, nunca ejecutar SQL directo sin mostrarlo primero).
-28. **Control de Versiones** — flujo de Git, despliegue vía GitHub Pages, esquema SQL versionado por archivo (`supabase_schema_vN.sql`) en vez de migraciones automáticas.
+24. **Roadmap** — plan de evolución por fases, con estado (construido / diseñado / pendiente). *(Desarrollo completo en `ROADMAP.md`; hoja de ruta a 5 fases MVP→Enterprise en `11A-PRODUCT-ROADMAP.md`, MDS-012)*
+25. **Estándares de Desarrollo** — cómo se escribe código nuevo en este proyecto para que encaje con lo existente. *(Desarrollo completo en `03-ENGINEERING-STANDARDS.md`, MDS-004; estándares de esquema en `07C-DATABASE-STANDARDS.md`, MDS-008)*
+26. **Convenciones de Código** — nomenclatura (UI en español, identificadores de código en inglés/español mixto ya establecido), estructura de archivos, estilo. *(Desarrollo completo en `03-ENGINEERING-STANDARDS.md`, MDS-004)*
+27. **Buenas Prácticas** — lecciones aprendidas del propio proyecto (verificar relaciones ambiguas en PostgREST, no asumir columnas sin revisar el schema real, nunca ejecutar SQL directo sin mostrarlo primero). *(Desarrollo completo en `CLAUDE.md` §2; catálogo de decisiones con su razonamiento en `ADR-INDEX.md`)*
+28. **Control de Versiones** — flujo de Git, despliegue vía GitHub Pages, esquema SQL versionado por archivo (`supabase_schema_vN.sql`) en vez de migraciones automáticas. *(Estrategia de despliegue completa en `10G-DEPLOYMENT-STRATEGY.md`, MDS-011; decisiones fundacionales en `ADR-003`, `ADR-004`)*
 29. **Documentación** — cómo se mantiene vivo este set de documentos y su historial de cambios. *(Bitácora en `CHANGELOG.md`)*
 30. **Reglas para Claude Code** — instrucciones operativas para cualquier asistente de IA que trabaje en este repositorio. *(Desarrollo completo en `CLAUDE.md`)*
 
 ### Parte VI — Visión a Largo Plazo
 
-31. **Estrategia de Escalabilidad** — cómo crecer (más empresas, más datos, más módulos) sin romper lo existente ni la arquitectura sin servidor propio.
-32. **Futuro del Producto** — visión más allá del roadmap inmediato: hacia dónde podría llegar MAHP como categoría de producto.
+31. **Estrategia de Escalabilidad** — cómo crecer (más empresas, más datos, más módulos) sin romper lo existente ni la arquitectura sin servidor propio. *(Desarrollo completo en `02-ENTERPRISE-SYSTEM-ARCHITECTURE.md` §14, MDS-003; estrategia de datos en `07-ENTERPRISE-DATA-PLATFORM.md` §8, MDS-008; estrategia comercial en `10I-GROWTH-STRATEGY.md`, MDS-011)*
+32. **Futuro del Producto** — visión más allá del roadmap inmediato: hacia dónde podría llegar MAHP como categoría de producto. *(Desarrollo completo en `11I-LONG-TERM-VISION.md`, MDS-012 — horizonte a 10 años)*
 
 ---
 
 ## Documentos relacionados
+
+> Tabla reconstruida el 2026-07-12 (MDS-012) — desactualizada desde
+> MDS-005 antes de este cambio, señalada como inconsistencia en
+> `07-ENTERPRISE-DATA-PLATFORM.md`, `08-ENTERPRISE-INTEGRATION-
+> PLATFORM.md` y `09-ENTERPRISE-AUTOMATION-PLATFORM.md`.
+
+### Documentos originales (capítulos 1–30, base fundacional)
 
 | Documento | Contenido |
 |---|---|
@@ -135,3 +146,72 @@ Por qué una empresa elegiría MAHP sobre una hoja de cálculo, un CRM genérico
 | `API.md` | Desarrollo completo del capítulo 22 |
 | `DATABASE.md` | Desarrollo completo del capítulo 12 |
 | `MODULOS.md` | Desarrollo completo del capítulo 18 |
+
+### MDS-002 a MDS-004 — Identidad, Arquitectura, Estándares
+
+| Documento | Contenido |
+|---|---|
+| `01-IDENTIDAD-DEL-PRODUCTO.md` | Capítulos 1, 6–8 (identidad, problema, público objetivo, propuesta de valor) |
+| `02-ENTERPRISE-SYSTEM-ARCHITECTURE.md` | Capítulos 9–11, 14, 20–21, 31 (arquitectura general, SaaS, multiempresa, backend, seguridad, integraciones, escalabilidad) |
+| `03-ENGINEERING-STANDARDS.md` | Capítulos 25–26 (estándares y convenciones de desarrollo) |
+
+### MDS-005 — Sistema de Diseño
+
+| Documento | Contenido |
+|---|---|
+| `04-DESIGN-SYSTEM.md` + `04A`–`04D` | Capítulo 16 (diseño UX/UI), desarrollo completo: tokens, componentes, guías UX, principios |
+
+### MDS-006 — Ecosistema de IA
+
+| Documento | Contenido |
+|---|---|
+| `05-AI-ECOSYSTEM.md` + `05A`–`05E` | Capítulo 15 (IA), desarrollo completo: 24 agentes catalogados, flujos colaborativos, gobierno, estándares de prompt, memoria/contexto |
+
+### MDS-007 — Blueprint de Producto
+
+| Documento | Contenido |
+|---|---|
+| `06-PRODUCT-BLUEPRINT.md` + `06A`–`06J` | Capítulos 17–19 (ecosistema, módulos actuales y futuros), 53 módulos catalogados |
+
+### MDS-008 — Plataforma de Datos
+
+| Documento | Contenido |
+|---|---|
+| `07-ENTERPRISE-DATA-PLATFORM.md` + `07A`–`07I` | Capítulos 11–12, 31 (multiempresa, base de datos, escalabilidad), dominios/gobierno/entidades/seguridad/calidad de datos |
+
+### MDS-009 — Plataforma de Integración
+
+| Documento | Contenido |
+|---|---|
+| `08-ENTERPRISE-INTEGRATION-PLATFORM.md` + `08A`–`08I` | Capítulos 21–22 (integraciones, API), estándares, webhooks, catálogo extendido, developer portal, seguridad, eventos, SDK, versionado, marketplace |
+
+### MDS-010 — Plataforma de Automatización
+
+| Documento | Contenido |
+|---|---|
+| `09-ENTERPRISE-AUTOMATION-PLATFORM.md` + `09A`–`09I` | Capítulo 23 (automatizaciones), workflows, reglas de negocio, eventos, plantillas, orquestación de IA, scheduler, aprobaciones, notificaciones, gobierno |
+
+### MDS-011 — Plataforma SaaS y Operación
+
+| Documento | Contenido |
+|---|---|
+| `10-ENTERPRISE-SAAS-PLATFORM.md` + `10A`–`10I` | Capítulo 10 (SaaS), multi-tenant operativo, planes, organización, excelencia operativa, backup/DR, SLO, despliegue, soporte, crecimiento |
+
+### MDS-012 — Estrategia de Producto (capítulo de cierre)
+
+| Documento | Contenido |
+|---|---|
+| `11-ENTERPRISE-PRODUCT-STRATEGY.md` + `11A`–`11I` | Capítulos 24, 31–32 (roadmap, escalabilidad, futuro), estrategia integral, roadmap 5 fases, crecimiento, expansión, monetización, innovación, evolución de IA, riesgos, métricas, visión a 10 años |
+
+### CCEC — Capacidades Compartidas entre todo el Sistema
+
+| Documento | Contenido |
+|---|---|
+| `CCEC-001-ENTERPRISE-AUDIT-PLATFORM.md` + `CCEC-001A`–`C` | Capítulo 20 (seguridad) — catálogo de eventos auditables, acceso/retención, guía de integración para todo MDS futuro |
+| `CCEC-004-OBSERVABILITY-PLATFORM.md` + `CCEC-004A`–`C` | Logs, métricas/dashboards, alertas — capacidad transversal de observabilidad |
+
+### ADR — Historial de Decisiones Arquitectónicas
+
+| Documento | Contenido |
+|---|---|
+| `ADR-INDEX.md` + `ADR-001`–`008` | El *porqué* de las decisiones ya tomadas: multi-tenancy por columna, Supabase como backend completo, frontend vanilla, esquema versionado por archivo, soft delete por defecto, `security definer` para identidad, IA vía Edge Function proxy, cola sobre Postgres+`pg_cron` |
