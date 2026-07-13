@@ -59,5 +59,6 @@ Un ADR **nunca se edita para cambiar la decisión** una vez `Aceptado` — si la
 | [ADR-006](ADR-006-security-definer-para-identidad.md) | Funciones `security definer` como patrón de resolución de identidad en RLS | Aceptado |
 | [ADR-007](ADR-007-ia-via-edge-function-proxy.md) | IA vía Edge Function proxy, nunca API key en el cliente | Aceptado |
 | [ADR-008](ADR-008-cola-sobre-postgres-pg-cron.md) | Cola de eventos/automatización sobre Postgres + `pg_cron`, sin broker externo | Aceptado |
+| [ADR-009](ADR-009-social-ai-hub-modulo-nativo.md) | Social AI Hub es un módulo nativo del ecosistema MAHP, no un componente aislado | Aceptado |
 
-Todos los ADR de esta primera tanda están en estado **Aceptado** porque documentan decisiones que ya rigen el sistema en producción — ninguno es una propuesta nueva.
+Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). `ADR-009` es el primer ADR **prospectivo** de la serie — una decisión tomada al mismo tiempo que se documenta (`MEM-002-001`, 2026-07-12), no reconstruida después.

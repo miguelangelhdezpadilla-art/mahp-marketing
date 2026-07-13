@@ -10,6 +10,14 @@
 
 ---
 
+## 2026-07-12 — Documentación (3)
+
+- **[Docs]** Cuatro ajustes a `MEM-002-001-SOCIAL-AI-HUB-VISION.md`, pedidos explícitamente antes de subir a git: (1) integración oficial con Community Manager Advisor (`05A-AI-AGENTS.md` #11 actualizado — deja de ser "agente independiente esperando integración" y pasa a depender formalmente de `MEM-002-001`); (2) alcance de MVP fijado a **Meta Graph API únicamente** (Facebook Pages, Instagram Business, Messenger) en vez de "el canal con más demanda"; (3) nueva capacidad transversal `CCEC-005-PRIVACY-AND-COMPLIANCE.md` — marco técnico (no legal) para datos de clientes finales, con las preguntas exactas que un abogado real debe resolver antes de MEM-002-002; (4) `ADR-009` — primer ADR **prospectivo** de la serie (los 8 anteriores eran retroactivos), estableciendo Social AI Hub como módulo nativo del ecosistema, no componente aislado.
+
+## 2026-07-12 — Documentación (2)
+
+- **[Docs]** `MEM-002-001-SOCIAL-AI-HUB-VISION.md` — primer documento de una serie nueva, **MEM (MAHP Enterprise Modules)**, distinta de MDS (plataforma)/CCEC (capacidades compartidas)/ADR (decisiones): diseña un módulo de producto vendible de principio a fin. Social AI Hub es la bandeja de comunicación omnicanal (Meta/WhatsApp/etc.) que activa capacidades ya diseñadas pero nunca conectadas — el agente Community Manager Advisor (`05A-AI-AGENTS.md` #11, hoy bloqueado por falta de integración real) y las integraciones de mensajería ya catalogadas (`06F-INTEGRATIONS.md`, `08C-INTEGRATIONS-CATALOG.md`). Incluye visión a 4 horizontes, 7 perfiles de cliente, 50 casos de uso, análisis de 8 competidores (Meta Business Suite, HubSpot, Zendesk, ManyChat, Respond.io, Intercom, Freshdesk, Salesforce Service Cloud), roadmap de 6 fases y riesgos con mitigación. Señala un prerrequisito legal no resuelto (privacidad de datos de clientes finales) antes de avanzar a MEM-002-002 (Functional Blueprint, no iniciado). Sin avanzar a la siguiente fase hasta aprobación explícita, conforme a las reglas de MEM-002-001.
+
 ## 2026-07-12 — Producto
 
 - **[Feat]** `v19`: cerrado el gap de auditoría más urgente identificado en toda la serie de documentación — la impersonación de `super_admin` (entrar al panel operativo de una empresa vía `?company_id=`) ahora queda registrada en `audit_log` (evento `impersonacion_iniciada`). Función `security definer` `log_impersonation_start()` (mismo patrón que `soft_delete_actividades()`, `v18`), invocada desde `js/empresa.js` al detectar impersonación activa. Pendiente de aplicar por el usuario en el SQL Editor.

@@ -180,14 +180,14 @@
 | | |
 |---|---|
 | **Objetivo** | Sugerir cómo responder a la comunidad (comentarios, mensajes) — asesor, no ejecutor |
-| **Descripción** | No publica ni responde directamente — MAHP hoy no tiene integración con las bandejas de mensajería de cada red (§12 de arquitectura) |
-| **Funciones** | Sugerir tono de respuesta ante un escenario descrito por el usuario |
+| **Descripción** | Hoy no publica ni responde directamente porque MAHP no tiene integración con bandejas de mensajería (§12 de arquitectura) — **integración oficial definida**: `MEM-002-001-SOCIAL-AI-HUB-VISION.md` (módulo "Social AI Hub") es el módulo que provee esa bandeja; este agente es su punto de activación de IA, no un componente separado que Social AI Hub además consuma |
+| **Funciones** | Hoy: sugerir tono de respuesta ante un escenario descrito por el usuario. **Con Social AI Hub (MEM-002-001, [FUTURO])**: mismo rol de asesor, pero con acceso directo a la conversación real (Meta Graph API — Facebook Pages, Instagram Business, Messenger) en vez de contexto pegado a mano |
 | **Permisos** | `company_admin`, `collaborator` |
-| **Entradas** | Descripción del comentario/situación a responder (pegado manualmente, sin integración) |
-| **Salidas** | Sugerencia de respuesta |
+| **Entradas** | Hoy: descripción pegada manualmente. Con Social AI Hub: la conversación real de la bandeja unificada |
+| **Salidas** | Sugerencia de respuesta — sigue siendo asesor, nunca ejecutor automático, sin cambio en ese límite con la integración |
 | **Fuentes de información** | Personalidad de marca de la empresa |
-| **Módulos** | Ninguno directo — es un agente independiente hasta que exista integración de mensajería |
-| **Limitaciones** | Depende 100% de que el usuario le pegue el contexto manualmente — sin integración real con Meta/WhatsApp, no puede ver mensajes por sí mismo |
+| **Módulos** | **Social AI Hub (MEM-002-001)** — relación oficial, no un agente independiente esperando una integración sin nombre |
+| **Limitaciones** | Hoy: depende 100% de contexto pegado a mano. Una vez construido Social AI Hub, esta limitación desaparece — ver roadmap del módulo (`MEM-002-001` §11) |
 | **Ejemplo de uso** | *"Un cliente se quejó de que llegó tarde su pedido, ¿cómo respondo?"* |
 | **Indicador de éxito** | Solo medible cualitativamente hasta que exista integración |
 
