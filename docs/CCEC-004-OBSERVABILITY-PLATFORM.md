@@ -1,17 +1,22 @@
 # CCEC-004 — OBSERVABILITY PLATFORM
 
-> Capacidad Compartida (CCEC) — cómo se sabe que el sistema está sano, no
-> quién hizo qué (eso es `CCEC-001-ENTERPRISE-AUDIT-PLATFORM.md`). Origen:
-> el mismo gap se reportó de forma independiente en
-> `07-ENTERPRISE-DATA-PLATFORM.md` §11 y `07I-DATA-QUALITY.md` §5–6
-> (MDS-008), `08F-EVENT-ARCHITECTURE.md` §5 (MDS-009), y
-> `09-ENTERPRISE-AUTOMATION-PLATFORM.md` §11 y `09H-NOTIFICATION-
-> ORCHESTRATION.md` §8 (MDS-010).
+> Capacidad Compartida — **CCEC = Cross-Cutting Enterprise Capabilities**,
+> definición oficial en `MES-001-ENGINEERING-CONSTITUTION.md` §5 — cómo se
+> sabe que el sistema está sano, no quién hizo qué (eso es
+> `CCEC-001-ENTERPRISE-AUDIT-PLATFORM.md`). Origen: el mismo gap se
+> reportó de forma independiente en `07-ENTERPRISE-DATA-PLATFORM.md` §11 y
+> `07I-DATA-QUALITY.md` §5–6 (MDS-008), `08F-EVENT-ARCHITECTURE.md` §5
+> (MDS-009), y `09-ENTERPRISE-AUTOMATION-PLATFORM.md` §11 y `09H-
+> NOTIFICATION-ORCHESTRATION.md` §8 (MDS-010).
 >
-> **Estado: [FUTURO] en su totalidad** — no existe hoy ningún panel de
-> observabilidad propio de MAHP. Lo único disponible son los logs nativos
-> de la plataforma Supabase (Postgres + Edge Functions), fuera del control
-> directo de la aplicación.
+> **Estado de madurez oficial: `Designed`** (ver `MES-001` §"Estados de
+> Madurez") — diseño completo, sin implementación real todavía. Bajo la
+> **Progressive Infrastructure Strategy** (`ADR-016`), esto no es una
+> inconsistencia: una capacidad puede documentarse completa en estado
+> `Designed`/`Planned` antes de construirse, siempre que su estado quede
+> declarado explícitamente, como aquí. Lo único disponible hoy son los
+> logs nativos de la plataforma Supabase (Postgres + Edge Functions),
+> fuera del control directo de la aplicación.
 >
 > Última actualización: 2026-07-12.
 

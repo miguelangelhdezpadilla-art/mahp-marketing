@@ -1,8 +1,10 @@
 # CCEC-001 — ENTERPRISE AUDIT PLATFORM
 
-> Capacidad Compartida (CCEC) — no una fase de producto (MDS), una
-> capacidad transversal que todo MDS presente y futuro reutiliza en vez de
-> redefinir. Origen: el mismo hallazgo se reportó de forma independiente en
+> Capacidad Compartida — **CCEC = Cross-Cutting Enterprise Capabilities**,
+> definición oficial resuelta en `MES-001-ENGINEERING-CONSTITUTION.md` §5
+> (decisión del Product Owner, 2026-07-12). No una fase de producto (MDS),
+> una capacidad transversal que todo MDS presente y futuro reutiliza en vez
+> de redefinir. Origen: el mismo hallazgo se reportó de forma independiente en
 > `07F-SECURITY-AND-AUDIT.md` §5 (MDS-008), `08E-SECURITY.md` §5 y
 > `08B-WEBHOOKS.md` §7 (MDS-009), y `09I-AUTOMATION-GOVERNANCE.md` §5
 > (MDS-010) — cuatro fases seguidas señalando el mismo vacío de auditoría

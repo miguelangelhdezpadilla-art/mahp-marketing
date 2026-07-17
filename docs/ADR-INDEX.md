@@ -3,7 +3,10 @@
 > Historial de decisiones arquitectónicas — el *por qué*, no el *qué* (eso
 > vive en los MDS) ni una *capacidad compartida* (eso es un CCEC). Un ADR
 > se escribe cuando se toma una decisión con alternativas reales
-> descartadas, para que esa razón no se pierda con el tiempo.
+> descartadas, para que esa razón no se pierda con el tiempo. CCEC =
+> **Cross-Cutting Enterprise Capabilities**, definición oficial resuelta
+> en `MES-001-ENGINEERING-CONSTITUTION.md` §5 (decisión del Product
+> Owner, 2026-07-12).
 >
 > Origen: hallazgo de `11-ENTERPRISE-PRODUCT-STRATEGY.md` §14 (MDS-012) —
 > la serie no existía hasta esta fecha, aunque decisiones arquitectónicas
@@ -66,7 +69,8 @@ Un ADR **nunca se edita para cambiar la decisión** una vez `Aceptado` — si la
 | [ADR-013](ADR-013-cie-cadena-de-eventos-no-motor-paralelo.md) | El Conversation Intelligence Engine es una cadena de eventos sobre el motor de workflows existente, no un motor de IA/reglas independiente | Aceptado |
 | [ADR-014](ADR-014-explainable-ai-obligatorio.md) | Ninguna clasificación, priorización o recomendación de IA se aplica sin un campo de explicación (motivo) visible | Aceptado |
 | [ADR-015](ADR-015-aprendizaje-sin-entrenamiento-propietario.md) | El Motor de Aprendizaje del CIE no entrena modelos propietarios; mejora por ajuste humano de reglas y prompts | Aceptado |
+| [ADR-016](ADR-016-progressive-infrastructure-strategy.md) | Progressive Infrastructure Strategy: una capacidad documentada como `Designed`/`Planned` no es una inconsistencia | Aceptado |
 
-Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). Desde `ADR-009`, la serie es **prospectiva** — decisiones tomadas al mismo tiempo que se documentan, no reconstruidas después. `ADR-013` a `ADR-015` nacieron como propuestas en el Entregable Final de `MPS-002-001` y se aceptaron tras aprobación explícita del usuario, mismo flujo que se seguirá para toda ADR prospectiva futura.
+Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). Desde `ADR-009`, la serie es **prospectiva** — decisiones tomadas al mismo tiempo que se documentan, no reconstruidas después. `ADR-013` a `ADR-015` nacieron como propuestas en el Entregable Final de `MPS-002-001` y se aceptaron tras aprobación explícita del usuario. `ADR-016` nació de una tensión detectada durante la revisión de `MES-001-ENGINEERING-CONSTITUTION.md` y se aceptó en la misma ronda de decisiones del Product Owner que resolvió CCEC, Enterprise Readiness, Estados de Madurez y Quality Gates proporcionales — mismo flujo que se seguirá para toda ADR prospectiva futura.
 
 **Nota sobre `ADR-011`**: `MPS-002-000-PRODUCT-CONSTITUTION.md` §8 reservó ese número para "la IA asistirá al usuario; las acciones críticas requerirán aprobación humana" — pero esa decisión ya está registrada de forma absoluta (`ADR-007`, `ADR-009`, `PROJECT-BLUEPRINT.md` §5 principio 3) y no tenía contenido nuevo específico de Social AI Hub que justificara un archivo propio. Se documenta el salto aquí en vez de crear un ADR duplicado solo para no dejar un hueco en la numeración — mismo criterio de "no duplicar" aplicado a esta serie.

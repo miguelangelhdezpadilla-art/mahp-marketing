@@ -10,6 +10,20 @@
 
 ---
 
+## 2026-07-12 — Documentación (6)
+
+- **[Docs]** `MES-001-ENGINEERING-CONSTITUTION.md` — primer documento de la serie **MES (MAHP Engineering Standards)**, máxima autoridad técnica del proyecto, rigiendo retroactivamente MDS/MPS/ADR/CCEC. 20 principios de ingeniería, 16 etapas de desarrollo, 9 Quality Gates con **política de proporcionalidad vinculante** (nunca los 9 en un cambio pequeño). Tras revisión del Product Owner, se incorporaron 6 decisiones más la propuesta de un nuevo estándar:
+  1. **CCEC redefinido oficialmente** como *Cross-Cutting Enterprise Capabilities* — resuelve la contradicción con la definición original ("capacidades compartidas"); aplicado también a `CCEC-001`/`004`/`005`.
+  2. **Enterprise Readiness dividida en dos métricas independientes**: Engineering Maturity (calidad de diseño, **88%**) e Implementation Maturity (cuánto está realmente construido, **28%**) — nunca combinadas en un solo número.
+  3. **Observabilidad confirmada como no-inconsistencia** bajo la nueva `ADR-016` (Progressive Infrastructure Strategy).
+  4. **7 Estados de Madurez oficiales** (`Proposed`→`Deprecated`) que formalizan, con más granularidad, la convención [EXISTE]/[FUTURO]/[PARCIAL] — aplican a documentos nuevos desde ahora; re-etiquetar los 90+ existentes queda como decisión de priorización futura, no ejecutada en este cambio.
+  5. **Quality Gates proporcionales elevados a política vinculante**, con tabla explícita por tamaño de cambio.
+  6. **Project Reality Check (PRC)** — nueva tercera sección obligatoria (7 preguntas) para documentos grandes, propuesta por el Product Owner tras esta misma revisión; aplicada a `MES-001` como primer ejemplo de referencia.
+  
+  Agrega `ADR-016`. Recomendación final de la Enterprise Architecture Review: **Aprobado** (sin observaciones abiertas).
+
+- **[Docs]** `MES-001-ENGINEERING-CONSTITUTION.md` — primer documento de la serie **MES (MAHP Engineering Standards)**, máxima autoridad técnica del proyecto, rigiendo retroactivamente MDS/MPS/ADR/CCEC. 20 principios de ingeniería, ciclo oficial de desarrollo de 16 etapas, 9 Quality Gates (con nota de proporcionalidad explícita para no contradecir el principio de simplicidad al tamaño actual del equipo), reglas oficiales por 20 categorías, y una Enterprise Readiness Score honesta: **57/100**, con Documentación (9/10) como el punto más fuerte y Observabilidad (2/10) como el más débil — diseñada por completo en `CCEC-004`, sin una sola línea implementada. **Hallazgo de coherencia real, no resuelto unilateralmente**: el documento de fase define CCEC como "Compliance, Cybersecurity & Enterprise Compliance", distinto de la definición ya vigente y usada en 8 documentos ("capacidades compartidas por todo el sistema") — queda como decisión pendiente del Product Owner. Recomendación de la Enterprise Architecture Review: **Aprobar con observaciones**. Sin avanzar a la siguiente fase hasta aprobación explícita.
+
 ## 2026-07-12 — Documentación (5)
 
 - **[Docs]** `MPS-002-001-CONVERSATION-INTELLIGENCE-ENGINE.md` — blueprint funcional del corazón de Social AI Hub: ciclo de vida completo de una conversación (18 etapas), Business Intent Engine (10 intenciones), motores de clasificación/priorización/recomendaciones/aprendizaje, 12 eventos del sistema, integración con 9 componentes del ecosistema, 6 diagramas. Reutiliza sin excepción la infraestructura de IA (`ADR-007`) y automatización (`09A`/`09B`/`08F`) ya existente — el CIE no es un motor paralelo. Marca explícitamente como **[HIPÓTESIS]** la ventana de 24 horas de Meta para responder sin restricciones, sin verificar contra documentación oficial vigente, señalada como la verificación más urgente antes de `MPS-002-002`. Agrega `ADR-013` (CIE como cadena de eventos, no motor independiente), `ADR-014` (Explainable AI obligatorio) y `ADR-015` (aprendizaje sin entrenamiento de modelos propietarios) — las tres nacieron como propuestas en el entregable final y se aceptaron tras aprobación explícita del usuario.

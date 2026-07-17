@@ -1,6 +1,8 @@
 # CCEC-005 — PRIVACY AND COMPLIANCE PLATFORM
 
-> Capacidad Compartida (CCEC) — cómo MAHP maneja datos de **terceros**
+> Capacidad Compartida — **CCEC = Cross-Cutting Enterprise Capabilities**,
+> definición oficial en `MES-001-ENGINEERING-CONSTITUTION.md` §5 — cómo
+> MAHP maneja datos de **terceros**
 > (clientes finales de la empresa cliente, no usuarios de MAHP) de forma
 > responsable. Origen: riesgo identificado en
 > `MEM-002-001-SOCIAL-AI-HUB-VISION.md` §12 — Social AI Hub sería el
