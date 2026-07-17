@@ -63,7 +63,10 @@ Un ADR **nunca se edita para cambiar la decisión** una vez `Aceptado` — si la
 | [ADR-010](ADR-010-meta-primer-canal-arquitectura-channel-agnostic.md) | Meta Graph API es el primer canal de Social AI Hub; el núcleo del módulo es channel-agnostic | Aceptado |
 | ADR-011 | *(no existe como archivo — ver nota abajo)* | — |
 | [ADR-012](ADR-012-conversaciones-como-activos-de-negocio.md) | Las conversaciones son activos de negocio que alimentan CRM ligero/Analytics/Automatizaciones, respetando permisos y privacidad | Aceptado |
+| [ADR-013](ADR-013-cie-cadena-de-eventos-no-motor-paralelo.md) | El Conversation Intelligence Engine es una cadena de eventos sobre el motor de workflows existente, no un motor de IA/reglas independiente | Aceptado |
+| [ADR-014](ADR-014-explainable-ai-obligatorio.md) | Ninguna clasificación, priorización o recomendación de IA se aplica sin un campo de explicación (motivo) visible | Aceptado |
+| [ADR-015](ADR-015-aprendizaje-sin-entrenamiento-propietario.md) | El Motor de Aprendizaje del CIE no entrena modelos propietarios; mejora por ajuste humano de reglas y prompts | Aceptado |
 
-Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). Desde `ADR-009`, la serie es **prospectiva** — decisiones tomadas al mismo tiempo que se documentan, no reconstruidas después.
+Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). Desde `ADR-009`, la serie es **prospectiva** — decisiones tomadas al mismo tiempo que se documentan, no reconstruidas después. `ADR-013` a `ADR-015` nacieron como propuestas en el Entregable Final de `MPS-002-001` y se aceptaron tras aprobación explícita del usuario, mismo flujo que se seguirá para toda ADR prospectiva futura.
 
 **Nota sobre `ADR-011`**: `MPS-002-000-PRODUCT-CONSTITUTION.md` §8 reservó ese número para "la IA asistirá al usuario; las acciones críticas requerirán aprobación humana" — pero esa decisión ya está registrada de forma absoluta (`ADR-007`, `ADR-009`, `PROJECT-BLUEPRINT.md` §5 principio 3) y no tenía contenido nuevo específico de Social AI Hub que justificara un archivo propio. Se documenta el salto aquí en vez de crear un ADR duplicado solo para no dejar un hueco en la numeración — mismo criterio de "no duplicar" aplicado a esta serie.

@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-12 — Documentación (5)
+
+- **[Docs]** `MPS-002-001-CONVERSATION-INTELLIGENCE-ENGINE.md` — blueprint funcional del corazón de Social AI Hub: ciclo de vida completo de una conversación (18 etapas), Business Intent Engine (10 intenciones), motores de clasificación/priorización/recomendaciones/aprendizaje, 12 eventos del sistema, integración con 9 componentes del ecosistema, 6 diagramas. Reutiliza sin excepción la infraestructura de IA (`ADR-007`) y automatización (`09A`/`09B`/`08F`) ya existente — el CIE no es un motor paralelo. Marca explícitamente como **[HIPÓTESIS]** la ventana de 24 horas de Meta para responder sin restricciones, sin verificar contra documentación oficial vigente, señalada como la verificación más urgente antes de `MPS-002-002`. Agrega `ADR-013` (CIE como cadena de eventos, no motor independiente), `ADR-014` (Explainable AI obligatorio) y `ADR-015` (aprendizaje sin entrenamiento de modelos propietarios) — las tres nacieron como propuestas en el entregable final y se aceptaron tras aprobación explícita del usuario.
+
 ## 2026-07-12 — Documentación (4)
 
 - **[Docs]** `MPS-002-000-PRODUCT-CONSTITUTION.md` — primer documento de la serie nueva **MPS (MAHP Product Specifications)**, constitución de producto de Social AI Hub: misión, visión a 4 horizontes, 15 principios de diseño explicados (qué/por qué/cómo/ejemplo), filosofía de producto, y — el hallazgo más relevante de esta fase — límites explícitos frente a CRM, reforzando (no contradiciendo) la identidad ya declarada de MAHP ("no es un CRM", `01-IDENTIDAD-DEL-PRODUCTO.md` §1, `06J-FUTURE-MODULES.md` §1). Documenta la relación con los 11 sistemas del ecosistema pedidos por la fase. Agrega `ADR-010` (Meta como primer canal, núcleo channel-agnostic) y `ADR-012` (conversaciones como activos de negocio con límites); `ADR-011` se documenta explícitamente como no creado, para no duplicar `ADR-007`/`ADR-009`. Sin avanzar a `MPS-002-001` (Functional Specification) hasta aprobación.
