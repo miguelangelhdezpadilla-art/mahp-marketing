@@ -4,8 +4,12 @@
 > distinta de MDS/CCEC/ADR: donde MDS diseña la *plataforma*, CCEC define
 > *capacidades compartidas* y ADR registra *decisiones arquitectónicas*,
 > MEM diseña un **módulo de producto vendible** de principio a fin, empezando
-> por su visión de negocio (este documento) antes de su blueprint funcional
-> (MEM-002-002, no iniciado).
+> por su visión de negocio (este documento).
+>
+> **Continúa en** `MPS-002-000-PRODUCT-CONSTITUTION.md` (serie **MPS**,
+> MAHP Product Specifications — constitución de producto: identidad,
+> principios, límites y gobierno), y después en `MPS-002-001` (Functional
+> Specification, no iniciado).
 >
 > **Estado: [FUTURO] en su totalidad.** Social AI Hub no existe hoy en
 > ninguna forma — ni como código, ni como integración, ni como agente

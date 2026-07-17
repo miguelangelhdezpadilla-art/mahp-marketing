@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-12 — Documentación (4)
+
+- **[Docs]** `MPS-002-000-PRODUCT-CONSTITUTION.md` — primer documento de la serie nueva **MPS (MAHP Product Specifications)**, constitución de producto de Social AI Hub: misión, visión a 4 horizontes, 15 principios de diseño explicados (qué/por qué/cómo/ejemplo), filosofía de producto, y — el hallazgo más relevante de esta fase — límites explícitos frente a CRM, reforzando (no contradiciendo) la identidad ya declarada de MAHP ("no es un CRM", `01-IDENTIDAD-DEL-PRODUCTO.md` §1, `06J-FUTURE-MODULES.md` §1). Documenta la relación con los 11 sistemas del ecosistema pedidos por la fase. Agrega `ADR-010` (Meta como primer canal, núcleo channel-agnostic) y `ADR-012` (conversaciones como activos de negocio con límites); `ADR-011` se documenta explícitamente como no creado, para no duplicar `ADR-007`/`ADR-009`. Sin avanzar a `MPS-002-001` (Functional Specification) hasta aprobación.
+
 ## 2026-07-12 — Documentación (3)
 
 - **[Docs]** Cuatro ajustes a `MEM-002-001-SOCIAL-AI-HUB-VISION.md`, pedidos explícitamente antes de subir a git: (1) integración oficial con Community Manager Advisor (`05A-AI-AGENTS.md` #11 actualizado — deja de ser "agente independiente esperando integración" y pasa a depender formalmente de `MEM-002-001`); (2) alcance de MVP fijado a **Meta Graph API únicamente** (Facebook Pages, Instagram Business, Messenger) en vez de "el canal con más demanda"; (3) nueva capacidad transversal `CCEC-005-PRIVACY-AND-COMPLIANCE.md` — marco técnico (no legal) para datos de clientes finales, con las preguntas exactas que un abogado real debe resolver antes de MEM-002-002; (4) `ADR-009` — primer ADR **prospectivo** de la serie (los 8 anteriores eran retroactivos), estableciendo Social AI Hub como módulo nativo del ecosistema, no componente aislado.

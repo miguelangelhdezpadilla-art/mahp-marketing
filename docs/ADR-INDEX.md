@@ -60,5 +60,10 @@ Un ADR **nunca se edita para cambiar la decisión** una vez `Aceptado` — si la
 | [ADR-007](ADR-007-ia-via-edge-function-proxy.md) | IA vía Edge Function proxy, nunca API key en el cliente | Aceptado |
 | [ADR-008](ADR-008-cola-sobre-postgres-pg-cron.md) | Cola de eventos/automatización sobre Postgres + `pg_cron`, sin broker externo | Aceptado |
 | [ADR-009](ADR-009-social-ai-hub-modulo-nativo.md) | Social AI Hub es un módulo nativo del ecosistema MAHP, no un componente aislado | Aceptado |
+| [ADR-010](ADR-010-meta-primer-canal-arquitectura-channel-agnostic.md) | Meta Graph API es el primer canal de Social AI Hub; el núcleo del módulo es channel-agnostic | Aceptado |
+| ADR-011 | *(no existe como archivo — ver nota abajo)* | — |
+| [ADR-012](ADR-012-conversaciones-como-activos-de-negocio.md) | Las conversaciones son activos de negocio que alimentan CRM ligero/Analytics/Automatizaciones, respetando permisos y privacidad | Aceptado |
 
-Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). `ADR-009` es el primer ADR **prospectivo** de la serie — una decisión tomada al mismo tiempo que se documenta (`MEM-002-001`, 2026-07-12), no reconstruida después.
+Los primeros 8 ADR documentan decisiones ya vigentes en producción (retroactivos). Desde `ADR-009`, la serie es **prospectiva** — decisiones tomadas al mismo tiempo que se documentan, no reconstruidas después.
+
+**Nota sobre `ADR-011`**: `MPS-002-000-PRODUCT-CONSTITUTION.md` §8 reservó ese número para "la IA asistirá al usuario; las acciones críticas requerirán aprobación humana" — pero esa decisión ya está registrada de forma absoluta (`ADR-007`, `ADR-009`, `PROJECT-BLUEPRINT.md` §5 principio 3) y no tenía contenido nuevo específico de Social AI Hub que justificara un archivo propio. Se documenta el salto aquí en vez de crear un ADR duplicado solo para no dejar un hueco en la numeración — mismo criterio de "no duplicar" aplicado a esta serie.
