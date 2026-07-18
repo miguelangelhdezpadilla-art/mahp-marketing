@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-07-12 — Documentación (7)
+
+- **[Docs]** `MPS-002-002-FUNCTIONAL-SPECIFICATION.md` — especificación funcional completa de Social AI Hub: 15 módulos funcionales, 15 casos de uso, 16 reglas de negocio, 9 roles funcionales, 7 máquinas de estado, validaciones, manejo de errores, KPIs, y el primer **backlog real** de todo `/docs` (8 épicas, ~145 story points, 4 sprints) con matriz de trazabilidad completa. Usa el formato oficial de `MES-001` (Engineering Maturity 96% / Implementation Maturity 2%, separados) en vez del "Enterprise Readiness Score" combinado que pedía el documento de fase — desviación señalada explícitamente, no aplicada en silencio. Tras revisión del Product Owner, se resolvieron 3 decisiones funcionales pendientes y se creó una cuarta por iniciativa del propio Product Owner, todas como ADR nuevas: `ADR-017` (Unified Customer Identity Model — un cliente, múltiples identidades de canal), `ADR-018` (AI Assisted Tagging — etiquetas en 3 estados `Suggested`/`Confirmed`/`Locked`), `ADR-019` (Intelligent Conversation Routing — transferencia automática por motor de reglas, nunca solo inactividad), `ADR-020` (MAHP Lightweight CRM Boundary — el límite "no somos un CRM" elevado a principio arquitectónico permanente, supersede la propuesta más estrecha del catálogo de campos). Actualizados en el mismo cambio: `MPS-002-001` §14 (decisión de identidad ya resuelta), `MPS-002-002` (CU-06, CU-11, RN-16 nueva, EAR, PRC, Entregable Final). Recomendación final: **Aprobado**, sin observaciones abiertas más allá de la ventana de 24h de Meta heredada.
+
 ## 2026-07-12 — Documentación (6)
 
 - **[Docs]** `MES-001-ENGINEERING-CONSTITUTION.md` — primer documento de la serie **MES (MAHP Engineering Standards)**, máxima autoridad técnica del proyecto, rigiendo retroactivamente MDS/MPS/ADR/CCEC. 20 principios de ingeniería, 16 etapas de desarrollo, 9 Quality Gates con **política de proporcionalidad vinculante** (nunca los 9 en un cambio pequeño). Tras revisión del Product Owner, se incorporaron 6 decisiones más la propuesta de un nuevo estándar:

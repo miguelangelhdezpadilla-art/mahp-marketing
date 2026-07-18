@@ -207,7 +207,7 @@ Mecanismo de captura: `CCEC-004A-METRICS-AND-DASHBOARDS.md`, reutilizado sin exc
 
 ## 14. Decisiones pendientes explícitas (no resueltas en este documento)
 
-1. **Identidad de contacto entre canales** (§4, etapa 4): ¿un mismo cliente escribiendo desde Instagram y Facebook es un contacto o dos?
+1. ~~**Identidad de contacto entre canales**~~ (§4, etapa 4) — **resuelto**: un cliente es una entidad única con múltiples identidades digitales (`ADR-017`, decisión del Product Owner en `MPS-002-002`). El mecanismo técnico de vinculación automática entre identidades sigue pendiente de diseño para `MPS-002-003`.
 2. **Dimensión "Sucursal"** (§7): sin valor real hasta que se resuelva el modelo de organización (`10C-ORGANIZATION-MODEL.md`).
 3. **Intención "Reclutamiento"** (§6): ¿tiene sentido que el CIE la clasifique si MAHP no tiene módulo de RH para actuar sobre ella?
 4. **Ventana de 24 horas de Meta** (§1, §4 etapa 12, §13): requiere verificación contra documentación oficial vigente antes de diseñar la etapa de seguimiento en detalle.
