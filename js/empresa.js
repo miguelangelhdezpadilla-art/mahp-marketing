@@ -16,6 +16,7 @@ import { renderHistorialTareas } from './shared/historialTareas.js';
 import { renderRanking, renderTablaPuntos } from './shared/gamificacion.js';
 import { renderizarGridKpis, cargarSeguidoresParaKpis } from './shared/kpis.js';
 import { renderizarAvanceColaboradores } from './shared/colaboradores.js';
+import { renderSocialHub } from './shared/socialHub.js';
 
 window.cerrarSesion = logout;
 configurarTabs();
@@ -449,10 +450,18 @@ window.toggleSeccionIA = function() {
   window._calendar = calendar; // usado por el formulario multi-día del Sprint 4
   window._recargarActividades = cargarActividades; // el calendario no usa event source dinámica, hay que repoblarlo manualmente
 
+  let hubInicializado = false;
   let cambiarTabBase = window.cambiarTab;
   window.cambiarTab = function(nombre) {
     cambiarTabBase(nombre);
     if (nombre === 'calendario') calendar.updateSize();
+    // El Social Hub carga conversaciones + Realtime — pesado para el
+    // Promise.all inicial, se inicializa solo la primera vez que se
+    // abre la pestaña.
+    if (nombre === 'social-hub' && !hubInicializado) {
+      hubInicializado = true;
+      renderSocialHub(supabaseClient, companyId, miPerfil, 'socialHubContenedor');
+    }
   };
 
   await Promise.all([
