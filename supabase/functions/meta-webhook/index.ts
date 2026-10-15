@@ -89,6 +89,28 @@ async function resolverPagina(pageId: string, channel: string) {
   return data;
 }
 
+// Nombre real del contacto vía Graph API (requiere el permiso
+// "Business Asset User Profile Access" con Advanced Access — todavía
+// en revisión junto con pages_messaging). Si la app no tiene el
+// permiso, o el usuario no es elegible (cuenta por teléfono, perfil
+// no público, etc.), Meta documenta que devuelve un objeto vacío —
+// se trata como "sin nombre" en vez de fallar, nunca se inventa un
+// nombre.
+async function obtenerNombrePerfil(externalId: string, pageAccessToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/${externalId}?fields=first_name,last_name&access_token=${pageAccessToken}`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const nombre = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+    return nombre || null;
+  } catch (err) {
+    console.warn('[Webhook] No se pudo obtener el nombre del perfil:', err);
+    return null;
+  }
+}
+
 // Resuelve el customer unificado para una identidad de canal
 // (ADR-017). No hay fusión automática entre canales todavía
 // (MPS-002-002 §3, pendiente para MPS-002-003): cada identidad nueva
@@ -96,7 +118,7 @@ async function resolverPagina(pageId: string, channel: string) {
 // sender.id es el PSID (page-scoped id) que Meta documenta como
 // identificador estable de Messenger — no cambia entre mensajes del
 // mismo usuario a la misma página.
-async function resolverCustomer(companyId: number, channel: string, externalId: string, displayName: string | null) {
+async function resolverCustomer(companyId: number, channel: string, externalId: string, pageAccessToken: string) {
   const { data: existente } = await supabase
     .from('customer_identities')
     .select('customer_id')
@@ -106,6 +128,10 @@ async function resolverCustomer(companyId: number, channel: string, externalId: 
     .maybeSingle();
 
   if (existente) return existente.customer_id;
+
+  // Solo se pide el nombre a Meta al crear un customer nuevo — no en
+  // cada mensaje de uno ya conocido.
+  const displayName = await obtenerNombrePerfil(externalId, pageAccessToken);
 
   const { data: nuevoCustomer } = await supabase
     .from('customers')
@@ -282,7 +308,7 @@ async function handleWebhook(req: Request): Promise<Response> {
       // vez de guardar una fila con content vacío.
       if (!content) continue;
 
-      const customerId = await resolverCustomer(pagina.company_id, channel, senderId, null);
+      const customerId = await resolverCustomer(pagina.company_id, channel, senderId, pagina.page_access_token);
       const convId = await resolverConversacion(pagina.company_id, customerId, channel, senderId);
 
       // Idempotencia real (sin ventana de carrera): insert atómico con

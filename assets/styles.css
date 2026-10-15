@@ -2276,12 +2276,14 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   border: 0.5px solid var(--border); border-radius: 6px;
   padding: 4px 10px; color: var(--text-secondary); cursor: pointer;
   font-family: var(--font-sans);
+  width: auto; margin-top: 0;
 }
 .btn-resolver {
   font-size: 11px; background: #dcfce7; border: none;
   border-radius: 6px; padding: 4px 10px;
   color: #166534; font-weight: 500; cursor: pointer;
   font-family: var(--font-sans);
+  width: auto; margin-top: 0;
 }
 
 /* Panel IA */
@@ -2386,6 +2388,7 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
 }
 .resp-input {
   flex: 1;
+  min-width: 0;
   background: var(--surface-1);
   border: 0.5px solid var(--border);
   border-radius: 8px;
@@ -2403,6 +2406,7 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   padding: 8px 14px; font-size: 12px;
   font-weight: 500; cursor: pointer;
   white-space: nowrap; font-family: var(--font-sans);
+  width: auto; margin-top: 0; flex-shrink: 0;
 }
 .btn-enviar:hover { background: #4f46e5; }
 

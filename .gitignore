@@ -1,2 +1,5 @@
-.claude/
+.claude/settings.local.json
 supabase/.temp/
+node_modules/
+playwright-report/
+test-results/

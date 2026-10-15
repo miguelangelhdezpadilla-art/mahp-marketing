@@ -1,0 +1,29 @@
+{
+  "name": "mahp-qa-tooling",
+  "version": "1.0.0",
+  "description": "Test-only tooling (Playwright E2E/visual) for MAHP. The shipped app itself stays vanilla JS/no-build per ADR-003 — this package.json exists only to run tests locally, it is not part of the deployed site.",
+  "private": true,
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miguelangelhdezpadilla-art/mahp-marketing.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/miguelangelhdezpadilla-art/mahp-marketing/issues"
+  },
+  "homepage": "https://github.com/miguelangelhdezpadilla-art/mahp-marketing#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
