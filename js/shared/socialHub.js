@@ -29,7 +29,7 @@ function nombreDe(conv) {
 
 async function cargarColaboradores(supabase, companyId) {
   const { data } = await supabase
-    .from('profiles')
+    .from('company_members')
     .select('id, full_name, role')
     .eq('company_id', companyId)
     .eq('active', true)

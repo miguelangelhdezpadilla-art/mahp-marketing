@@ -42,12 +42,72 @@ export async function requireSession(allowedRoles) {
     return null;
   }
 
+  // Multiempresa (ADR-021): profile.company_id/role es la empresa
+  // activa. Si esa membresía fue revocada, saltar a otra empresa de la
+  // cuenta; si no queda ninguna, la cuenta ya no tiene acceso.
+  if (profile.role !== "super_admin") {
+    const { data: empresas, error: errEmpresas } = await supabaseClient.rpc("my_companies");
+    if (errEmpresas) {
+      console.error("[auth] my_companies:", errEmpresas.message);
+    } else if (!empresas.length) {
+      alert("Tu acceso fue revocado. Contacta a tu administrador si crees que es un error.");
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+      return null;
+    } else if (!empresas.some(e => e.is_current)) {
+      await cambiarEmpresa(empresas[0].company_id);
+      return null;
+    } else if (empresas.length > 1) {
+      montarSelectorEmpresa(empresas);
+    }
+  }
+
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     window.location.href = roleHome(profile.role);
     return null;
   }
 
   return { session, profile };
+}
+
+// Cambia la empresa activa y abre el panel del rol que la cuenta
+// tiene en esa empresa (puede ser distinto: admin en una, director en otra).
+export async function cambiarEmpresa(companyId) {
+  const { data: rol, error } = await supabaseClient.rpc("switch_company", { p_company_id: companyId });
+  if (error) {
+    alert("No se pudo cambiar de empresa: " + error.message);
+    return;
+  }
+  window.location.href = roleHome(rol);
+}
+
+// Si el correo invitado ya tenía cuenta, la base de datos aplica la
+// invitación al momento (v24) y la marca como usada.
+export async function mensajeInvitacionCreada(inviteId) {
+  const { data } = await supabaseClient.from("invites").select("used").eq("id", inviteId).single();
+  return data?.used
+    ? "✅ Esa cuenta ya existía: ya tiene acceso a la empresa."
+    : "✅ Invitación creada. Esa persona debe crear su cuenta en login.html con ese mismo correo.";
+}
+
+function montarSelectorEmpresa(empresas) {
+  const acciones = document.querySelector(".topbar-actions");
+  if (!acciones || document.getElementById("selectorEmpresa")) return;
+
+  const etiquetaRol = { company_admin: "Admin", director: "Director", collaborator: "Colaborador" };
+  const selector = document.createElement("select");
+  selector.id = "selectorEmpresa";
+  selector.className = "selector-empresa";
+  selector.setAttribute("aria-label", "Cambiar de empresa");
+  for (const e of empresas) {
+    const opcion = document.createElement("option");
+    opcion.value = e.company_id;
+    opcion.textContent = `${e.name} · ${etiquetaRol[e.role] || e.role}`;
+    opcion.selected = e.is_current;
+    selector.appendChild(opcion);
+  }
+  selector.addEventListener("change", () => cambiarEmpresa(Number(selector.value)));
+  acciones.prepend(selector);
 }
 
 export async function logout() {

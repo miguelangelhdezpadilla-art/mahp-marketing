@@ -45,8 +45,10 @@
 ### 1. Autenticación y sesión
 Login/signup con Supabase Auth (`login.html`). Al autenticar, `irADashboard()` consulta `profiles.role` y redirige con `roleHome(role)`. Cada página protegida llama `requireSession(rolesPermitidos)` (`js/supabaseClient.js`), que valida sesión + perfil + rol, y redirige si no corresponde. `resolveCompanyId()`/`resolveUserId()` resuelven a qué empresa/usuario aplica la página según el rol (el `super_admin` los toma de `?company_id=`/`?user_id=` en la URL).
 
+**Multiempresa (`v24`, `ADR-021`)**: una cuenta puede pertenecer a varias empresas (`company_memberships`). `requireSession()` consulta `my_companies()`. Si la cuenta tiene más de una empresa, monta un selector en `.topbar-actions`, y `cambiarEmpresa()` llama a `switch_company()` y abre el panel del rol que la cuenta tiene en esa empresa. Si se revocó la empresa activa, salta sola a otra; si no le queda ninguna, cierra sesión. Invitar un correo que ya tiene cuenta lo agrega al momento (`mensajeInvitacionCreada()` lo indica). "Revocar" en la pestaña Equipo de `empresa.html` edita `company_memberships.active` (solo esa empresa); en el Panel Super Admin edita `profiles.active` (toda la plataforma).
+
 ### 2–5. Panel Super Admin
-`admin.html`/`js/admin.js`, 4 pestañas: **Empresas** (crear, listar, enlace directo a "Ver panel operativo"), **Invitaciones** (invitar el primer `company_admin` de una empresa), **Usuarios** (listado global con botón Revocar/Restaurar acceso, editando `profiles.active`), **Actividad** (lectura de `audit_log`, alimentado por triggers — nunca por el cliente directamente).
+`admin.html`/`js/admin.js`, 4 pestañas: **Empresas** (crear, listar, enlace directo a "Ver panel operativo"), **Invitaciones** (invitar el primer `company_admin` de una empresa), **Usuarios** (listado global con todas las empresas y roles de cada cuenta, con la empresa activa en negritas; botón Revocar/Restaurar acceso en toda la plataforma, editando `profiles.active`), **Actividad** (lectura de `audit_log`, alimentado por triggers — nunca por el cliente directamente).
 
 ### 6. Dashboard / resumen ejecutivo
 `renderizarResumen()` (`js/shared/dashboard.js`) — 4 tarjetas: actividades de hoy, % de cumplimiento (semáforo verde ≥90% / ámbar ≥70% / rojo <70%), campañas activas, colaboradores activos. Compartido entre `empresa.js` y `directivo.js`.

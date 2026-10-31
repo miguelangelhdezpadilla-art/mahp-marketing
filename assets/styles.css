@@ -109,6 +109,24 @@ a:hover { color: var(--indigo-dark); }
 
 .topbar a { color: rgba(255,255,255,.7); }
 
+/* Selector de empresa (cuentas con más de una empresa, ADR-021) */
+.selector-empresa {
+  width: auto;
+  max-width: 220px;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.selector-empresa option { color: #0f172a; }
+@media (max-width: 600px) {
+  .selector-empresa { max-width: 130px; }
+}
+
 /* ── Botón campana ──────────────────────────────────────── */
 .btn-campanita {
   position: relative;

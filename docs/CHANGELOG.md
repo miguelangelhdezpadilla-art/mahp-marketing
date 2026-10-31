@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-10-31 — Producto: una cuenta, varias empresas
+
+- **[Producto]** `supabase_schema_v24.sql` + `ADR-021`: una misma cuenta puede pertenecer a varias empresas con un rol distinto en cada una (tabla `company_memberships`). Hay un selector de empresa en el encabezado, que solo aparece con más de una empresa. Origen: el admin de "La Casa del Centro" debía ser una cuenta que ya era director de "ta camaron", y la invitación quedaba ⏳ para siempre.
+- **[Producto]** Invitar a un correo que ya tiene cuenta lo agrega a la empresa al momento. `v24` aplica también las invitaciones que ya estaban atascadas.
+- **[Producto]** "Revocar" en la pestaña Equipo quita el acceso solo a esa empresa; en el Panel Super Admin lo quita de toda la plataforma. La lista de usuarios del Super Admin muestra todas las empresas de cada cuenta.
+- **[Seguridad]** Se cierra un hueco de `profiles_update` (`v2`): cualquier usuario autenticado podía cambiar su propio `role` (incluido `super_admin`), `company_id` o `active`. Ahora lo bloquea el trigger `guard_profile_update`.
+- **[Seguridad]** La autorización de edición de avances (`detalleTarea.js`) valida el rol del director **en la empresa de esa tarea**, no el de su empresa activa (antes un director de otra empresa podía autorizar).
+- **[Docs]** `MIP-002`: el esquema de conexiones de Meta pasa de `v24` a `v25`.
+
 ## 2026-07-12 — Documentación (8)
 
 - **[Docs]** `MIP-001-META-GRAPH-API-INTEGRATION.md` — primer documento de la serie nueva **MIP (MAHP Integration Platform)**: arquitectura completa de integración con Meta Graph API para el MVP de Social AI Hub (Facebook Pages, Messenger, Instagram Business/Direct). 11 componentes desacoplados detrás de un Meta Integration Gateway único (principio de desacoplamiento verificado explícitamente), modelo de autenticación OAuth con renovación automática, permisos de mínimo privilegio (`pages_manage_posts` excluido a propósito por no tener uso real), webhooks idempotentes sobre la cola ya existente (`ADR-008`), modelo canónico de conversación channel-agnostic, y aplicación directa de `ADR-017` para el modelo de cliente (sin re-decidirlo). **Hallazgo verificado con fuentes técnicas reales**: la etiqueta `HUMAN_AGENT` de Meta extiende la ventana de respuesta a 7 días para mensajes con origen humano — resuelve, sin rediseño, la [HIPÓTESIS] de la ventana de 24h arrastrada desde `MPS-002-001`. Dos hallazgos de coherencia menores señalados: la lista de dependencias del documento de fase citaba ADR hasta `013` (ya existen hasta `020`) y CCEC como rango `001→005` continuo (`CCEC-002`/`003` nunca existieron). Ningún ADR nuevo requerido — todo lo necesario ya estaba decidido. Engineering Maturity 86% / Implementation Maturity 14%. Recomendación: **Aprobar con observaciones** (verificar la ventana de Meta con el equipo técnico antes de construir). Aprobado por el Product Owner. No avanzar a MIP-002 (WhatsApp Cloud API) sin nueva aprobación.

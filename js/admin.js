@@ -1,4 +1,4 @@
-import { supabaseClient, requireSession, logout } from './supabaseClient.js';
+import { supabaseClient, requireSession, logout, mensajeInvitacionCreada } from './supabaseClient.js';
 import { showToast, configurarNotificaciones, configurarTabs } from './ui.js';
 
 window.cerrarSesion = logout;
@@ -38,21 +38,34 @@ function enlaceVerPanel(usuario) {
   return '';
 }
 
+// Una fila por cuenta; Rol/Empresa listan todas sus membresías
+// (ADR-021). La empresa activa va en negritas.
 async function cargarUsuarios() {
-  let { data, error } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+  let [{ data, error }, { data: membresias, error: errMembresias }] = await Promise.all([
+    supabaseClient.from('profiles').select('*').order('created_at', { ascending: false }),
+    supabaseClient.from('company_memberships').select('*')
+  ]);
   if (error) { showToast('Error al cargar usuarios: ' + error.message, 'error'); return; }
+  if (errMembresias) { showToast('Error al cargar membresías: ' + errMembresias.message, 'error'); return; }
 
   document.getElementById('tablaUsuarios').innerHTML = data.map(u => {
-    let empresa = empresasCache.find(e => e.id === u.company_id);
+    let suyas = membresias.filter(m => m.user_id === u.id);
+    let nombreEmpresa = id => empresasCache.find(e => e.id === id)?.name ?? id;
+    let roles = u.role === 'super_admin' ? 'super_admin' :
+      suyas.map(m => `${m.role}${m.active ? '' : ' 🚫'}`).join('<br>') || '—';
+    let empresas = suyas.map(m => m.company_id === u.company_id
+      ? `<strong>${nombreEmpresa(m.company_id)}</strong>` : nombreEmpresa(m.company_id)).join('<br>') || '—';
     let botonAcceso = u.role === 'super_admin' ? '' :
       `<button onclick="toggleAcceso('${u.id}', ${!u.active})" style="width:auto; background:${u.active ? '#e74c3c' : '#28A745'};">
         ${u.active ? 'Revocar' : 'Restaurar'}
       </button>`;
-    return `<tr><td>${u.full_name || u.id}</td><td>${u.role}</td><td>${empresa ? empresa.name : '—'}</td>
+    return `<tr><td>${u.full_name || u.id}</td><td>${roles}</td><td>${empresas}</td>
       <td>${u.active ? '✅ Activo' : '🚫 Revocado'}</td><td>${enlaceVerPanel(u)}</td><td>${botonAcceso}</td></tr>`;
   }).join('') || '<tr class="fila-vacia"><td colspan="6">Sin usuarios todavía.</td></tr>';
 }
 
+// Revocar aquí bloquea la cuenta en TODAS sus empresas; para quitarla
+// de una sola empresa se usa la pestaña Equipo de esa empresa.
 window.toggleAcceso = async function(userId, nuevoEstado) {
   let { error } = await supabaseClient.from('profiles').update({ active: nuevoEstado }).eq('id', userId);
   if (error) { showToast('Error al actualizar acceso: ' + error.message, 'error'); return; }
@@ -106,9 +119,9 @@ window.invitarAdminEmpresa = async function() {
   }
 
   let { data: { session } } = await supabaseClient.auth.getSession();
-  let { error } = await supabaseClient.from('invites').insert({
+  let { data: invite, error } = await supabaseClient.from('invites').insert({
     email, role: 'company_admin', company_id, invited_by: session.user.id
-  });
+  }).select('id').single();
 
   if (error) {
     document.getElementById('mensajeInvite').textContent = 'Error: ' + error.message;
@@ -116,8 +129,8 @@ window.invitarAdminEmpresa = async function() {
   }
 
   document.getElementById('emailInvite').value = '';
-  document.getElementById('mensajeInvite').textContent = '✅ Invitación creada.';
-  await cargarInvites();
+  document.getElementById('mensajeInvite').textContent = await mensajeInvitacionCreada(invite.id);
+  await Promise.all([cargarInvites(), cargarUsuarios()]);
 };
 
 (async function() {

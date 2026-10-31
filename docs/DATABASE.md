@@ -5,7 +5,7 @@
 > como una secuencia de archivos `supabase_schema_vN.sql` en la raíz del
 > proyecto, aplicados manualmente en el SQL Editor de Supabase, en orden.
 >
-> Última actualización: 2026-07-08.
+> Última actualización: 2026-10-31.
 
 ---
 
@@ -51,11 +51,16 @@ RLS (`v2`, reestructurada en `v16`): `company_admin`/`director` ven toda su empr
 ### `companies` (`v2`)
 `id` (PK) · `name` · `active` · `created_at`. Solo `super_admin` crea/desactiva.
 
-### `profiles` (`v2`)
-`id` (PK, = `auth.users.id`) · `role` (`super_admin`/`company_admin`/`director`/`collaborator`) · `company_id` → `companies` (nulo solo para `super_admin`) · `full_name` · `active` (default `true`, controla revocación de acceso) · `created_at`.
+### `profiles` (`v2`, redefinida en `v24`)
+`id` (PK, = `auth.users.id`) · `role` (`super_admin`/`company_admin`/`director`/`collaborator`) · `company_id` → `companies` (nulo solo para `super_admin`) · `full_name` · `active` (default `true`) · `created_at`.
 
-### `invites` (`v2`)
-`id` (PK) · `email` · `role` · `company_id` → `companies` · `invited_by` → `profiles` · `used` (bool) · `created_at`. Política de inserción (`invites_insert`) es la que impone la regla de negocio: `company_admin` solo puede invitar `director`/`collaborator` de **su propia** empresa, nunca otro `company_admin`.
+Desde `v24` (`ADR-021`), `company_id`/`role` son la **empresa activa** de la cuenta, y `active` es la revocación **global** (solo Super Admin). El trigger `guard_profile_update` impide que un usuario cambie su propio `role`/`company_id`/`active`, salvo hacia una membresía activa vía `switch_company()`.
+
+### `company_memberships` (`v24`)
+PK (`user_id` → `profiles`, `company_id` → `companies`) · `role` (`company_admin`/`director`/`collaborator`) · `active` (revocación **por empresa**) · `created_at`. Una fila por cada empresa a la que pertenece una cuenta. `my_role()`/`my_company_id()` solo devuelven valor si la empresa activa tiene membresía activa. Inserción solo vía `apply_invite()` (interna); el cliente solo puede editar la columna `active` (`company_admin` de esa empresa, no a sí mismo, o Super Admin). Vista `company_members` (`security_invoker`): miembros por empresa con `full_name`, la usa el frontend en lugar de `profiles.eq('company_id', …)`. RPC: `switch_company(id)`, `my_companies()`.
+
+### `invites` (`v2`, extendida en `v24`)
+`id` (PK) · `email` · `role` · `company_id` → `companies` · `invited_by` → `profiles` · `used` (bool) · `created_at`. Política de inserción (`invites_insert`) es la que impone la regla de negocio: `company_admin` solo puede invitar `director`/`collaborator` de **su propia** empresa, nunca otro `company_admin`. Desde `v24`, si el correo ya tiene cuenta, la invitación se aplica al momento (`trg_apply_invite_existing_user`) y queda `used = true`.
 
 ---
 

@@ -1,4 +1,4 @@
-import { supabaseClient, requireSession, logout, resolveCompanyId } from './supabaseClient.js';
+import { supabaseClient, requireSession, logout, resolveCompanyId, mensajeInvitacionCreada } from './supabaseClient.js';
 import { showToast, showConfirm, showPrompt, showInfo, configurarNotificaciones, configurarTabs, sHtml } from './ui.js';
 import { renderizarResumen } from './shared/dashboard.js';
 import { toggleCampania, cargarDetalleCampania } from './shared/campanias.js';
@@ -43,9 +43,9 @@ window.invitarUsuario = async function() {
 
   if (!email) { document.getElementById('mensajeInvite').textContent = 'Escribe un correo.'; return; }
 
-  let { error } = await supabaseClient.from('invites').insert({
+  let { data: invite, error } = await supabaseClient.from('invites').insert({
     email, role, company_id: companyId, invited_by: miPerfil.id
-  });
+  }).select('id').single();
 
   if (error) {
     document.getElementById('mensajeInvite').textContent = 'Error: ' + error.message;
@@ -53,8 +53,8 @@ window.invitarUsuario = async function() {
   }
 
   document.getElementById('emailInvite').value = '';
-  document.getElementById('mensajeInvite').textContent = '✅ Invitación creada.';
-  await cargarInvites();
+  document.getElementById('mensajeInvite').textContent = await mensajeInvitacionCreada(invite.id);
+  await Promise.all([cargarInvites(), cargarEquipo()]);
 };
 
 async function cargarCampanias() {
@@ -132,7 +132,7 @@ window.publicarEstrategia = async function() {
 };
 
 async function cargarEquipo() {
-  let { data, error } = await supabaseClient.from('profiles').select('*').eq('company_id', companyId).order('created_at', { ascending: false });
+  let { data, error } = await supabaseClient.from('company_members').select('*').eq('company_id', companyId).order('created_at', { ascending: false });
   if (error) { showToast('Error al cargar el equipo: ' + error.message, 'error'); return; }
 
   document.getElementById('tablaEquipo').innerHTML = data.map(u => `
@@ -147,8 +147,10 @@ async function cargarEquipo() {
   `).join('') || '<tr class="fila-vacia"><td colspan="4">Todavía no has invitado a nadie.</td></tr>';
 }
 
+// Revoca/restaura el acceso solo a ESTA empresa (ADR-021); las demás
+// empresas de esa cuenta no se ven afectadas.
 window.toggleAcceso = async function(userId, nuevoEstado) {
-  let { error } = await supabaseClient.from('profiles').update({ active: nuevoEstado }).eq('id', userId);
+  let { error } = await supabaseClient.from('company_memberships').update({ active: nuevoEstado }).eq('user_id', userId).eq('company_id', companyId);
   if (error) { showToast('Error al actualizar acceso: ' + error.message, 'error'); return; }
   showToast(nuevoEstado ? 'Acceso restaurado' : 'Acceso revocado');
   await cargarEquipo();
@@ -174,7 +176,7 @@ async function cargarAuditoria() {
 
 async function cargarColaboradores() {
   let { data, error } = await supabaseClient
-    .from('profiles')
+    .from('company_members')
     .select('id, full_name')
     .eq('company_id', companyId)
     .eq('role', 'collaborator');
@@ -375,7 +377,7 @@ async function manejarClickEvento(info) {
     showInfo(sHtml(info.event.title), html);
   } else if (accion === '4') {
     let { data: colaboradores, error: errColab } = await supabaseClient
-      .from('profiles')
+      .from('company_members')
       .select('id, full_name')
       .eq('company_id', companyId)
       .eq('role', 'collaborator');

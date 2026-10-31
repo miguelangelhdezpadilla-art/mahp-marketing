@@ -22,7 +22,7 @@ export async function renderizarResumen(supabaseClient, companyId, idContenedor)
     supabaseClient.from('actividades').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('fecha', hoy),
     supabaseClient.from('actividades').select('status').eq('company_id', companyId),
     supabaseClient.from('campaigns').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'activa'),
-    supabaseClient.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('role', 'collaborator').eq('active', true)
+    supabaseClient.from('company_members').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('role', 'collaborator').eq('active', true)
   ]);
 
   if (actividadesHoy.error)   console.error('[dashboard] actividadesHoy:', actividadesHoy.error.message);

@@ -255,9 +255,28 @@ export async function solicitarAutorizacion(supabase, updateId, tareaId, onGuard
       .eq('id', authData.user.id)
       .single();
 
-    console.log('[Auth] Role del director:', perfilDirector?.role);
+    // El rol que cuenta es el que tiene en la empresa de ESTA tarea
+    // (ADR-021: una cuenta puede ser director en una empresa y
+    // colaborador en otra), no el de su empresa activa.
+    let rolEnEmpresa = perfilDirector?.role;
+    if (perfilDirector && perfilDirector.role !== 'super_admin') {
+      const { data: avance } = await supabase
+        .from('activity_updates')
+        .select('actividades(company_id)')
+        .eq('id', updateId)
+        .single();
+      const { data: membresia } = await tmpClient
+        .from('company_memberships')
+        .select('role, active')
+        .eq('user_id', perfilDirector.id)
+        .eq('company_id', avance?.actividades?.company_id)
+        .maybeSingle();
+      rolEnEmpresa = membresia?.active ? membresia.role : null;
+    }
 
-    if (!['director', 'company_admin', 'super_admin'].includes(perfilDirector?.role)) {
+    console.log('[Auth] Role del director en la empresa de la tarea:', rolEnEmpresa);
+
+    if (!['director', 'company_admin', 'super_admin'].includes(rolEnEmpresa)) {
       if (errEl) { errEl.textContent = 'El usuario no tiene permisos de director.'; errEl.style.display = 'block'; }
       if (btnOk) btnOk.disabled = false;
       return;

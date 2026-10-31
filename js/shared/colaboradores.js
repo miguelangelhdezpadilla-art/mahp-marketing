@@ -22,7 +22,7 @@ export async function renderizarAvanceColaboradores(supabase, companyId, idConte
       .select('id, titulo, canal, fecha, status, progress_pct, assigned_to, company_id')
       .eq('company_id', companyId)
       .not('assigned_to', 'is', null),
-    supabase.from('profiles')
+    supabase.from('company_members')
       .select('id, full_name')
       .eq('company_id', companyId)
       .eq('role', 'collaborator'),

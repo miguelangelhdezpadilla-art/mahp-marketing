@@ -207,7 +207,7 @@ export async function renderResultadoIA(actividades, campaignId, mes, supabase, 
   if (!cont) return;
 
   const { data: colaboradores } = await supabase
-    .from('profiles')
+    .from('company_members')
     .select('id, full_name')
     .eq('company_id', companyId)
     .eq('role', 'collaborator');
