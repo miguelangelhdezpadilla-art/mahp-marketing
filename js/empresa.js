@@ -140,9 +140,9 @@ async function cargarEquipo() {
       <td>${u.full_name || u.id}</td>
       <td>${u.role}</td>
       <td>${u.active ? '✅ Activo' : '🚫 Revocado'}</td>
-      <td><button onclick="toggleAcceso('${u.id}', ${!u.active})" style="width:auto; background:${u.active ? '#e74c3c' : '#28A745'};">
+      <td>${u.id === miPerfil.id ? '' : `<button onclick="toggleAcceso('${u.id}', ${!u.active})" style="width:auto; background:${u.active ? '#e74c3c' : '#28A745'};">
         ${u.active ? 'Revocar' : 'Restaurar'}
-      </button></td>
+      </button>`}</td>
     </tr>
   `).join('') || '<tr class="fila-vacia"><td colspan="4">Todavía no has invitado a nadie.</td></tr>';
 }
