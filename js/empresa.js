@@ -17,6 +17,7 @@ import { renderRanking, renderTablaPuntos } from './shared/gamificacion.js';
 import { renderizarGridKpis, cargarSeguidoresParaKpis } from './shared/kpis.js';
 import { renderizarAvanceColaboradores } from './shared/colaboradores.js';
 import { renderSocialHub } from './shared/socialHub.js';
+import { renderConexionesSociales } from './shared/conexionesSociales.js';
 
 window.cerrarSesion = logout;
 configurarTabs();
@@ -462,6 +463,7 @@ window.toggleSeccionIA = function() {
     // abre la pestaña.
     if (nombre === 'social-hub' && !hubInicializado) {
       hubInicializado = true;
+      renderConexionesSociales(supabaseClient, companyId, miPerfil, 'conexionesSocialesContenedor');
       renderSocialHub(supabaseClient, companyId, miPerfil, 'socialHubContenedor');
     }
   };

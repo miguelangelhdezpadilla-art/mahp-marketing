@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-11-03 — Producto: Conexiones sociales en Social Hub
+
+- **[Producto]** Cuadro "Conexiones sociales" en Social Hub (`js/shared/conexionesSociales.js`) y Edge Function `meta-oauth`: el admin de la empresa conecta, verifica y desconecta su página con Facebook Login for Business (`MIP-002` §8). Conectar suscribe la página al webhook y agrega el Instagram vinculado si existe. Esquema `supabase_schema_v25.sql`.
+- **[Producto]** `meta-send-message` pasa de Graph API `v19.0` a `v26.0` en el código. **Pendiente de desplegar**: el editor del panel de Supabase no muestra su código real, así que debe hacerse con la CLI.
+- **[Docs]** `MIP-003-META-PUBLICACION-Y-ONBOARDING.md`: propuesta para reducir la fricción de Instagram, preparar App Review y cumplir los requisitos de publicación. Pendiente de aprobación. `MIP-002` §8.7: IDs y ajustes de la app de Meta. `MIP-003` §2.5 corrige la recomendación de Instagram Login: el panel de Meta la marca como legacy y pide app publicada para webhooks. Borrador de aviso de privacidad, a petición del Product Owner, fuera del repositorio publicado hasta su revisión. Se corrige la sugerencia de usar testers para clientes: Meta solo los permite para empleados o personas con acuerdo.
+
+---
+
+## 2026-10-31 — Diseño: Conexiones sociales en autoservicio
+
+- **[Producto]** Pestaña Equipo: el botón "Revocar" ya no aparece en la fila del propio admin.
+- **[Docs]** `MIP-002` §8 (Fase B, aprobada): cuadro "Conexiones sociales" en Social Hub, Edge Function `meta-oauth`, los 8 estados de conexión y `supabase_schema_v25.sql` (escrito, **todavía no aplicado**). Hallazgos: falta el permiso `pages_manage_metadata` para suscribir webhooks, `meta-send-message` usa Graph API `v19.0` (fuera de soporte) y la cuenta de revisor de Meta no tiene perfil en MAHP. Queda abierta la decisión del tipo de token (§8.6).
+
 ## 2026-10-31 — Producto: una cuenta, varias empresas
 
 - **[Producto]** `supabase_schema_v24.sql` + `ADR-021`: una misma cuenta puede pertenecer a varias empresas con un rol distinto en cada una (tabla `company_memberships`). Hay un selector de empresa en el encabezado, que solo aparece con más de una empresa. Origen: el admin de "La Casa del Centro" debía ser una cuenta que ya era director de "ta camaron", y la invitación quedaba ⏳ para siempre.

@@ -37,6 +37,8 @@ La documentación de Meta distingue dos tipos de token bajo Facebook Login for B
 | Atado a | La cuenta personal de quien se loguea | La cartera empresarial del cliente |
 | Caso de uso de Meta | Apps de consumidor | Tech providers gestionando negocios de clientes |
 
+> **Reemplazado por §8.6 (2026-11-03):** el Product Owner eligió **token de usuario**, para no exigir Business Manager a cada cliente. Se conserva el razonamiento original:
+
 **MAHP necesita el de usuario de sistema** — es exactamente el caso "tech provider gestionando negocios de clientes" que describe la documentación, y evita que la conexión de un cliente se rompa cada vez que expire un token corto (el problema de fondo que ya vivimos con los tokens manuales).
 
 ## 4. Prerequisitos de Meta — checklist antes de FASE C
@@ -63,8 +65,69 @@ Tabla nueva, si hace falta trazabilidad de eventos de conexión/desconexión por
 
 ## 6. Próxima fase recomendada
 
-**FASE B**: diseño detallado de permisos/RLS + el `supabase_schema_v25.sql` exacto, una vez confirmes el tipo de app (punto bloqueante de la sección 2.2). No tiene sentido diseñar el flujo OAuth completo si la app necesita recrearse como tipo Business primero.
+~~**FASE B**~~: hecha, ver §8. **FASE C**: en curso; el plan para publicar la app está en `MIP-003`.
 
 ## 7. Lo que esto NO resuelve hoy
 
 Esto no conecta CDC hoy mismo — es la solución correcta para que la *próxima* empresa (y CDC, una vez construido) se conecten sin esta fricción. Si quieres tener CDC funcionando mientras tanto, seguimos en paralelo con "Asignar socio" en Business Manager (lo que estábamos intentando antes de este prompt).
+
+## 8. FASE B — Diseño detallado (aprobado el 2026-10-31)
+
+Aprobado por el Product Owner: el cuadro vive en Social Hub; solo `company_admin` (y `super_admin`) conecta o desconecta; director y colaborador ven el estado. Verificado contra la documentación vigente de Facebook Login for Business (Graph API `v26.0`).
+
+### 8.1 Flujo
+
+1. Social Hub → cuadro **"Conexiones sociales"** (`js/shared/conexionesSociales.js`, mismo patrón modular que los demás `js/shared/`). Muestra una fila por canal: Facebook e Instagram.
+2. **"Conectar con Facebook"** carga el JS SDK de Meta y llama `FB.login({ config_id, response_type: 'code', override_default_response_type: true })`. El cliente elige su página en la ventana oficial de Meta.
+3. El navegador envía **solo el `code`** a la Edge Function nueva **`meta-oauth`** (con el JWT del usuario). La función:
+   - verifica que quien llama sea `company_admin` de esa empresa (o `super_admin`);
+   - cambia el `code` por un token en `GET /v26.0/oauth/access_token` con `client_secret` (secreto `META_APP_SECRET`, que ya existe);
+   - lista las páginas autorizadas con su Instagram vinculado (`/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}`);
+   - con **una** página, conecta directo; con varias, guarda el token 10 minutos en `meta_oauth_sessions` y devuelve la lista **sin tokens** para que el admin elija.
+4. Al conectar: verifica que la página no esté ya conectada a **otra** empresa (aislamiento, `07H` §6; la restricción `unique (channel, page_id)` ya lo impide); guarda la fila de Facebook y, si existe, la de Instagram (`page_id` = id de la cuenta de Instagram, que es el `entry.id` que ya usa `meta-webhook`); suscribe la página con `POST /{page-id}/subscribed_apps?subscribed_fields=messages,messaging_postbacks`; registra los permisos concedidos (`/me/permissions`).
+5. Otras acciones de `meta-oauth`: **desconectar** (quita la suscripción, `active = false`, borra el token, estado `desconectada`) y **verificar** (prueba el token y actualiza `status`/`last_checked_at`; botón "Verificar conexión").
+
+### 8.2 Estados (los 8 de §5)
+
+| Estado | Dónde vive | Qué ve el admin |
+|---|---|---|
+| No conectada | Pantalla (sin fila) | Botón "Conectar con Facebook" |
+| Esperando autorización | Pantalla (ventana de Meta abierta) | "Esperando a Meta…" |
+| Autorización cancelada | Pantalla (ventana cerrada sin `code`) | Aviso + reintentar |
+| `conectada` | `company_meta_pages.status` | ✅ nombre de la página, quién conectó y cuándo |
+| `permisos_insuficientes` | idem | Qué permiso falta + "Reconectar" |
+| `requiere_reconexion` / `token_invalido` | idem | "Reconectar" |
+| `error_sincronizacion` | idem | `last_error` + "Verificar conexión" |
+| `desconectada` | idem | Botón "Conectar con Facebook" |
+
+### 8.3 Datos — `supabase_schema_v25.sql`
+
+- `company_meta_pages` + `status`, `connected_by`, `granted_scopes`, `linked_page_id`, `last_checked_at`, `last_error`, `updated_at`. **Se descarta** la columna `instagram_account_id` propuesta en §5: Instagram ya vive como su propia fila (`channel = 'instagram'`), que es como lo resuelve `meta-webhook` hoy.
+- `meta_oauth_sessions` (tabla nueva, solo service role, caduca a los 10 minutos).
+- `my_meta_connections(company_id)`: estado sin token, para cualquier miembro de la empresa.
+- Trazabilidad: trigger hacia `audit_log` (`meta_conectada` / `meta_desconectada` / `meta_estado_cambiado`). No hace falta tabla aparte.
+
+### 8.4 Permisos que pedirá la Configuración
+
+`pages_show_list`, `pages_messaging`, `pages_read_engagement`, **`pages_manage_metadata`** (sin este, `subscribed_apps` falla; faltaba en §4), `instagram_basic`, `instagram_manage_messages`, y `business_management` solo si se elige token de usuario de sistema (§8.6).
+
+### 8.5 Hallazgos
+
+- `meta-send-message` llama a Graph API **`v19.0`**, una versión ya fuera de soporte; Meta la atiende con la más antigua vigente. Las funciones nuevas usan `v26.0`, y conviene subir las dos existentes en la misma Fase C.
+- Antes de App Review, solo personas con rol en la app (administrador, desarrollador o **tester**) o en la página pueden autorizar. Los testers deben ser empleados o personas con acuerdo: no es un camino para clientes (ver `MIP-003` §3). Para el flujo de usuario de sistema, además deben tener control total de la cartera del cliente.
+- La cuenta de revisor de Meta (`carlosdanielfin+metareview@gmail.com`) no tiene perfil en MAHP y no puede iniciar sesión. Hay que invitarla antes de enviar a revisión.
+
+### 8.6 Decisiones abiertas antes de FASE C
+
+1. **Tipo de token de la Configuración — DECIDIDO (2026-11-03): token de usuario.** §3 eligió *token de usuario de sistema* (no caduca, atado a la cartera del cliente). Su costo: **exige que el cliente tenga una cartera empresarial (Business Manager)**, algo que muchos restaurantes pequeños no tienen. La alternativa, *token de usuario*, funciona con cualquier página: el token de usuario largo da tokens de página que no caducan mientras el cliente no cambie su contraseña ni quite la app (para eso existe "Verificar / Reconectar"). **Recomendación: token de usuario**, que es menos fricción, el objetivo de este documento. Si se elige, cambia la decisión de §3.
+2. **Datos de la app para el frontend — HECHO**, ver §8.7.
+3. **Dominios en la app de Meta — HECHO**, ver §8.7.
+
+### 8.7 Configuración de Meta — hecha (2026-11-03)
+
+- **App ID:** `1011783041707142`. **`config_id`:** `1683981806659523` ("MAHP Conexiones sociales": variación General, token de acceso de usuario). Ninguno es secreto.
+- **Permisos:** `pages_show_list`, `pages_messaging`, `pages_read_engagement`, `pages_manage_metadata`, `instagram_basic`, `instagram_manage_messages`. Este último hubo que agregarlo antes en el caso de uso "API de Instagram"; sin eso no aparece en el asistente.
+- **Dominios:** `miguelangelhdezpadilla-art.github.io` en Dominios de la app; "Iniciar sesión con el SDK para JavaScript" activado, con `https://miguelangelhdezpadilla-art.github.io/` en sus dominios permitidos.
+- **Instagram requiere página vinculada:** con Facebook Login, la cuenta de Instagram del cliente debe ser profesional y estar vinculada a su página de Facebook. Meta recomienda *Unified Login* para integraciones nuevas; aquí se usa Facebook Login porque `meta-webhook` y `company_meta_pages` ya siguen ese modelo. Aún sin probar con una cuenta real.
+
+**Pendiente antes de publicar la app** (aviso de Meta en Configuración básica): ícono de 1024 x 1024, URL de la política de privacidad, eliminación de datos de usuario y categoría, además de App Review con acceso avanzado. La política de privacidad y la eliminación de datos son texto legal: no se redactan aquí (`CLAUDE.md` §6). La app tampoco está asociada a un portfolio comercial.

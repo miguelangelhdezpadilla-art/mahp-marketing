@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
   // ventana de respuesta a 7 días porque el mensaje lo redacta un
   // agente humano — encaja con el diseño Human-in-the-Loop (ADR-009)
   // de MAHP, nunca se usa para contenido promocional.
-  const metaRes = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${pagina.page_access_token}`, {
+  const metaRes = await fetch(`https://graph.facebook.com/v26.0/me/messages?access_token=${pagina.page_access_token}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -2433,3 +2433,66 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   .hub-left { height: 300px; }
   .hub-right { height: 400px; }
 }
+
+/* ── Conexiones sociales (Social Hub, MIP-002 §8) ─────────── */
+.cs-cuadro { padding: 0 1.1rem 1rem; }
+.cs-cuadro h3 { font-size: 0.95em; margin: 0 0 8px; }
+.cs-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.cs-icono { font-size: 20px; }
+.cs-info { flex: 1; min-width: 0; }
+.cs-nombre { font-weight: 600; font-size: 14px; }
+.cs-detalle { font-size: 13px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+.cs-estado {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cs-ok { background: var(--green-light); color: #047857; }
+.cs-alerta { background: var(--amber-light); color: #B45309; }
+.cs-error { background: var(--red-light); color: #B91C1C; }
+.cs-neutro { background: var(--slate-100); color: var(--text-muted); }
+.cs-error-texto { color: #B91C1C; }
+.cs-botones { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+.cs-btn-pri, .cs-btn-sec {
+  width: auto;
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.cs-btn-pri { background: var(--indigo); color: #fff; border: 1px solid var(--indigo); }
+.cs-btn-pri:hover { background: var(--indigo-dark); }
+.cs-btn-sec { background: #fff; color: var(--slate-900); border: 1px solid var(--border); }
+.cs-btn-sec:hover { background: var(--slate-100); }
+.cs-mensaje { font-size: 13px; margin: 10px 0 0; }
+.cs-paginas { display: grid; gap: 6px; margin-top: 8px; }
+.cs-pagina {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  text-align: left;
+  color: var(--slate-900);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.cs-pagina:hover { border-color: var(--indigo); }
+@media (max-width: 600px) {
+  .cs-fila { flex-wrap: wrap; }
+  .cs-acciones { width: 100%; }
+}

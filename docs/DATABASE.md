@@ -62,6 +62,12 @@ PK (`user_id` → `profiles`, `company_id` → `companies`) · `role` (`company_
 ### `invites` (`v2`, extendida en `v24`)
 `id` (PK) · `email` · `role` · `company_id` → `companies` · `invited_by` → `profiles` · `used` (bool) · `created_at`. Política de inserción (`invites_insert`) es la que impone la regla de negocio: `company_admin` solo puede invitar `director`/`collaborator` de **su propia** empresa, nunca otro `company_admin`. Desde `v24`, si el correo ya tiene cuenta, la invitación se aplica al momento (`trg_apply_invite_existing_user`) y queda `used = true`.
 
+### `company_meta_pages` (`v21`, extendida en `v25`)
+`id` (PK) · `company_id` → `companies` · `channel` (`facebook`/`instagram`) · `page_id` · `page_access_token` (secreto) · `page_name` · `active` · `status` · `connected_by` → `profiles` · `granted_scopes` · `linked_page_id` · `last_checked_at` · `last_error` · `updated_at` · `created_at`. Única por (`channel`, `page_id`). Sin políticas para `authenticated`: solo el service role lee y escribe (`meta-oauth`, `meta-webhook`, `meta-send-message`). El estado se lee sin token con `my_meta_connections(company_id)`. Instagram es su propia fila; `page_id` es el id de la cuenta de Instagram y `linked_page_id`, su página de Facebook. Conectar, desconectar y cambiar de estado se registra en `audit_log`.
+
+### `meta_oauth_sessions` (`v25`)
+`id` (uuid) · `company_id` · `created_by` · `user_token` (secreto) · `pages` (sin tokens) · `expires_at` (10 minutos). Guarda el token de usuario mientras el admin elige entre varias páginas. Solo service role.
+
 ---
 
 ## 4. Operación: campañas, KPIs, avances, evidencias
