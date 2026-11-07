@@ -10,6 +10,14 @@
 
 ---
 
+## 2026-11-07 — Producto: aviso de privacidad publicado
+
+- **[Producto]** `privacidad.html`: aviso de privacidad integral, publicado a petición del Product Owner para poder publicar la app de Meta (requisito de Meta). Excepción explícita a `CLAUDE.md` §6; queda pendiente la revisión de un abogado (lista en el borrador privado `docs/legal/`). Incluye la sección `#eliminar-datos`, que sirve como URL de instrucciones de eliminación de datos para Meta. El enlace "Privacidad" del pie de `index.html` ya apunta ahí.
+- **[Producto]** `assets/mahp-icon-1024.png`: ícono cuadrado de la app para Meta, basado en el logo de MAHP.
+- **[Hallazgo]** Meta no entrega webhooks reales (ni siquiera de administradores o evaluadores) mientras la app no esté publicada: por eso Social Hub no recibe mensajes. El objeto Instagram de Webhooks tampoco tenía URL ni suscripción a `messages`.
+
+---
+
 ## 2026-11-07 — Producto: corrección al conectar Facebook
 
 - **[Producto]** "Conectar con Facebook" fallaba con "Error validating verification code… redirect_uri". El `code` que entrega `FB.login` queda ligado a un `redirect_uri` interno del SDK que el servidor no puede repetir. Ahora el navegador envía el token corto de usuario y `meta-oauth` comprueba con `debug_token` que pertenece a la app de MAHP antes de cambiarlo por uno largo. Los tokens largos y los de página siguen solo en el servidor. Si `/me/accounts` no devuelve páginas (pasa con páginas de un portfolio comercial), se leen las elegidas en la ventana de Meta desde `granular_scopes`.
