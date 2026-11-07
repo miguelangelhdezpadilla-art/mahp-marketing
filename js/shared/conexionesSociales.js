@@ -181,19 +181,20 @@ export async function renderConexionesSociales(supabase, companyId, perfil, idCo
     aviso('Esperando a Meta… Completa los pasos en la ventana que se abrió.');
     // FB.login no acepta una función async como callback.
     window.FB.login((respuesta) => {
-      const code = respuesta?.authResponse?.code;
-      if (!code) {
+      // Token corto de usuario: el servidor valida que sea de esta app y lo
+      // cambia por uno largo. response_type 'code' no sirve con el SDK
+      // (Meta rechaza el canje por redirect_uri).
+      const accessToken = respuesta?.authResponse?.accessToken;
+      if (!accessToken) {
         aviso('Se canceló la autorización. Puedes intentarlo de nuevo cuando quieras.');
         return;
       }
       aviso('Conectando…');
-      llamar(supabase, { action: 'exchange', company_id: companyId, code })
+      llamar(supabase, { action: 'exchange', company_id: companyId, access_token: accessToken })
         .then(procesarResultado)
         .catch(e => aviso(e.message, 'cs-error-texto'));
     }, {
       config_id: CONFIG_ID,
-      response_type: 'code',
-      override_default_response_type: true,
     });
   }
 

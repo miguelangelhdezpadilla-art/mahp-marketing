@@ -10,6 +10,12 @@
 
 ---
 
+## 2026-11-07 — Producto: corrección al conectar Facebook
+
+- **[Producto]** "Conectar con Facebook" fallaba con "Error validating verification code… redirect_uri". El `code` que entrega `FB.login` queda ligado a un `redirect_uri` interno del SDK que el servidor no puede repetir. Ahora el navegador envía el token corto de usuario y `meta-oauth` comprueba con `debug_token` que pertenece a la app de MAHP antes de cambiarlo por uno largo. Los tokens largos y los de página siguen solo en el servidor.
+
+---
+
 ## 2026-11-03 — Producto: Conexiones sociales en Social Hub
 
 - **[Producto]** Cuadro "Conexiones sociales" en Social Hub (`js/shared/conexionesSociales.js`) y Edge Function `meta-oauth`: el admin de la empresa conecta, verifica y desconecta su página con Facebook Login for Business (`MIP-002` §8). Conectar suscribe la página al webhook y agrega el Instagram vinculado si existe. Esquema `supabase_schema_v25.sql`.

@@ -1,6 +1,6 @@
 // Conexiones sociales en autoservicio (MIP-002 §8). El navegador solo
-// envía el `code` de Facebook Login for Business; aquí, y nunca en el
-// cliente (ADR-007), se cambia por un token, se guardan los tokens de
+// envía el token corto de usuario de Facebook Login for Business; aquí,
+// y nunca en el cliente (ADR-007), se valida y se cambia por uno largo, se guardan los tokens de
 // página en company_meta_pages y se suscribe la página al webhook.
 // Acciones: exchange, connect (tras elegir página), disconnect, verify.
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -188,22 +188,26 @@ async function accionExchange(
   service: SupabaseClient,
   companyId: number,
   userId: string,
-  code: string,
+  tokenCorto: string,
 ) {
-  // redirect_uri vacío: el code viene del SDK de JavaScript, sin redirección.
-  const corto = await graph('/oauth/access_token', {
-    client_id: APP_ID,
-    client_secret: APP_SECRET,
-    redirect_uri: '',
-    code,
+  // El token corto llega de FB.login. No se usa response_type=code porque
+  // el SDK firma ese code con un redirect_uri interno (xd_arbiter) que el
+  // servidor no puede reproducir, y Meta lo rechaza. Antes de usarlo se
+  // comprueba que lo emitió esta app y no otra.
+  const depuracion = await graph('/debug_token', {
+    input_token: tokenCorto,
+    access_token: `${APP_ID}|${APP_SECRET}`,
   });
+  if (!depuracion.data?.is_valid || String(depuracion.data?.app_id) !== APP_ID) {
+    return json({ error: 'La autorización de Meta no es válida para MAHP. Intenta conectar de nuevo.' }, 400);
+  }
   // Los tokens de página derivados de un token de usuario largo no
   // deberían caducar por tiempo; "Verificar conexión" detecta si se invalidan.
   const largo = await graph('/oauth/access_token', {
     grant_type: 'fb_exchange_token',
     client_id: APP_ID,
     client_secret: APP_SECRET,
-    fb_exchange_token: corto.access_token,
+    fb_exchange_token: tokenCorto,
   });
 
   const [paginas, permisos] = await Promise.all([
@@ -220,7 +224,7 @@ async function accionExchange(
     return conectarPagina(service, companyId, userId, paginas[0], permisos);
   }
 
-  // Varias páginas: el `code` ya se gastó, así que el token espera aquí
+  // Varias páginas: el token largo nunca vuelve al navegador; espera aquí
   // (10 minutos, solo service role) mientras el admin elige. Al
   // navegador solo le llegan nombres, sin tokens.
   const lista = paginas.map((p) => ({
@@ -358,8 +362,8 @@ Deno.serve(async (req: Request) => {
   try {
     switch (body.action) {
       case 'exchange':
-        if (!body.code) return json({ error: 'Falta code' }, 400);
-        return await accionExchange(service, companyId, user.id, body.code);
+        if (!body.access_token) return json({ error: 'Falta access_token' }, 400);
+        return await accionExchange(service, companyId, user.id, String(body.access_token));
       case 'connect':
         if (!body.session_id || !body.page_id) return json({ error: 'Falta session_id o page_id' }, 400);
         return await accionConnect(service, companyId, user.id, body.session_id, String(body.page_id));
