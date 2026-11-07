@@ -12,7 +12,7 @@
 
 ## 2026-11-07 — Producto: corrección al conectar Facebook
 
-- **[Producto]** "Conectar con Facebook" fallaba con "Error validating verification code… redirect_uri". El `code` que entrega `FB.login` queda ligado a un `redirect_uri` interno del SDK que el servidor no puede repetir. Ahora el navegador envía el token corto de usuario y `meta-oauth` comprueba con `debug_token` que pertenece a la app de MAHP antes de cambiarlo por uno largo. Los tokens largos y los de página siguen solo en el servidor.
+- **[Producto]** "Conectar con Facebook" fallaba con "Error validating verification code… redirect_uri". El `code` que entrega `FB.login` queda ligado a un `redirect_uri` interno del SDK que el servidor no puede repetir. Ahora el navegador envía el token corto de usuario y `meta-oauth` comprueba con `debug_token` que pertenece a la app de MAHP antes de cambiarlo por uno largo. Los tokens largos y los de página siguen solo en el servidor. Si `/me/accounts` no devuelve páginas (pasa con páginas de un portfolio comercial), se leen las elegidas en la ventana de Meta desde `granular_scopes`.
 
 ---
 

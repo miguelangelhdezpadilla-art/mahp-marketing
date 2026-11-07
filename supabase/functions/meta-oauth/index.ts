@@ -58,13 +58,37 @@ interface PaginaMeta {
   instagram_business_account?: { id: string; username?: string };
 }
 
+const CAMPOS_PAGINA = 'id,name,access_token,instagram_business_account{id,username}';
+
 async function listarPaginas(userToken: string): Promise<PaginaMeta[]> {
   const { data } = await graph('/me/accounts', {
     access_token: userToken,
-    fields: 'id,name,access_token,instagram_business_account{id,username}',
+    fields: CAMPOS_PAGINA,
     limit: '100',
   });
-  return data ?? [];
+  if (data?.length) return data;
+
+  // Con Facebook Login for Business, una página de un portfolio comercial
+  // puede no salir en /me/accounts aunque se haya autorizado. Los IDs
+  // elegidos en la ventana de Meta vienen en granular_scopes.
+  const depuracion = await graph('/debug_token', {
+    input_token: userToken,
+    access_token: `${APP_ID}|${APP_SECRET}`,
+  });
+  const ids = new Set<string>();
+  for (const g of depuracion.data?.granular_scopes ?? []) {
+    if (g.scope?.startsWith('pages_')) for (const id of g.target_ids ?? []) ids.add(String(id));
+  }
+  const paginas: PaginaMeta[] = [];
+  for (const id of ids) {
+    try {
+      const p = await graph(`/${id}`, { access_token: userToken, fields: CAMPOS_PAGINA });
+      if (p.access_token) paginas.push(p);
+    } catch (e) {
+      console.warn('[meta-oauth] página de granular_scopes:', (e as Error).message);
+    }
+  }
+  return paginas;
 }
 
 async function permisosConcedidos(userToken: string): Promise<string[]> {
@@ -217,7 +241,7 @@ async function accionExchange(
 
   if (!paginas.length) {
     return json({
-      error: 'Meta no devolvió ninguna página. Revisa que administres la página y que la hayas seleccionado en la ventana de Meta.',
+      error: 'Meta no devolvió ninguna página. Vuelve a conectar, elige "Editar configuración" en la ventana de Meta y marca tu página.',
     }, 422);
   }
   if (paginas.length === 1) {
