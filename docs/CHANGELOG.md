@@ -10,6 +10,14 @@
 
 ---
 
+## 2026-11-13 — Meta: app migrada a Dunihub y publicada
+
+- **[Configuración]** La app de Meta `1011783041707142` (Marketing Activity Hub Pro) se movió del portfolio "Marketing Activity Hub Pro" (sin verificar) al portfolio **Dunihub** (`1808506603863289`, verificado a nombre de Carlos Daniel Hernandez Padilla), a petición del Product Owner. Carlos Hernandez se agregó como administrador de la app. El identificador de la app, los webhooks, el inicio de sesión y las conexiones existentes no cambian.
+- **[Configuración]** App **publicada**: Meta ya puede entregar webhooks reales de las páginas administradas por los roles de la app (CDC, Tacamaron). Las páginas de clientes externos siguen necesitando App Review de `pages_messaging` e `instagram_manage_messages`.
+- **[Pendiente]** `privacidad.html` todavía nombra como responsable a Miguel Ángel Hernández Padilla; debe coincidir con el negocio verificado antes de App Review.
+
+---
+
 ## 2026-11-07 — Producto: aviso de privacidad publicado
 
 - **[Producto]** `privacidad.html`: aviso de privacidad integral, publicado a petición del Product Owner para poder publicar la app de Meta (requisito de Meta). Excepción explícita a `CLAUDE.md` §6; queda pendiente la revisión de un abogado (lista en el borrador privado `docs/legal/`). Incluye la sección `#eliminar-datos`, que sirve como URL de instrucciones de eliminación de datos para Meta. El enlace "Privacidad" del pie de `index.html` ya apunta ahí.
