@@ -79,27 +79,37 @@ Deno.serve(async (req: Request) => {
 
   if (!pagina) return json({ error: 'Esta empresa no tiene una página de Meta conectada' }, 409);
 
-  // Etiqueta HUMAN_AGENT (verificada en MIP-001 §0): extiende la
-  // ventana de respuesta a 7 días porque el mensaje lo redacta un
-  // agente humano — encaja con el diseño Human-in-the-Loop (ADR-009)
-  // de MAHP, nunca se usa para contenido promocional.
-  const metaRes = await fetch(`https://graph.facebook.com/v26.0/me/messages?access_token=${pagina.page_access_token}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      recipient: { id: identidad.external_id },
-      messaging_type: 'MESSAGE_TAG',
-      tag: 'HUMAN_AGENT',
-      message: { text: content },
-    }),
-  });
+  const enviar = (extra: Record<string, unknown>) =>
+    fetch(`https://graph.facebook.com/v26.0/me/messages?access_token=${pagina.page_access_token}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient: { id: identidad.external_id },
+        message: { text: content },
+        ...extra,
+      }),
+    });
 
-  if (!metaRes.ok) {
-    const err = await metaRes.text();
-    return json({ error: `Meta rechazó el envío: ${err}` }, 502);
+  // Dentro de las 24 h desde el último mensaje del cliente basta
+  // RESPONSE. HUMAN_AGENT (MIP-001 §0, ADR-009) extiende la ventana a
+  // 7 días, pero exige la función "Human Agent" aprobada en la app, así
+  // que solo se intenta cuando Meta indica que la ventana ya cerró.
+  let metaRes = await enviar({ messaging_type: 'RESPONSE' });
+  let metaData = await metaRes.json();
+  const fueraDeVentana = metaData.error?.error_subcode === 2018278
+    || /outside of allowed window/i.test(metaData.error?.message ?? '');
+  if (fueraDeVentana) {
+    metaRes = await enviar({ messaging_type: 'MESSAGE_TAG', tag: 'HUMAN_AGENT' });
+    metaData = await metaRes.json();
   }
 
-  const metaData = await metaRes.json();
+  if (!metaRes.ok || metaData.error) {
+    console.error('[meta-send-message]', conv.channel, metaData.error?.code, metaData.error?.error_subcode, metaData.error?.message);
+    const motivo = fueraDeVentana
+      ? 'Pasaron más de 24 horas desde el último mensaje del cliente; Meta no permite responder hasta que vuelva a escribir.'
+      : (metaData.error?.message ?? `Meta respondió ${metaRes.status}`);
+    return json({ error: `Meta rechazó el envío: ${motivo}` }, 502);
+  }
 
   const { error: insertError } = await supabaseUser.from('messages').insert({
     conversation_id: conv.id,

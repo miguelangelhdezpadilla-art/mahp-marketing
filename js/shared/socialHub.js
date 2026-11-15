@@ -245,7 +245,13 @@ export async function enviarRespuestaMeta(supabase, convId, companyId, contenido
   });
 
   if (error || data?.error) {
-    showToast(data?.error || 'No se pudo enviar la respuesta', 'error');
+    // Con un estado distinto de 2xx, invoke() deja `data` vacío y el
+    // mensaje de la función viene en error.context (la Response).
+    let detalle = data?.error;
+    if (!detalle && error?.context?.json) {
+      try { detalle = (await error.context.json())?.error; } catch { /* sin cuerpo JSON */ }
+    }
+    showToast(detalle || 'No se pudo enviar la respuesta', 'error');
     return;
   }
 
