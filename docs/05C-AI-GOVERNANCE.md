@@ -42,6 +42,7 @@
 ## 6. Control Humano
 
 - Ningún agente publica, envía, gasta, o modifica un dato real de negocio sin confirmación explícita de una persona — regla absoluta de los 24 agentes, sin excepción, incluidos los de solo-análisis (que de por sí no escriben nada, pero tampoco se asume que su lectura es la última palabra).
+- **Única excepción (2026-11-15):** `ADR-022` — en Social AI Hub, la IA puede contestar automáticamente mensajes que un cliente envió primero, solo si la empresa activó el modo automático y bajo las salvaguardas de ese ADR. Ningún otro agente queda cubierto.
 - El usuario siempre puede ignorar, descartar, o pedir una alternativa a cualquier sugerencia de IA sin fricción — nunca un flujo donde aceptar la sugerencia de IA sea más fácil que rechazarla.
 
 ## 7. Auditoría

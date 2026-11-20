@@ -58,6 +58,8 @@ Ser el módulo de MAHP donde cada conversación con un cliente final deja de ser
 | 14 | **Arquitectura modular** | Social AI Hub se puede desactivar por empresa sin romper el resto de MAHP | Mismo criterio de activación por plan (`10B-SUBSCRIPTION-AND-LICENSING.md`) | El módulo no introduce dependencias obligatorias en el Core — una empresa sin Social AI Hub activo sigue operando MAHP normalmente | Un plan básico podría no incluir este módulo, igual que hoy podría no incluir acceso a IA (`10B` §2) |
 | 15 | **Integración nativa con el ecosistema MAHP** | No es un componente aislado (`ADR-009`) | Decisión ya tomada y registrada | Toda relación con otros dominios se diseña explícitamente (§6, §7), no se deja implícita | Community Manager Advisor, Workflow Engine, KPIs — todos consumidos, ninguno reinventado |
 
+> **Nota (2026-11-15):** el principio 3 queda acotado por `ADR-022` para un único caso: la IA puede contestar automáticamente mensajes que un cliente envió primero, si la empresa activó el modo automático y se cumplen las 21 salvaguardas de ese ADR. El texto original del principio se conserva sin cambios; fuera de ese caso sigue aplicando íntegro.
+
 ## 5. Product Philosophy
 
 **¿Qué es Social AI Hub?** El módulo de MAHP donde vive toda conversación externa con un cliente final, conectada al resto de la operación de marketing/ventas/atención que MAHP ya gestiona.

@@ -1,6 +1,6 @@
 # ADR-009 — Social AI Hub es un módulo nativo del ecosistema MAHP, no un componente aislado
 
-Estado: Aceptado
+Estado: Aceptado — la restricción de *Consecuencias* queda acotada por `ADR-022` para la respuesta automática de Social AI Hub (2026-11-15); el resto de la decisión sigue vigente.
 Fecha: 2026-07-12
 Decisores: Chief Product Owner
 
