@@ -40,10 +40,14 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
   if (userError || !user) return json({ error: 'Sesión inválida' }, 401);
 
-  const { conversation_id, content } = await req.json();
-  if (!conversation_id || !content || typeof content !== 'string') {
+  const { conversation_id, content: contenidoCrudo, ai_response_id } = await req.json();
+  if (!conversation_id || !contenidoCrudo || typeof contenidoCrudo !== 'string') {
     return json({ error: 'Falta conversation_id o content' }, 400);
   }
+  const content = contenidoCrudo.trim();
+  if (!content) return json({ error: 'El mensaje está vacío' }, 400);
+  // Límite de texto de la Send API de Messenger/Instagram.
+  if (content.length > 2000) return json({ error: 'El mensaje supera 2000 caracteres' }, 400);
 
   const { data: conv, error: convError } = await supabaseUser
     .from('conversations')
@@ -66,8 +70,29 @@ Deno.serve(async (req: Request) => {
 
   if (!identidad) return json({ error: 'No se encontró la identidad del cliente en este canal' }, 404);
 
-  // Service role solo para leer el token de la página — company_meta_pages
-  // no tiene ninguna política RLS para `authenticated` a propósito (v21).
+  // Si el agente está usando una sugerencia de IA, debe pertenecer a
+  // esta conversación (RLS ya garantiza que es de su empresa) y seguir
+  // pendiente. Se valida ANTES de enviar.
+  let sugerencia: { id: number; draft: string } | null = null;
+  if (ai_response_id != null) {
+    const { data } = await supabaseUser
+      .from('ai_responses')
+      .select('id, draft, status, conversation_id')
+      .eq('id', ai_response_id)
+      .maybeSingle();
+    if (!data || data.conversation_id !== conv.id) {
+      return json({ error: 'La sugerencia no pertenece a esta conversación' }, 400);
+    }
+    if (data.status !== 'propuesta' && data.status !== 'legacy') {
+      return json({ error: 'Esa sugerencia ya fue usada o descartada' }, 409);
+    }
+    sugerencia = { id: data.id, draft: data.draft };
+  }
+
+  // Service role solo para dos cosas: leer el token de la página
+  // (company_meta_pages no tiene política RLS para `authenticated`, v21)
+  // y escribir messages/ai_responses (el navegador no puede, v26). Todo
+  // lo anterior ya se validó con la sesión y el RLS del usuario.
   const supabaseService = createClient(SUPABASE_URL, SERVICE_ROLE);
   const { data: pagina } = await supabaseService
     .from('company_meta_pages')
@@ -111,7 +136,10 @@ Deno.serve(async (req: Request) => {
     return json({ error: `Meta rechazó el envío: ${motivo}` }, 502);
   }
 
-  const { error: insertError } = await supabaseUser.from('messages').insert({
+  // H2 (v26): el navegador ya no puede insertar en messages. Se guarda
+  // con service role, solo después de que Meta aceptó el envío, y con
+  // el autor tomado de la sesión validada arriba (nunca del body).
+  const { data: guardado, error: insertError } = await supabaseService.from('messages').insert({
     conversation_id: conv.id,
     company_id: conv.company_id,
     direction: 'outbound',
@@ -119,9 +147,26 @@ Deno.serve(async (req: Request) => {
     sender_id: user.id,
     content,
     meta_message_id: metaData.message_id ?? null,
-  });
+  }).select('id').single();
 
-  if (insertError) return json({ error: insertError.message }, 500);
+  if (insertError) {
+    // El mensaje YA llegó al cliente: no se reporta como fallo de envío.
+    console.error('[meta-send-message] Enviado a Meta pero no se guardó en messages', insertError, { convId: conv.id });
+    return json({ ok: true, aviso: 'El mensaje se envió, pero no se pudo guardar en el historial' });
+  }
+
+  // H1 (v26): si el agente usó una sugerencia de IA, queda registrada
+  // como aprobada (sin cambios) o editada, ligada al mensaje enviado.
+  if (sugerencia) {
+    const { error: errSugerencia } = await supabaseService.from('ai_responses').update({
+      status: content === sugerencia.draft.trim() ? 'aprobada' : 'editada',
+      final_text: content,
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      sent_message_id: guardado.id,
+    }).eq('id', sugerencia.id);
+    if (errSugerencia) console.error('[meta-send-message] No se pudo actualizar la sugerencia', errSugerencia);
+  }
 
   return json({ ok: true });
 });

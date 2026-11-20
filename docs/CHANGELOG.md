@@ -10,6 +10,30 @@
 
 ---
 
+## 2026-11-15 — Producto: Social AI Hub, correcciones H1–H3 (desplegado 2026-11-20)
+
+- **[Fix]** **H1**: las sugerencias de IA dejan de guardarse como mensajes salientes que nunca se enviaron. Tabla nueva `ai_responses` (`supabase_schema_v26.sql`). `meta-webhook` crea ahí la `propuesta`, y `meta-send-message` la marca `aprobada` o `editada` cuando el agente la usa y envía. Las sugerencias antiguas se marcan con `messages.legacy_ai_suggestion` y se copian como `legacy`, **sin borrar nada**. La bandeja ya no las muestra como enviadas, y una conversación cuyo último mensaje real es del cliente vuelve a aparecer como pendiente.
+- **[Sec]** **H2**: se eliminó `messages_insert` y el permiso de inserción del navegador sobre `messages`. Responder sigue disponible para todo miembro con acceso, a través de `meta-send-message`, que ahora guarda con service role y solo después de que Meta aceptó el envío. Si Meta acepta pero falla el guardado, la función ya no responde "error" por un mensaje que sí llegó.
+- **[Sec]** **H3**: `analizarConIA` separa instrucciones (`system`) y mensaje del cliente (`user`), usa modo JSON de Groq, recorta a 2000 caracteres, descarta sugerencias de más de 1000, valida la respuesta HTTP de Groq y prohíbe inventar precios, horarios, direcciones o promociones mientras no exista base de conocimientos. Registra modelo, tokens y latencia por sugerencia (base de las analíticas de costo).
+- **[Fix]** `socialHub.js`: el Realtime comparaba `window._convAbierta` (texto) con `conversation_id` (número) con `===`, así que un mensaje nuevo nunca se agregaba al chat abierto. Ahora se comparan como texto. Además escucha `ai_responses` para mostrar sugerencias nuevas sin recargar.
+- **[Infra]** Desplegado en este orden, a petición del Product Owner: (1) `meta-send-message` v10 (2026-11-20 00:03), (2) `supabase_schema_v26.sql` ejecutado en una transacción vía `supabase db query --linked`, (3) `meta-webhook` v13 con `--no-verify-jwt` (igual que antes), (4) frontend publicado. Verificado:
+  - 0 sugerencias antiguas que migrar (0 marcadas = 0 copiadas);
+  - en `messages` solo queda `messages_select`;
+  - `authenticated` no puede insertar en `messages` ni en `ai_responses`;
+  - RLS activo en `ai_responses`;
+  - el webhook sigue rechazando con 403 un token de verificación incorrecto y un payload sin firma.
+
+  `DATABASE.md` documenta `messages` y `ai_responses`.
+- **[Hallazgo]** La publicación `supabase_realtime` solo incluía `invites`: `messages` nunca estuvo en ella, así que las actualizaciones en vivo de la bandeja (`suscribirseAMensajesNuevos`) no recibían eventos. `v26` agregó `ai_responses`; `messages` sigue fuera, pendiente de decisión.
+
+## 2026-11-15 — Documentación
+
+- **[Docs]** `ADR-022` — respuesta automática de IA en Social AI Hub como excepción acotada a Human in the Loop (decisión D1 de `MPS-002-003`). La aprobación humana pasa de "por mensaje" a "por política": activación solo por `company_admin`, solo respuestas a mensajes entrantes, solo con conocimiento publicado y vigente, validación de cifras por código, solo dentro de 24 h sin `HUMAN_AGENT`, pausa de emergencia revisada antes de cada envío, interruptor global y registro completo (21 salvaguardas). Salvaguarda 19 revisada por el Product Owner: la IA **no** se presenta como asistente virtual por defecto (opción `disclose_ai` por empresa, apagada), pero nunca afirma ser humana si el cliente lo pregunta. Notas de alcance agregadas en `MPS-002-000` §4, `05C-AI-GOVERNANCE.md` §6, estado de `ADR-009` y `ADR-INDEX.md`, sin reescribir el texto original de esos principios. Ningún cambio de código ni de esquema.
+
+## 2026-11-13 — Documentación
+
+- **[Docs]** `MPS-002-003-AI-CUSTOMER-SERVICE-KNOWLEDGE-CENTER.md` — Fase 1 (auditoría + propuesta) del módulo AI Customer Service & Business Knowledge Center: reconciliación de las 14 tablas propuestas con el esquema real (se extienden `conversations`/`messages`, se proponen 7 tablas nuevas), RAG sobre `pgvector` + texto completo en español aislado por `company_id`, flujo del motor con validación de salida por código, plan en 11 fases, costos y riesgos. Hallazgos nuevos: sugerencias de IA guardadas como mensajes salientes (H1), `messages_insert` abierto a cualquier miembro (H2), prompt inyectable (H3), `HUMAN_AGENT` en todos los envíos (H4). Señala conflicto entre el modo automático pedido y el principio *Human in the Loop* de `MPS-002-000` (requiere ADR-022). Ningún cambio de código ni de esquema.
+
 ## 2026-11-13 — Meta: app migrada a Dunihub y publicada
 
 - **[Configuración]** La app de Meta `1011783041707142` (Marketing Activity Hub Pro) se movió del portfolio "Marketing Activity Hub Pro" (sin verificar) al portfolio **Dunihub** (`1808506603863289`, verificado a nombre de Carlos Daniel Hernandez Padilla), a petición del Product Owner. Carlos Hernandez se agregó como administrador de la app. El identificador de la app, los webhooks, el inicio de sesión y las conexiones existentes no cambian.

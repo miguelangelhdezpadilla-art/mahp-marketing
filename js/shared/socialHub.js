@@ -53,8 +53,30 @@ function tagsHtml(conv, companyId, convId) {
     </div>`;
 }
 
+// Las sugerencias de IA antiguas que se guardaron como mensajes (v26,
+// H1) nunca se enviaron al cliente: no son parte del historial.
 function mensajesOrdenados(conv) {
-  return (conv.messages ?? []).slice().sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+  return (conv.messages ?? [])
+    .filter(m => !m.legacy_ai_suggestion)
+    .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+}
+
+// Sugerencia de IA vigente: la más reciente sin usar, y solo si es
+// posterior a la última respuesta enviada (si un agente ya contestó,
+// esa sugerencia quedó atrás).
+async function sugerenciaVigente(supabase, convId, mensajes) {
+  const { data } = await supabase
+    .from('ai_responses')
+    .select('id, draft, created_at')
+    .eq('conversation_id', convId)
+    .in('status', ['propuesta', 'legacy'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  const ultimaSalida = [...mensajes].reverse().find(m => m.direction === 'outbound');
+  if (ultimaSalida && new Date(ultimaSalida.sent_at) >= new Date(data.created_at)) return null;
+  return data;
 }
 
 // ── Tarjeta de conversación (lista izquierda) ────────────────────
@@ -116,7 +138,7 @@ async function cargarConversaciones(supabase, companyId, canal) {
 
   const { data: conversaciones, error } = await supabase
     .from('conversations')
-    .select('*, customers(full_name), messages(content, sent_at, sender_type, direction)')
+    .select('*, customers(full_name), messages(content, sent_at, sender_type, direction, legacy_ai_suggestion)')
     .eq('company_id', companyId)
     .eq('channel', canal)
     .order('last_message_at', { ascending: false });
@@ -183,7 +205,7 @@ async function abrirConversacion(supabase, convId, companyId, perfil) {
 
   const nombre = nombreDe(conv);
   const mensajes = mensajesOrdenados(conv);
-  const sugerenciaIA = [...mensajes].reverse().find(m => m.sender_type === 'ia');
+  const sugerenciaIA = await sugerenciaVigente(supabase, convId, mensajes);
 
   right.innerHTML = `
     <div class="conv-header">
@@ -212,8 +234,8 @@ async function abrirConversacion(supabase, convId, companyId, perfil) {
         </div>
         ${conv.ia_explicacion ? `<div style="font-size:11px;color:#4338ca;margin-bottom:6px;">💡 ${s(conv.ia_explicacion)}</div>` : ''}
         ${sugerenciaIA ? `
-        <div class="ia-sugerencia" onclick="window.usarSugerenciaIA('${convId}')">
-          <span>${s(sugerenciaIA.content)}</span>
+        <div class="ia-sugerencia" onclick="window.usarSugerenciaIA('${convId}','${sugerenciaIA.id}')">
+          <span>${s(sugerenciaIA.draft)}</span>
           <span class="ia-sugerencia-usar">Usar respuesta →</span>
         </div>` : ''}
       </div>
@@ -240,8 +262,14 @@ async function abrirConversacion(supabase, convId, companyId, perfil) {
 // §5, ADR-007). Este wrapper solo invoca la función con la sesión del
 // usuario ya autenticado.
 export async function enviarRespuestaMeta(supabase, convId, companyId, contenido) {
+  const textareaEnvio = document.getElementById(`resp-${convId}`);
+  const aiResponseId = textareaEnvio?.dataset.aiResponseId;
   const { data, error } = await supabase.functions.invoke('meta-send-message', {
-    body: { conversation_id: convId, content: contenido },
+    body: {
+      conversation_id: convId,
+      content: contenido,
+      ...(aiResponseId ? { ai_response_id: Number(aiResponseId) } : {}),
+    },
   });
 
   if (error || data?.error) {
@@ -255,8 +283,10 @@ export async function enviarRespuestaMeta(supabase, convId, companyId, contenido
     return;
   }
 
+  if (data?.aviso) showToast(data.aviso, 'error');
+
   const textarea = document.getElementById(`resp-${convId}`);
-  if (textarea) textarea.value = '';
+  if (textarea) { textarea.value = ''; delete textarea.dataset.aiResponseId; }
 
   await abrirConversacion(supabase, convId, companyId, window._perfilActual);
   await cargarConversaciones(supabase, companyId, _canalActivo);
@@ -273,9 +303,26 @@ export function suscribirseAMensajesNuevos(supabase, companyId) {
       filter: `company_id=eq.${companyId}`,
     }, (payload) => {
       cargarConversaciones(supabase, companyId, _canalActivo);
-      if (window._convAbierta === payload.new.conversation_id) {
+      // _convAbierta llega como texto desde el onclick; conversation_id
+      // viene como número en el payload — se comparan como texto.
+      if (String(window._convAbierta) === String(payload.new.conversation_id)) {
         agregarMensajeAlChat(payload.new);
       }
+    })
+    // Sugerencias de IA nuevas (v26): viven en ai_responses, no en
+    // messages. Si es de la conversación abierta, se vuelve a pintar
+    // para mostrarla — salvo que el agente ya esté escribiendo.
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'ai_responses',
+      filter: `company_id=eq.${companyId}`,
+    }, (payload) => {
+      const convId = window._convAbierta;
+      if (String(convId) !== String(payload.new.conversation_id)) return;
+      const textarea = document.getElementById(`resp-${convId}`);
+      if (textarea && textarea.value.trim()) return;
+      abrirConversacion(supabase, convId, companyId, window._perfilActual);
     })
     .subscribe();
 }
@@ -370,10 +417,16 @@ window.resolverConversacion = async function (convId, companyId) {
   await abrirConversacion(supabase, convId, companyId, window._perfilActual);
 };
 
-window.usarSugerenciaIA = function (convId) {
+// Guarda en el textarea qué sugerencia se usó: al enviar, la Edge
+// Function la marca como aprobada o editada (v26). Si el agente borra
+// todo el texto, deja de contar como uso de la sugerencia.
+window.usarSugerenciaIA = function (convId, aiResponseId) {
   const textarea = document.getElementById(`resp-${convId}`);
   const sugerencia = document.querySelector('.ia-sugerencia span');
-  if (textarea && sugerencia) textarea.value = sugerencia.textContent;
+  if (!textarea || !sugerencia) return;
+  textarea.value = sugerencia.textContent;
+  textarea.dataset.aiResponseId = aiResponseId;
+  textarea.oninput = () => { if (!textarea.value.trim()) delete textarea.dataset.aiResponseId; };
 };
 
 window.enviarRespuesta = async function (convId, companyId) {
