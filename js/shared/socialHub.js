@@ -97,7 +97,7 @@ function conversacionCardHtml(conv, companyId) {
       </div>
       <div class="conv-info">
         <div class="conv-nombre">${s(nombre)} <span class="conv-hora">${ultimo ? horaCorta(ultimo.sent_at) : ''}</span></div>
-        <div class="conv-ultimo">${ultimo ? s(truncar(ultimo.content, 60)) : 'Sin mensajes'}</div>
+        <div class="conv-ultimo">${ultimo ? s(truncar(textoVistaPrevia(ultimo), 60)) : 'Sin mensajes'}</div>
         <div class="conv-badges">
           <span class="conv-badge badge-${claseEstado}">${textoEstado}</span>
           ${conv.ia_urgencia === 'alta' ? '<span class="conv-badge badge-urgente">Urgente</span>' : ''}
@@ -108,26 +108,150 @@ function conversacionCardHtml(conv, companyId) {
     </div>`;
 }
 
+// ── Adjuntos (v27) ────────────────────────────────────────────────
+// media_url guarda la ruta dentro del bucket privado social-media, no
+// una URL: se pide una URL firmada (válida 1 h) y el RLS de Storage
+// limita la lectura a la empresa dueña.
+const BUCKET_MEDIA = 'social-media';
+const ETIQUETA_TIPO = { image: '📷 Imagen', video: '🎬 Video', audio: '🎤 Audio', file: '📎 Archivo' };
+
+// Texto para la lista de conversaciones cuando el mensaje es solo un adjunto.
+function textoVistaPrevia(m) {
+  return m.content || ETIQUETA_TIPO[m.message_type] || '';
+}
+
+function adjuntoHtml(m) {
+  if (!m.message_type || m.message_type === 'text') return '';
+  const etiqueta = ETIQUETA_TIPO[m.message_type] ?? '📎 Archivo';
+  // Meta no dejó descargar el archivo (o caducó antes de guardarlo).
+  if (!m.media_url) return `<div class="msg-media-pendiente">${etiqueta} (no disponible)</div>`;
+  return `<div class="msg-media-pendiente" data-media-path="${s(m.media_url)}" data-media-tipo="${s(m.message_type)}">${etiqueta}…</div>`;
+}
+
+// Cambia cada marcador data-media-path por la imagen/video/audio real.
+async function hidratarMedios(supabase, cont) {
+  const marcadores = [...(cont?.querySelectorAll('[data-media-path]') ?? [])];
+  if (!marcadores.length || !supabase) return;
+  const rutas = [...new Set(marcadores.map(el => el.dataset.mediaPath))];
+  const { data, error } = await supabase.storage.from(BUCKET_MEDIA).createSignedUrls(rutas, 3600);
+  if (error || !data) return;
+  const urlPorRuta = new Map(data.filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
+
+  for (const el of marcadores) {
+    const url = urlPorRuta.get(el.dataset.mediaPath);
+    if (!url) { el.textContent = `${ETIQUETA_TIPO[el.dataset.mediaTipo] ?? '📎 Archivo'} (no disponible)`; continue; }
+    const tipo = el.dataset.mediaTipo;
+    let nodo;
+    if (tipo === 'image') {
+      nodo = document.createElement('a');
+      nodo.href = url; nodo.target = '_blank'; nodo.rel = 'noopener'; nodo.className = 'msg-media-link';
+      const img = document.createElement('img');
+      img.src = url; img.alt = 'Imagen enviada en la conversación'; img.className = 'msg-media'; img.loading = 'lazy';
+      img.onload = () => { if (cont.dataset.pegadoAbajo === '1') cont.scrollTop = cont.scrollHeight; };
+      nodo.appendChild(img);
+    } else if (tipo === 'video' || tipo === 'audio') {
+      nodo = document.createElement(tipo);
+      nodo.src = url; nodo.controls = true; nodo.preload = 'metadata'; nodo.className = 'msg-media';
+    } else {
+      nodo = document.createElement('a');
+      nodo.href = url; nodo.target = '_blank'; nodo.rel = 'noopener';
+      nodo.className = 'msg-media-pendiente'; nodo.textContent = '📎 Abrir archivo';
+    }
+    el.replaceWith(nodo);
+  }
+}
+
 // ── Burbuja de mensaje (panel derecho) ───────────────────────────
 function mensajeHtml(m) {
   const clase = m.sender_type === 'cliente' ? 'cliente' : m.sender_type === 'ia' ? 'ia-msg' : 'agente';
   const icono = clase === 'cliente' ? '🧑' : clase === 'ia-msg' ? '✨' : '🧑‍💼';
+  const adjunto = adjuntoHtml(m);
   return `
-    <div class="msg ${clase}">
+    <div class="msg ${clase}" data-msg-id="${Number(m.id) || ''}">
       <div class="msg-avatar">${icono}</div>
-      <div>
+      <div class="${adjunto ? 'msg-media-wrap' : ''}">
         ${clase === 'ia-msg' ? '<div class="msg-ia-badge">✨ IA</div>' : ''}
-        <div class="msg-burbuja">${s(m.content)}</div>
-        <div class="msg-hora">${horaCorta(m.sent_at)}</div>
+        ${adjunto}
+        ${m.content ? `<div class="msg-burbuja">${s(m.content)}</div>` : ''}
+        <div class="msg-hora">${fechaHora(m.sent_at)}</div>
       </div>
     </div>`;
+}
+
+// En el historial importado hay mensajes de otros días: la hora sola
+// no basta.
+function fechaHora(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const hoy = new Date();
+  if (d.toDateString() === hoy.toDateString()) return horaCorta(iso);
+  return d.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 function agregarMensajeAlChat(mensaje) {
   const cont = document.getElementById(`mensajes-${mensaje.conversation_id}`);
   if (!cont) return;
+  if (mensaje.legacy_ai_suggestion) return;
+  // Llega tarde por Realtime algo que ya se pintó (p. ej. tras importar historial).
+  if (cont.querySelector(`[data-msg-id="${Number(mensaje.id)}"]`)) return;
   cont.insertAdjacentHTML('beforeend', mensajeHtml(mensaje));
   cont.scrollTop = cont.scrollHeight;
+  hidratarMedios(window._supabaseHub, cont);
+}
+
+// ── Historial de Meta (v27) ───────────────────────────────────────
+// Al abrir una conversación se pide a Meta su historial reciente una
+// vez por sesión (Meta solo entrega los últimos 20 mensajes). Mientras
+// tanto, el Realtime no agrega uno por uno los mensajes importados: se
+// vuelve a pintar todo al final, ya en orden.
+const _sincronizadas = new Set();
+const _sincronizando = new Set();
+
+async function sincronizarHistorial(supabase, convId, companyId, { manual = false } = {}) {
+  const clave = String(convId);
+  if (_sincronizando.has(clave)) return;
+  _sincronizando.add(clave);
+  const btn = document.getElementById(`btn-historial-${convId}`);
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Trayendo…'; }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('meta-sync-conversation', {
+      body: { conversation_id: Number(convId) },
+    });
+    let detalle = data?.error;
+    if (error && !detalle && error?.context?.json) {
+      try { detalle = (await error.context.json())?.error; } catch { /* sin cuerpo JSON */ }
+    }
+    if (error || detalle) {
+      if (manual) showToast(detalle || 'No se pudo traer el historial de Meta', 'error');
+      return;
+    }
+    _sincronizadas.add(clave);
+    if (manual) {
+      showToast(data?.importados ? `Se agregaron ${data.importados} mensajes del historial` : 'El historial ya estaba completo', 'ok');
+    }
+    if (data?.importados && String(window._convAbierta) === clave) {
+      _sincronizando.delete(clave);
+      await abrirConversacion(supabase, convId, companyId, window._perfilActual, { sinSincronizar: true });
+      recargarListaPronto(supabase, companyId);
+    }
+  } finally {
+    _sincronizando.delete(clave);
+    const b = document.getElementById(`btn-historial-${convId}`);
+    if (b) { b.disabled = false; b.textContent = '↻ Historial'; }
+  }
+}
+
+window.sincronizarHistorial = function (convId, companyId) {
+  sincronizarHistorial(window._supabaseHub, convId, companyId, { manual: true });
+};
+
+// Una importación inserta varios mensajes seguidos; sin esto la lista
+// se recargaría una vez por cada uno.
+let _temporizadorLista = null;
+function recargarListaPronto(supabase, companyId) {
+  clearTimeout(_temporizadorLista);
+  _temporizadorLista = setTimeout(() => cargarConversaciones(supabase, companyId, _canalActivo), 400);
 }
 
 // ── Lista de conversaciones ───────────────────────────────────────
@@ -138,7 +262,7 @@ async function cargarConversaciones(supabase, companyId, canal) {
 
   const { data: conversaciones, error } = await supabase
     .from('conversations')
-    .select('*, customers(full_name), messages(content, sent_at, sender_type, direction, legacy_ai_suggestion)')
+    .select('*, customers(full_name), messages(content, sent_at, sender_type, direction, message_type, legacy_ai_suggestion)')
     .eq('company_id', companyId)
     .eq('channel', canal)
     .order('last_message_at', { ascending: false });
@@ -176,7 +300,7 @@ async function cargarConversaciones(supabase, companyId, canal) {
 }
 
 // ── Abrir conversación (panel derecho) ────────────────────────────
-async function abrirConversacion(supabase, convId, companyId, perfil) {
+async function abrirConversacion(supabase, convId, companyId, perfil, { sinSincronizar = false } = {}) {
   window._convAbierta = convId;
 
   document.querySelectorAll(`#conv-list-${companyId} .conv-item`).forEach(el => el.classList.remove('sel'));
@@ -218,6 +342,8 @@ async function abrirConversacion(supabase, convId, companyId, perfil) {
         </div>
       </div>
       <div class="conv-header-actions">
+        <button class="btn-historial" id="btn-historial-${convId}" title="Traer de ${conv.channel === 'facebook' ? 'Messenger' : 'Instagram'} los últimos 20 mensajes, con imágenes"
+                onclick="window.sincronizarHistorial('${convId}','${companyId}')">↻ Historial</button>
         <button class="btn-asignar" onclick="window.asignarConversacion('${convId}','${companyId}')">👤 Asignar</button>
         <button class="btn-resolver" onclick="window.resolverConversacion('${convId}','${companyId}')">✓ Resolver</button>
       </div>
@@ -250,10 +376,24 @@ async function abrirConversacion(supabase, convId, companyId, perfil) {
     </div>`;
 
   const contMensajes = document.getElementById(`mensajes-${convId}`);
-  if (contMensajes) contMensajes.scrollTop = contMensajes.scrollHeight;
+  if (contMensajes) {
+    contMensajes.scrollTop = contMensajes.scrollHeight;
+    // Las imágenes cargan después: si el agente sigue abajo, se
+    // mantiene abajo al terminar de cargar cada una.
+    contMensajes.dataset.pegadoAbajo = '1';
+    contMensajes.onscroll = () => {
+      const abajo = contMensajes.scrollHeight - contMensajes.scrollTop - contMensajes.clientHeight < 40;
+      contMensajes.dataset.pegadoAbajo = abajo ? '1' : '0';
+    };
+    hidratarMedios(supabase, contMensajes);
+  }
 
   window._perfilActual = perfil;
   window._supabaseHub = supabase;
+
+  if (!sinSincronizar && !_sincronizadas.has(String(convId))) {
+    sincronizarHistorial(supabase, convId, companyId);
+  }
 }
 
 // ── Envío de respuesta ────────────────────────────────────────────
@@ -302,7 +442,9 @@ export function suscribirseAMensajesNuevos(supabase, companyId) {
       table: 'messages',
       filter: `company_id=eq.${companyId}`,
     }, (payload) => {
-      cargarConversaciones(supabase, companyId, _canalActivo);
+      recargarListaPronto(supabase, companyId);
+      // Durante una importación de historial se pinta todo al final.
+      if (_sincronizando.has(String(payload.new.conversation_id))) return;
       // _convAbierta llega como texto desde el onclick; conversation_id
       // viene como número en el payload — se comparan como texto.
       if (String(window._convAbierta) === String(payload.new.conversation_id)) {

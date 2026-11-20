@@ -2394,6 +2394,29 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   font-size: 10px; color: var(--text-muted);
   margin-top: 3px;
 }
+/* Adjuntos de Messenger/Instagram (v27) */
+.msg-media {
+  display: block;
+  max-width: min(260px, 100%);
+  max-height: 320px;
+  border-radius: 10px;
+  background: var(--surface-1);
+  object-fit: cover;
+}
+.msg-media-wrap { display: flex; flex-direction: column; gap: 4px; }
+.msg-media-wrap a.msg-media-link { display: block; width: fit-content; }
+.msg-media-wrap audio.msg-media { width: 240px; max-height: none; }
+.msg-media-pendiente {
+  font-size: 12px; color: var(--text-muted);
+  padding: .5rem .75rem; border-radius: 10px;
+  border: 0.5px dashed var(--border);
+}
+.btn-historial {
+  font-size: 12px; padding: .35rem .6rem; border-radius: 6px;
+  border: 0.5px solid var(--border); background: transparent;
+  color: var(--text-secondary, inherit); cursor: pointer;
+}
+.btn-historial:disabled { opacity: .6; cursor: default; }
 .msg.agente .msg-hora,
 .msg.ia-msg .msg-hora { text-align: right; }
 

@@ -10,6 +10,7 @@
 // implementación de la cadena de eventos del CIE — solo ya no bloquea
 // la respuesta al webhook.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { guardarAdjunto, tipoDeAdjunto, urlDeAdjunto } from '../_shared/metaMedia.ts';
 
 const VERIFY_TOKEN  = Deno.env.get('META_VERIFY_TOKEN') ?? '';
 const APP_SECRET     = Deno.env.get('META_APP_SECRET') ?? '';
@@ -185,7 +186,9 @@ async function resolverCustomer(companyId: number, channel: string, externalId: 
 // escribir es un comportamiento de producto intencional (no un bug):
 // un mismo hilo de Meta (meta_thread_id = PSID) representa una sola
 // conversación continua con ese cliente en ese canal, nunca varias.
-async function resolverConversacion(companyId: number, customerId: number, channel: string, threadId: string) {
+// reabrir=false para los ecos: que el negocio escriba no reabre una
+// conversación resuelta.
+async function resolverConversacion(companyId: number, customerId: number, channel: string, threadId: string, reabrir = true) {
   const { data: existente } = await supabase
     .from('conversations')
     .select('id, status')
@@ -194,7 +197,7 @@ async function resolverConversacion(companyId: number, customerId: number, chann
     .maybeSingle();
 
   if (existente) {
-    if (existente.status === 'resuelto') {
+    if (reabrir && existente.status === 'resuelto') {
       await supabase.from('conversations').update({ status: 'nuevo' }).eq('id', existente.id);
     }
     return existente.id;
@@ -347,58 +350,77 @@ async function handleWebhook(req: Request): Promise<Response> {
 
     for (const event of entry.messaging ?? []) {
       if (!event.message) continue;
+      // Mensajes borrados o que Meta no puede mostrar: no hay nada que
+      // guardar.
+      if (event.message.is_deleted || event.message.is_unsupported) continue;
 
-      const senderId = event.sender.id;
-      const content = event.message.text ?? '';
+      // Eco (is_echo): mensaje que ENVIÓ el negocio — desde MAHP o
+      // desde la app de Instagram/Messenger. Instagram los entrega
+      // siempre. El cliente es el destinatario, no el remitente: antes
+      // se trataba como mensaje entrante y creaba un "cliente" con el
+      // id del propio negocio.
+      const esEco = event.message.is_echo === true;
+      const clienteId = esEco ? event.recipient?.id : event.sender?.id;
+      if (!clienteId) continue;
+
+      const texto = event.message.text ?? '';
       const metaMsgId = event.message.mid;
+      const adjuntos = (event.message.attachments ?? [])
+        .map((a: any) => ({ tipo: tipoDeAdjunto(a), url: urlDeAdjunto(a) }))
+        .filter((a: { url: string | null }) => a.url);
 
-      // Mensajes sin texto (sticker/adjunto sin caption) — soporte de
-      // medios no está en alcance todavía (no se pidió); se ignora en
-      // vez de guardar una fila con content vacío.
-      if (!content) continue;
+      // Sin texto ni adjunto descargable (p. ej. una reacción): nada
+      // que mostrar.
+      if (!texto && !adjuntos.length) continue;
 
-      const customerId = await resolverCustomer(pagina.company_id, channel, senderId, pagina.page_access_token);
-      const convId = await resolverConversacion(pagina.company_id, customerId, channel, senderId);
+      const customerId = await resolverCustomer(pagina.company_id, channel, clienteId, pagina.page_access_token);
+      const convId = await resolverConversacion(pagina.company_id, customerId, channel, clienteId, !esEco);
 
-      // Idempotencia real (sin ventana de carrera): insert atómico con
-      // ON CONFLICT DO NOTHING sobre messages.meta_message_id (unique
-      // constraint, v23) en vez de "select, si no existe, insert" —
-      // dos entregas concurrentes del mismo evento (Meta reintenta
-      // ante cualquier fallo o demora) ya no pueden colarse las dos.
-      // Si metaMsgId viene null (no debería, Meta lo documenta como
-      // parte estándar de todo evento de mensaje), el constraint no
-      // aplica entre sí — se inserta sin deduplicar ese caso.
-      const { data: mensajeInsertado, error: insertError } = await supabase
-        .from('messages')
-        .upsert({
-          conversation_id: convId,
-          company_id: pagina.company_id,
-          direction: 'inbound',
-          sender_type: 'cliente',
-          sender_id: senderId,
-          content,
-          meta_message_id: metaMsgId,
-        }, { onConflict: 'meta_message_id', ignoreDuplicates: true })
-        .select('id')
-        .maybeSingle();
+      // Un eco de un envío hecho desde MAHP ya lo guardó
+      // meta-send-message con el mismo mid: el upsert de abajo lo
+      // ignora. Solo queda nuevo lo que se escribió en la app de Meta.
+      const { data: yaExiste } = await supabase
+        .from('messages').select('id').eq('meta_message_id', metaMsgId).maybeSingle();
+      if (yaExiste) continue;
 
-      if (insertError) {
-        console.error('[Webhook] Error al guardar el mensaje:', insertError, { metaMsgId });
-        continue;
+      // Cada adjunto es su propia fila (así los muestra Meta); el texto,
+      // si lo hay, va en la primera. El mid se repite con sufijo para
+      // respetar el unique de meta_message_id.
+      const filas = (adjuntos.length ? adjuntos : [{ tipo: 'text', url: null }]).map((a: any, i: number) => ({
+        indice: i,
+        tipo: a.tipo,
+        url: a.url,
+        content: i === 0 ? texto : '',
+        mid: i === 0 ? metaMsgId : `${metaMsgId}#${i}`,
+      }));
+
+      let primeraId: number | null = null;
+      for (const f of filas) {
+        const media = f.url ? await guardarAdjunto(supabase, f.url, pagina.company_id, convId, metaMsgId, f.indice) : null;
+        const { data: fila, error } = await supabase
+          .from('messages')
+          .upsert({
+            conversation_id: convId,
+            company_id: pagina.company_id,
+            direction: esEco ? 'outbound' : 'inbound',
+            sender_type: esEco ? 'agente' : 'cliente',
+            sender_id: event.sender?.id ?? null,
+            content: f.content,
+            message_type: f.tipo,
+            media_url: media,
+            meta_message_id: f.mid,
+            ...(event.timestamp ? { sent_at: new Date(event.timestamp).toISOString() } : {}),
+          }, { onConflict: 'meta_message_id', ignoreDuplicates: true })
+          .select('id')
+          .maybeSingle();
+        if (error) console.error('[Webhook] Error al guardar el mensaje:', error, { metaMsgId });
+        if (f.indice === 0) primeraId = fila?.id ?? null;
       }
 
-      if (!mensajeInsertado) {
-        // ignoreDuplicates: no se insertó nada porque metaMsgId ya
-        // existía — reintento de Meta, no se re-analiza con IA.
-        console.log('[Webhook] Reintento de Meta detectado, ya procesado', { metaMsgId });
-        continue;
-      }
-
-      // No se espera el análisis de IA — ver comentario en
-      // analizarConIA. El webhook responde 200 OK apenas termina de
-      // guardar los mensajes, sin esperar a Groq.
+      // La IA solo analiza texto escrito por el cliente.
+      if (esEco || !texto || !primeraId) continue;
       // @ts-ignore -- global del runtime de Supabase Edge Functions
-      EdgeRuntime.waitUntil(analizarConIA(convId, content, pagina.company_id, mensajeInsertado.id));
+      EdgeRuntime.waitUntil(analizarConIA(convId, texto, pagina.company_id, primeraId));
     }
   }
 

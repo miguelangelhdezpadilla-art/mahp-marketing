@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
   // H2 (v26): el navegador ya no puede insertar en messages. Se guarda
   // con service role, solo después de que Meta aceptó el envío, y con
   // el autor tomado de la sesión validada arriba (nunca del body).
-  const { data: guardado, error: insertError } = await supabaseService.from('messages').insert({
+  let { data: guardado, error: insertError } = await supabaseService.from('messages').insert({
     conversation_id: conv.id,
     company_id: conv.company_id,
     direction: 'outbound',
@@ -148,6 +148,17 @@ Deno.serve(async (req: Request) => {
     content,
     meta_message_id: metaData.message_id ?? null,
   }).select('id').single();
+
+  // 23505: el eco de Meta (is_echo) llegó al webhook antes que esta
+  // inserción y ya guardó el mensaje con el mismo mid. No es un fallo:
+  // se completa el autor real sobre esa fila.
+  if (insertError?.code === '23505' && metaData.message_id) {
+    const { data: existente } = await supabaseService.from('messages')
+      .update({ sender_id: user.id, sender_type: 'agente' })
+      .eq('meta_message_id', metaData.message_id)
+      .select('id').maybeSingle();
+    if (existente) { guardado = existente; insertError = null; }
+  }
 
   if (insertError) {
     // El mensaje YA llegó al cliente: no se reporta como fallo de envío.

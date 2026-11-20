@@ -10,6 +10,14 @@
 
 ---
 
+## 2026-11-20 — Producto: Social AI Hub, imágenes e historial de Meta
+
+- **[Feature]** Adjuntos: `meta-webhook` y la nueva `meta-sync-conversation` descargan imágenes, video, audio y archivos de Messenger/Instagram y los guardan en el bucket privado `social-media` (`supabase_schema_v27.sql`). Las URLs de Meta caducan, por eso no se guardan tal cual. `messages.media_url` guarda la ruta en el bucket. La bandeja pide URLs firmadas, y el RLS de Storage limita la lectura a la empresa dueña. Helper compartido: `supabase/functions/_shared/metaMedia.ts`.
+- **[Feature]** Historial: `meta-sync-conversation` trae de la Conversations API los **últimos 20 mensajes** de una conversación, que es el límite de Meta. Incluye lo que el negocio escribió desde la app de Instagram/Messenger. Deduplica por `meta_message_id` y, como respaldo, por dirección + texto + hora (±3 min). Si el cliente no tenía nombre, lo completa con el nombre o `@usuario` que trae la conversación. La bandeja la llama al abrir cada conversación (una vez por sesión) y con el botón **↻ Historial**. Muestra fecha y hora en los mensajes de otros días.
+- **[Fix]** Ecos (`is_echo`): Instagram entrega como evento los mensajes que envía el propio negocio. El webhook los trataba como mensajes entrantes y creaba un "cliente" con el id del negocio. Ahora se guardan como salientes en la conversación del destinatario, no reabren conversaciones resueltas y no pasan por la IA. `meta-send-message` ya no reporta error si el eco llegó antes que su propia inserción (`23505`).
+- **[Fix]** `update_conversation_timestamp` (v27): `last_message_at` solo avanza. Importar mensajes antiguos ya no hunde la conversación en la bandeja.
+- **[Infra]** Desplegado 2026-11-20, con autorización del Product Owner: (1) `supabase_schema_v27.sql` vía `supabase db query --remote` (verificado: bucket privado, política `social_media_select` y trigger con `greatest`), (2) `meta-webhook` con `--no-verify-jwt`, `meta-sync-conversation` y `meta-send-message`, (3) frontend publicado. El webhook sigue respondiendo 403 a un token incorrecto y a un payload sin firma, y `meta-sync-conversation` responde 401 sin sesión.
+
 ## 2026-11-15 — Producto: Social AI Hub, correcciones H1–H3 (desplegado 2026-11-20)
 
 - **[Fix]** **H1**: las sugerencias de IA dejan de guardarse como mensajes salientes que nunca se enviaron. Tabla nueva `ai_responses` (`supabase_schema_v26.sql`). `meta-webhook` crea ahí la `propuesta`, y `meta-send-message` la marca `aprobada` o `editada` cuando el agente la usa y envía. Las sugerencias antiguas se marcan con `messages.legacy_ai_suggestion` y se copian como `legacy`, **sin borrar nada**. La bandeja ya no las muestra como enviadas, y una conversación cuyo último mensaje real es del cliente vuelve a aparecer como pendiente.
