@@ -28,6 +28,17 @@
   Prueba funcional dentro de una transacción con rollback (sin dejar datos): una reserva de $5 es rechazada por `presupuesto_diario`, un modelo inexistente por `modelo_inactivo`, y una reserva válida liquidada con 2,500 tokens de entrada y 300 de salida registra `cost_usd = 0.0004`.
 - **[Pendiente]** Desplegar `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` cuando exista `ANTHROPIC_API_KEY`. Mientras tanto, producción sigue con Groq. Panel de consumo (E3) pendiente.
 
+## 2026-11-21 — Producto: estadísticas de Meta, fase 2 (panel)
+
+- **[Feature]** Tarjeta **📊 Estadísticas de Meta** al inicio de la pestaña Seguidores (`empresa.html` y `directivo.html`), módulo `js/shared/metaInsights.js`:
+  - **Filtros:** red (Ambas / Facebook / Instagram) y periodo (7 / 30 / 90 días).
+  - **Tarjetas por red:** visualizaciones, alcance, interacciones, nuevos seguidores, video (FB) y visitas al perfil (IG), con el % contra el periodo anterior. Ese % solo aparece si el periodo anterior tiene al menos el 90% de los días. El alcance se muestra como promedio diario, porque sumar alcances únicos contaría dos veces a las mismas personas.
+  - **Gráfica:** visualizaciones por día en SVG propio, con línea guía y tooltip, y tabla accesible.
+  - **Barras:** visualizaciones de Instagram por tipo de contenido.
+  - **Mejor contenido:** miniaturas asignadas vía DOM, enlace con `noopener noreferrer`.
+  - **Actualizar ahora:** invoca `meta-insights` con la sesión.
+- **[Verificado]** Probado localmente con los datos reales de la empresa 2 a 1000 px y 390 px (sin scroll horizontal) y con el tooltip. Paleta de 2 series validada (`#2a78d6`/`#eb6834`, todo PASS).
+
 ## 2026-11-21 — Producto: estadísticas de Meta, fase 1 (captura de datos)
 
 - **[Feature]** `supabase_schema_v29.sql` (renumerado: `v28` es el motor de IA de otra rama de trabajo). Tabla `meta_insights_daily`: una fila por empresa, canal, métrica, desglose y día. Tabla `meta_content_insights`: cifras por publicación. En ambas lee solo la empresa y escribe solo service role. Ejecución diaria con `pg_cron` + `pg_net` a las 09:15 UTC. El secreto del cron se genera dentro de Vault y la función lo valida con `cron_secret_ok()`, que solo puede ejecutar service role.

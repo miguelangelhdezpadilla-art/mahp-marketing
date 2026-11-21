@@ -2417,6 +2417,88 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   color: var(--text-secondary, inherit); cursor: pointer;
 }
 .btn-historial:disabled { opacity: .6; cursor: default; }
+
+/* ============================================================
+   Estadísticas de Meta (js/shared/metaInsights.js, v29)
+   Paleta: slot 1 azul #2a78d6 (Facebook), slot 2 naranja #eb6834
+   (Instagram), validada con dataviz/validate_palette (todo PASS).
+   ============================================================ */
+.mi-filtros { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.mi-seg-ctrl { display: inline-flex; border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+.mi-seg-ctrl button {
+  width: auto; margin: 0; border-radius: 0;
+  font: inherit; font-size: 12px; padding: .4rem .7rem; border: 0; background: var(--surface);
+  color: var(--text-secondary); cursor: pointer; min-height: 32px;
+}
+.mi-seg-ctrl button:hover, .mi-actualizar:hover { background: var(--surface-2); }
+.mi-seg-ctrl button[aria-pressed="true"]:hover { background: var(--indigo-light); }
+.mi-seg-ctrl button + button { border-left: 0.5px solid var(--border); }
+.mi-seg-ctrl button[aria-pressed="true"] { background: var(--indigo-light); color: var(--indigo-dark); font-weight: 600; }
+.mi-actualizar {
+  width: auto; flex: 0 0 auto; margin-top: 0;
+  margin-left: auto; font: inherit; font-size: 12px; padding: .4rem .7rem; min-height: 32px;
+  border: 0.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-secondary); cursor: pointer;
+}
+.mi-actualizar:disabled { opacity: .6; cursor: default; }
+.mi-rango { font-size: 11px; color: var(--text-muted); margin: 0 0 12px; }
+.mi-aviso { font-size: 11px; color: var(--text-muted); margin: 0 0 8px; }
+.mi-canal { margin-bottom: 16px; }
+.mi-canal-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 14px; color: var(--text-primary); }
+.mi-punto { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.mi-seg { margin-left: auto; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.mi-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.mi-tile { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 10px; padding: .75rem .85rem; }
+.mi-tile-titulo { font-size: 12px; color: var(--text-secondary); }
+.mi-tile-valor { font-size: 22px; font-weight: 600; color: var(--text-primary); line-height: 1.2; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.mi-tile-nota { font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.35; }
+.mi-delta { font-size: 11px; margin-top: 4px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.mi-sube span[aria-hidden] { color: #0f7a3d; }
+.mi-baja span[aria-hidden] { color: #c2410c; }
+.mi-delta-ref, .mi-delta-nd { color: var(--text-muted); }
+.mi-bloque { margin-top: 18px; }
+.mi-bloque h3 { font-size: 14px; margin: 0 0 8px; color: var(--text-primary); }
+.mi-sub { font-weight: 400; font-size: 11px; color: var(--text-muted); }
+.mi-leyenda { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.mi-leyenda i, .mi-tooltip i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.mi-grafica { position: relative; }
+.mi-grafica svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.mi-grid { stroke: var(--border); stroke-width: 1; }
+.mi-eje { font-size: 11px; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+.mi-cruz { stroke: var(--slate-300); stroke-width: 1; stroke-dasharray: 3 3; }
+.mi-tooltip {
+  position: absolute; top: 8px; pointer-events: none; background: var(--surface); border: 0.5px solid var(--border);
+  box-shadow: var(--shadow-md); border-radius: 8px; padding: 6px 8px; font-size: 12px; color: var(--text-primary);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.mi-tip-fecha { color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
+.mi-tabla-det { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
+.mi-tabla-det summary { cursor: pointer; }
+.mi-tabla { border-collapse: collapse; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.mi-tabla th, .mi-tabla td { padding: 3px 10px; text-align: right; border-bottom: 0.5px solid var(--border); }
+.mi-tabla th:first-child, .mi-tabla td:first-child { text-align: left; }
+.mi-barras { display: flex; flex-direction: column; gap: 8px; }
+.mi-barra-fila { display: grid; grid-template-columns: 110px 1fr 52px; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.mi-barra-pista { height: 10px; }
+.mi-barra { display: block; height: 10px; background: #eb6834; border-radius: 0 4px 4px 0; }
+.mi-barra-val { text-align: right; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.mi-contenido { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.mi-post { display: block; text-decoration: none; color: inherit; border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.mi-post:hover { box-shadow: var(--shadow-md); }
+.mi-post-img { position: relative; aspect-ratio: 4 / 3; background: var(--surface-2); }
+.mi-post-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mi-post-canal { position: absolute; top: 6px; left: 6px; font-size: 11px; border-radius: 6px; padding: 1px 4px; }
+.mi-post-info { padding: 8px; }
+.mi-post-vistas { font-size: 15px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.mi-post-vistas span { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+.mi-post-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.mi-post-texto { font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.35; max-height: 2.7em; overflow: hidden; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mi-vacio { font-size: 13px; color: var(--text-secondary); }
+@media (max-width: 600px) {
+  .mi-actualizar { margin-left: 0; }
+  .mi-barra-fila { grid-template-columns: 80px 1fr 44px; }
+}
+
 .msg.agente .msg-hora,
 .msg.ia-msg .msg-hora { text-align: right; }
 

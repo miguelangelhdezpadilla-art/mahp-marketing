@@ -10,6 +10,7 @@ import {
   renderGestionCanales
 } from './shared/seguidores.js';
 import { renderFormMetas, cargarListaMetas } from './shared/metasSeguidores.js';
+import { renderPanelMetaInsights } from './shared/metaInsights.js';
 import { cargarTablaAvances } from './shared/avances.js';
 import { renderFormIA } from './shared/ia.js';
 import { renderHistorialTareas } from './shared/historialTareas.js';
@@ -481,6 +482,7 @@ window.toggleSeccionIA = function() {
       await cargarHistorialSeguidores(supabaseClient, companyId);
     }),
     cargarHistorialSeguidores(supabaseClient, companyId),
+    renderPanelMetaInsights(supabaseClient, companyId, 'metaInsightsPanel'),
     renderFormIA(supabaseClient, companyId, showToast),
     cargarKpis(),
     renderizarAvanceColaboradores(supabaseClient, companyId, 'avanceColaboradores', miPerfil),
