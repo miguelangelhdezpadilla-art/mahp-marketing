@@ -12,6 +12,7 @@
 // conversación; el Page Access Token solo se lee aquí con service role.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { guardarAdjunto, tipoDeAdjunto, urlDeAdjunto } from '../_shared/metaMedia.ts';
+import { nombreDeContacto } from '../_shared/metaNombres.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -72,7 +73,11 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
   if (userError || !user) return json({ error: 'Sesión inválida' }, 401);
 
-  const { conversation_id } = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
+  if (body.rellenar_nombres && body.company_id) {
+    return await rellenarNombres(supabaseUser, Number(body.company_id), Number(body.antes_de) || null);
+  }
+  const { conversation_id } = body;
   if (!conversation_id) return json({ error: 'Falta conversation_id' }, 400);
 
   // RLS del usuario: si no es de su empresa, no existe para él.
@@ -174,12 +179,69 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Instagram no da el nombre del perfil sin permisos avanzados, pero la
-  // conversación sí trae el @usuario: se usa solo si no había nombre.
-  if (nombreCliente) {
-    await service.from('customers').update({ full_name: nombreCliente })
-      .eq('id', conv.customer_id).is('full_name', null);
+  // Nombre del contacto, solo si no tenía: primero el que venga en los
+  // mensajes, si no, el perfil o los participantes de la conversación.
+  const { data: cliente } = await service.from('customers')
+    .select('full_name').eq('id', conv.customer_id).maybeSingle();
+  if (cliente && !cliente.full_name) {
+    const nombre = nombreCliente
+      ?? await nombreDeContacto(conv.channel, conv.meta_thread_id, fbPageId, pagina.page_access_token);
+    if (nombre) await guardarNombre(service, conv.customer_id, conv.channel, nombre);
   }
 
   return json({ ok: true, importados, total: mensajesMeta.length });
 });
+
+async function guardarNombre(service: any, customerId: number, channel: string, nombre: string) {
+  await service.from('customers').update({ full_name: nombre }).eq('id', customerId).is('full_name', null);
+  await service.from('customer_identities').update({ display_name: nombre })
+    .eq('customer_id', customerId).eq('channel', channel).is('display_name', null);
+}
+
+// Completa el nombre de los contactos de una empresa que no lo tienen
+// (p. ej. los que llegaron antes de que el webhook supiera pedirlo en
+// Instagram). Lotes de 40 para no exceder el tiempo de la función; la
+// bandeja vuelve a llamar mientras queden pendientes.
+const LOTE_NOMBRES = 40;
+
+async function rellenarNombres(supabaseUser: any, companyId: number, antesDe: number | null) {
+  // RLS del usuario: solo ve los contactos de su empresa.
+  // antes_de: cursor para avanzar aunque algunos contactos no tengan
+  // nombre disponible en Meta (si no, se pedirían los mismos siempre).
+  let consulta = supabaseUser
+    .from('customers')
+    .select('id, customer_identities(channel, external_id)')
+    .eq('company_id', companyId)
+    .is('full_name', null)
+    .order('id', { ascending: false })
+    .limit(LOTE_NOMBRES);
+  if (antesDe) consulta = consulta.lt('id', antesDe);
+  const { data: pendientes, error } = await consulta;
+  if (error) return json({ error: 'No se pudieron leer los contactos' }, 500);
+  if (!pendientes?.length) return json({ ok: true, actualizados: 0, revisados: 0 });
+
+  const service = createClient(SUPABASE_URL, SERVICE_ROLE);
+  const { data: paginas } = await service
+    .from('company_meta_pages')
+    .select('channel, page_id, linked_page_id, page_access_token')
+    .eq('company_id', companyId)
+    .eq('active', true);
+  const porCanal = new Map((paginas ?? []).map((p: any) => [p.channel, p]));
+
+  let actualizados = 0;
+  await Promise.all(pendientes.map(async (c: any) => {
+    for (const ident of c.customer_identities ?? []) {
+      const pagina: any = porCanal.get(ident.channel);
+      if (!pagina) continue;
+      const fbPageId = ident.channel === 'instagram' ? pagina.linked_page_id : pagina.page_id;
+      const nombre = await nombreDeContacto(ident.channel, ident.external_id, fbPageId, pagina.page_access_token);
+      if (nombre) {
+        await guardarNombre(service, c.id, ident.channel, nombre);
+        actualizados++;
+        return;
+      }
+    }
+  }));
+
+  return json({ ok: true, actualizados, revisados: pendientes.length, hay_mas: pendientes.length === LOTE_NOMBRES, siguiente: pendientes[pendientes.length - 1].id });
+}

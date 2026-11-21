@@ -11,6 +11,7 @@
 // la respuesta al webhook.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { guardarAdjunto, tipoDeAdjunto, urlDeAdjunto } from '../_shared/metaMedia.ts';
+import { nombreDeContacto } from '../_shared/metaNombres.ts';
 
 const VERIFY_TOKEN  = Deno.env.get('META_VERIFY_TOKEN') ?? '';
 const APP_SECRET     = Deno.env.get('META_APP_SECRET') ?? '';
@@ -113,34 +114,12 @@ async function firmaValida(rawBody: string, signatureHeader: string | null): Pro
 async function resolverPagina(pageId: string, channel: string) {
   const { data } = await supabase
     .from('company_meta_pages')
-    .select('company_id, page_access_token')
+    .select('company_id, page_id, linked_page_id, page_access_token')
     .eq('page_id', pageId)
     .eq('channel', channel)
     .eq('active', true)
     .maybeSingle();
   return data;
-}
-
-// Nombre real del contacto vía Graph API (requiere el permiso
-// "Business Asset User Profile Access" con Advanced Access — todavía
-// en revisión junto con pages_messaging). Si la app no tiene el
-// permiso, o el usuario no es elegible (cuenta por teléfono, perfil
-// no público, etc.), Meta documenta que devuelve un objeto vacío —
-// se trata como "sin nombre" en vez de fallar, nunca se inventa un
-// nombre.
-async function obtenerNombrePerfil(externalId: string, pageAccessToken: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://graph.facebook.com/${externalId}?fields=first_name,last_name&access_token=${pageAccessToken}`
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const nombre = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
-    return nombre || null;
-  } catch (err) {
-    console.warn('[Webhook] No se pudo obtener el nombre del perfil:', err);
-    return null;
-  }
 }
 
 // Resuelve el customer unificado para una identidad de canal
@@ -150,7 +129,7 @@ async function obtenerNombrePerfil(externalId: string, pageAccessToken: string):
 // sender.id es el PSID (page-scoped id) que Meta documenta como
 // identificador estable de Messenger — no cambia entre mensajes del
 // mismo usuario a la misma página.
-async function resolverCustomer(companyId: number, channel: string, externalId: string, pageAccessToken: string) {
+async function resolverCustomer(companyId: number, channel: string, externalId: string, pagina: any) {
   const { data: existente } = await supabase
     .from('customer_identities')
     .select('customer_id')
@@ -163,7 +142,10 @@ async function resolverCustomer(companyId: number, channel: string, externalId: 
 
   // Solo se pide el nombre a Meta al crear un customer nuevo — no en
   // cada mensaje de uno ya conocido.
-  const displayName = await obtenerNombrePerfil(externalId, pageAccessToken);
+  // Con Facebook Login, la página de Facebook vinculada es la que
+  // consulta las conversaciones de Instagram (respaldo de nombre).
+  const fbPageId = channel === 'instagram' ? pagina.linked_page_id : pagina.page_id;
+  const displayName = await nombreDeContacto(channel, externalId, fbPageId, pagina.page_access_token);
 
   const { data: nuevoCustomer } = await supabase
     .from('customers')
@@ -373,7 +355,7 @@ async function handleWebhook(req: Request): Promise<Response> {
       // que mostrar.
       if (!texto && !adjuntos.length) continue;
 
-      const customerId = await resolverCustomer(pagina.company_id, channel, clienteId, pagina.page_access_token);
+      const customerId = await resolverCustomer(pagina.company_id, channel, clienteId, pagina);
       const convId = await resolverConversacion(pagina.company_id, customerId, channel, clienteId, !esEco);
 
       // Un eco de un envío hecho desde MAHP ya lo guardó

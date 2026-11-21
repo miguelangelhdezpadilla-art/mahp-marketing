@@ -10,6 +10,11 @@
 
 ---
 
+## 2026-11-20 — Producto: Social AI Hub, nombres de contactos de Instagram
+
+- **[Fix]** Casi todos los contactos de Instagram aparecían como "Contacto sin nombre": el webhook pedía `first_name,last_name`, campos que solo existen en Messenger. Helper nuevo `supabase/functions/_shared/metaNombres.ts`: Instagram → `name`/`username`, Messenger → `first_name`/`last_name`. Si no hay perfil, usa como respaldo los `participants` de la conversación. Nunca inventa un nombre.
+- **[Feature]** `meta-sync-conversation` con `rellenar_nombres`: completa por lotes de 40, con cursor `antes_de`, el nombre de los contactos de la empresa que no lo tienen. La bandeja lo llama una vez por sesión al abrir el Social Hub. También completa `customer_identities.display_name`.
+
 ## 2026-11-20 — Producto: Social AI Hub, imágenes e historial de Meta
 
 - **[Feature]** Adjuntos: `meta-webhook` y la nueva `meta-sync-conversation` descargan imágenes, video, audio y archivos de Messenger/Instagram y los guardan en el bucket privado `social-media` (`supabase_schema_v27.sql`). Las URLs de Meta caducan, por eso no se guardan tal cual. `messages.media_url` guarda la ruta en el bucket. La bandeja pide URLs firmadas, y el RLS de Storage limita la lectura a la empresa dueña. Helper compartido: `supabase/functions/_shared/metaMedia.ts`.

@@ -618,4 +618,25 @@ export async function renderSocialHub(supabase, companyId, perfil, idContenedor)
 
   await cargarConversaciones(supabase, companyId, 'facebook');
   suscribirseAMensajesNuevos(supabase, companyId);
+  rellenarNombresPendientes(supabase, companyId);
+}
+
+// Contactos que siguen como "Contacto sin nombre": se le pide a Meta su
+// nombre o @usuario, una vez por sesión y por lotes (v27).
+const _nombresRevisados = new Set();
+async function rellenarNombresPendientes(supabase, companyId) {
+  if (_nombresRevisados.has(String(companyId))) return;
+  _nombresRevisados.add(String(companyId));
+  let antesDe = null;
+  let total = 0;
+  for (let vuelta = 0; vuelta < 10; vuelta++) {
+    const { data, error } = await supabase.functions.invoke('meta-sync-conversation', {
+      body: { company_id: Number(companyId), rellenar_nombres: true, ...(antesDe ? { antes_de: antesDe } : {}) },
+    });
+    if (error || data?.error) return;
+    total += data?.actualizados ?? 0;
+    if (!data?.hay_mas) break;
+    antesDe = data.siguiente;
+  }
+  if (total) cargarConversaciones(supabase, companyId, _canalActivo);
 }
