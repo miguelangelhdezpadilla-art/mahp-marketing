@@ -1,5 +1,5 @@
 // Estadísticas de Meta (Facebook Page Insights + Instagram Insights)
-// → meta_insights_daily / meta_content_insights (v28).
+// → meta_insights_daily / meta_content_insights (v29).
 //
 // Dos formas de llamarla:
 //   * pg_cron, una vez al día: { modo: 'cron' } + encabezado

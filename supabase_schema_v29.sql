@@ -1,8 +1,8 @@
 -- ============================================================
--- Esquema v28: Estadísticas de Meta (Facebook + Instagram)
+-- Esquema v29: Estadísticas de Meta (Facebook + Instagram)
 --
 -- El panel de seguidores se llenaba solo a mano (follower_logs).
--- Con v28, la Edge Function meta-insights guarda cada día las cifras
+-- Con v29, la Edge Function meta-insights guarda cada día las cifras
 -- que Meta expone por API (visualizaciones, alcance, seguidores,
 -- interacciones…) para poder compararlas en el tiempo. Instagram solo
 -- conserva ~30 días de varias métricas: si MAHP no las guarda, se
@@ -17,7 +17,7 @@
 --      role).
 --
 -- Lectura: miembros de la empresa. Escritura: solo service role.
--- Requiere v27. Ejecutar completo en el SQL Editor (de una sola vez).
+-- Requiere v27 (independiente de v28, el motor de IA). Ejecutar completo en el SQL Editor (de una sola vez).
 -- Ningún dato existente se modifica.
 -- ============================================================
 

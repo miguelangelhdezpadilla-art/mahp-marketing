@@ -30,13 +30,13 @@
 
 ## 2026-11-21 — Producto: estadísticas de Meta, fase 1 (captura de datos; pendiente de aplicar)
 
-- **[Feature]** `supabase_schema_v28.sql`. Tabla `meta_insights_daily`: una fila por empresa, canal, métrica, desglose y día. Tabla `meta_content_insights`: cifras por publicación. En ambas lee solo la empresa y escribe solo service role. Ejecución diaria con `pg_cron` + `pg_net` a las 09:15 UTC. El secreto del cron se genera dentro de Vault y la función lo valida con `cron_secret_ok()`, que solo puede ejecutar service role.
+- **[Feature]** `supabase_schema_v29.sql` (renumerado: `v28` es el motor de IA de otra rama de trabajo). Tabla `meta_insights_daily`: una fila por empresa, canal, métrica, desglose y día. Tabla `meta_content_insights`: cifras por publicación. En ambas lee solo la empresa y escribe solo service role. Ejecución diaria con `pg_cron` + `pg_net` a las 09:15 UTC. El secreto del cron se genera dentro de Vault y la función lo valida con `cron_secret_ok()`, que solo puede ejecutar service role.
 - **[Feature]** Edge Function `meta-insights` (`--no-verify-jwt`, valida cron secret o sesión + `my_companies()`):
   - **Facebook:** `page_media_view`, reproducciones de video, seguidores, follows/unfollows y más. La primera corrida trae 90 días.
   - **Instagram:** `views`, `reach`, interacciones y `follower_count`. Incluye `views` y `reach` desglosados por **seguidores contra no seguidores** y `views` por **tipo de contenido**. La primera corrida trae 30 días, el máximo de Meta.
   - **Publicaciones:** las últimas 30 de cada canal, con sus métricas.
   - **Métricas no disponibles:** si Meta rechaza una métrica, el resto se guarda igual y la respuesta la reporta en `no_disponibles`.
-- **[Pendiente]** (1) Agregar `read_insights`, `pages_read_engagement`, `instagram_basic` e `instagram_manage_insights` a la configuración de Facebook Login for Business y reconectar la página. (2) Ejecutar v28. (3) Desplegar `meta-insights --no-verify-jwt`. (4) Fase 2: panel en "Seguidores".
+- **[Pendiente]** (1) Agregar `read_insights`, `pages_read_engagement`, `instagram_basic` e `instagram_manage_insights` a la configuración de Facebook Login for Business y reconectar la página. (2) Ejecutar v29. (3) Desplegar `meta-insights --no-verify-jwt`. (4) Fase 2: panel en "Seguidores".
 
 ## 2026-11-20 — Producto: Social AI Hub, nombres de contactos de Instagram
 
