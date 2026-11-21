@@ -28,7 +28,7 @@
   Prueba funcional dentro de una transacción con rollback (sin dejar datos): una reserva de $5 es rechazada por `presupuesto_diario`, un modelo inexistente por `modelo_inactivo`, y una reserva válida liquidada con 2,500 tokens de entrada y 300 de salida registra `cost_usd = 0.0004`.
 - **[Pendiente]** Desplegar `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` cuando exista `ANTHROPIC_API_KEY`. Mientras tanto, producción sigue con Groq. Panel de consumo (E3) pendiente.
 
-## 2026-11-21 — Producto: estadísticas de Meta, fase 1 (captura de datos; pendiente de aplicar)
+## 2026-11-21 — Producto: estadísticas de Meta, fase 1 (captura de datos)
 
 - **[Feature]** `supabase_schema_v29.sql` (renumerado: `v28` es el motor de IA de otra rama de trabajo). Tabla `meta_insights_daily`: una fila por empresa, canal, métrica, desglose y día. Tabla `meta_content_insights`: cifras por publicación. En ambas lee solo la empresa y escribe solo service role. Ejecución diaria con `pg_cron` + `pg_net` a las 09:15 UTC. El secreto del cron se genera dentro de Vault y la función lo valida con `cron_secret_ok()`, que solo puede ejecutar service role.
 - **[Feature]** Edge Function `meta-insights` (`--no-verify-jwt`, valida cron secret o sesión + `my_companies()`):
@@ -36,7 +36,18 @@
   - **Instagram:** `views`, `reach`, interacciones y `follower_count`. Incluye `views` y `reach` desglosados por **seguidores contra no seguidores** y `views` por **tipo de contenido**. La primera corrida trae 30 días, el máximo de Meta.
   - **Publicaciones:** las últimas 30 de cada canal, con sus métricas.
   - **Métricas no disponibles:** si Meta rechaza una métrica, el resto se guarda igual y la respuesta la reporta en `no_disponibles`.
-- **[Pendiente]** (1) Agregar `read_insights`, `pages_read_engagement`, `instagram_basic` e `instagram_manage_insights` a la configuración de Facebook Login for Business y reconectar la página. (2) Ejecutar v29. (3) Desplegar `meta-insights --no-verify-jwt`. (4) Fase 2: panel en "Seguidores".
+- **[Infra]** Aplicado 2026-11-21, con autorización del Product Owner:
+  - **Meta:** `read_insights` e `instagram_manage_insights` agregados a los casos de uso. La configuración `1683981806659523` quedó con 8 permisos. La Casa del Centro se reconectó con ambos permisos.
+  - **Base de datos:** `v29` vía `db query --remote` (tablas, políticas, cron `meta-insights-diario` y secreto en Vault verificados).
+  - **Función:** `meta-insights` desplegada con `--no-verify-jwt`. Rechaza con 401 las llamadas sin secreto o con secreto incorrecto.
+- **[Verificado]** Primera corrida para la empresa 2:
+  - **Facebook:** 811 filas, 90 días.
+  - **Instagram:** 433 filas, 29 días.
+  - **Publicaciones:** 30 por canal.
+  - **Contra Meta:** `page_media_view` del 21 oct al 19 nov = **113 952**, idéntico al panel de Meta. `page_video_views` da 8067 contra 7950 "reproducciones de 3 s" en Meta, una definición cercana pero no idéntica.
+  - **No disponibles en Meta:** `views`/`reach` por `follower_type` día por día, `page_video_views_unique` y `post_impressions_unique`. El desglose por `media_product_type` sí llega.
+  - **Empresa 1:** su conexión antigua tiene un token inválido ("user logged out") y necesita reconectarse.
+- **[Pendiente]** Fase 2: panel en "Seguidores". Desglose seguidores/no seguidores de Instagram con otro periodo (`timeframe`).
 
 ## 2026-11-20 — Producto: Social AI Hub, nombres de contactos de Instagram
 
