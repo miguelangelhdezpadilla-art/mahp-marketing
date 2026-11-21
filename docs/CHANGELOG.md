@@ -10,6 +10,34 @@
 
 ---
 
+## 2026-11-20 — Producto: MAHP AI Response Engine con Claude (sin desplegar)
+
+- **[Docs]** `MPS-002-004` (auditoría y arquitectura del motor, hallazgos H10–H14) y `ADR-023` (Claude como proveedor, Haiku 5.5 económico y Opus 5.5 avanzado), aprobados por el Product Owner.
+- **[Feature]** `supabase/functions/_shared/ai/`: capa de proveedor intercambiable (adaptador de Anthropic con el SDK oficial 1.5.0), motor de sugerencias con escalera de costo (omite mensajes triviales, usa Haiku y recurre a Opus solo si la empresa lo permite), recorte de contexto (últimos 6 mensajes, límite de tokens por empresa), salida JSON estructurada, validación por código (bloquea precios, porcentajes, horas y fechas sin fuente, y respuestas que filtran instrucciones) y contabilidad con reserva y liquidación.
+- **[Feature]** `meta-webhook`: el análisis pasa de Groq al motor y ahora usa historial reciente. Guarda confianza, `needs_human`, costo y también las sugerencias **bloqueadas** (solo para auditoría; la bandeja no las muestra). Tope de 10 generaciones por conversación por hora.
+- **[Sec]** **H11** `generar-calendario`: pasa a Claude, toma la empresa de la sesión, limita el prompt a 12,000 caracteres y a 20 solicitudes por usuario por hora, aplica el presupuesto de la empresa, registra el consumo en `ai_usage` y ya no reenvía al navegador el error crudo del proveedor. La respuesta conserva el formato que usa `js/shared/ia.js`.
+- **[DB]** `supabase_schema_v28.sql` (aditiva): `ai_models`, `ai_company_limits` (una fila por empresa y trigger para las nuevas), `ai_usage`, `ai_effective_limits` / `ai_reserve` / `ai_settle` (solo service role, con candado por empresa), las vistas `ai_usage_daily` / `ai_usage_status` y `messages` en Realtime.
+- **[Test]** 23 pruebas con `deno test supabase/functions/_shared/ai/`, todas pasan. Usan un proveedor simulado y un registro en memoria, sin red ni llaves; **no** prueban la API real, la base de datos ni Meta.
+- **[Infra]** `supabase_schema_v28.sql` aplicada el 2026-11-20 con autorización del Product Owner (`supabase db query --linked`, en una sola transacción). Verificado:
+  - las 2 empresas tienen fila de límites;
+  - los 2 modelos están cargados;
+  - RLS está activa en las 3 tablas;
+  - `authenticated` no puede ejecutar `ai_reserve`/`ai_settle`/`ai_effective_limits` ni insertar en `ai_usage`;
+  - `messages` y `ai_responses` están en Realtime.
+
+  Prueba funcional dentro de una transacción con rollback (sin dejar datos): una reserva de $5 es rechazada por `presupuesto_diario`, un modelo inexistente por `modelo_inactivo`, y una reserva válida liquidada con 2,500 tokens de entrada y 300 de salida registra `cost_usd = 0.0004`.
+- **[Pendiente]** Desplegar `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` cuando exista `ANTHROPIC_API_KEY`. Mientras tanto, producción sigue con Groq. Panel de consumo (E3) pendiente.
+
+## 2026-11-21 — Producto: estadísticas de Meta, fase 1 (captura de datos; pendiente de aplicar)
+
+- **[Feature]** `supabase_schema_v28.sql`. Tabla `meta_insights_daily`: una fila por empresa, canal, métrica, desglose y día. Tabla `meta_content_insights`: cifras por publicación. En ambas lee solo la empresa y escribe solo service role. Ejecución diaria con `pg_cron` + `pg_net` a las 09:15 UTC. El secreto del cron se genera dentro de Vault y la función lo valida con `cron_secret_ok()`, que solo puede ejecutar service role.
+- **[Feature]** Edge Function `meta-insights` (`--no-verify-jwt`, valida cron secret o sesión + `my_companies()`):
+  - **Facebook:** `page_media_view`, reproducciones de video, seguidores, follows/unfollows y más. La primera corrida trae 90 días.
+  - **Instagram:** `views`, `reach`, interacciones y `follower_count`. Incluye `views` y `reach` desglosados por **seguidores contra no seguidores** y `views` por **tipo de contenido**. La primera corrida trae 30 días, el máximo de Meta.
+  - **Publicaciones:** las últimas 30 de cada canal, con sus métricas.
+  - **Métricas no disponibles:** si Meta rechaza una métrica, el resto se guarda igual y la respuesta la reporta en `no_disponibles`.
+- **[Pendiente]** (1) Agregar `read_insights`, `pages_read_engagement`, `instagram_basic` e `instagram_manage_insights` a la configuración de Facebook Login for Business y reconectar la página. (2) Ejecutar v28. (3) Desplegar `meta-insights --no-verify-jwt`. (4) Fase 2: panel en "Seguidores".
+
 ## 2026-11-20 — Producto: Social AI Hub, nombres de contactos de Instagram
 
 - **[Fix]** Casi todos los contactos de Instagram aparecían como "Contacto sin nombre": el webhook pedía `first_name,last_name`, campos que solo existen en Messenger. Helper nuevo `supabase/functions/_shared/metaNombres.ts`: Instagram → `name`/`username`, Messenger → `first_name`/`last_name`. Si no hay perfil, usa como respaldo los `participants` de la conversación. Nunca inventa un nombre.
