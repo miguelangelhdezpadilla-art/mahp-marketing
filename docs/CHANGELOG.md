@@ -16,6 +16,12 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-26 — Producto: modo automático verificado en producción; ajuste de reservaciones
+
+- **[Verificación]** La Casa del Centro en `automatico` (activado por su admin el 2026-11-25 21:07 UTC). Respuestas automáticas reales: horario (confianza 0.90, citando la entrada de horario) y paquete para parejas (respuesta guardada tal cual + 2 imágenes).
+- **[Fix]** Las preguntas de "cómo reservar" se transferían siempre, aunque la información publicada explica cómo hacerlo en la app. `reserva` deja de ser intención "siempre humano"; solo `queja` lo es. Confirmar, apartar, disponibilidad, grupos o cambios siguen transfiriendo vía `requiere_humano` (prompt `social-v5`). Consistente con ADR-022 #7 ("solo informa, no compromete"). 61 pruebas.
+- **[Hallazgo]** En la conversación 104 respondió también otro sistema automático conectado a la página (mensajes "Nuestro horario es de 09:00:00 a 21:00:00." y "¡Vamos a reservar tu mesa!…"), con un horario distinto al publicado en MAHP. Pendiente de decisión del Product Owner.
+
 ## 2026-11-26 — Producto: respuestas guardadas con sus archivos
 
 - **[Feature]** Una **Pregunta frecuente** funciona como respuesta guardada: si la IA la cita, se envía el texto tal cual lo escribió la empresa (no reescrito), y enseguida sus archivos (máx. 3). Prompt `social-v4`.

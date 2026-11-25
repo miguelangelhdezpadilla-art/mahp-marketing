@@ -110,7 +110,7 @@ for (const [nombre, over] of [
   ['presupuesto agotado', { desenlace: 'sin_presupuesto', analisis: undefined }],
   ['el cliente pide una persona', { analisis: { ...analisisOk, requiere_humano: true, motivo_humano: 'pide humano' } }],
   ['una queja', { analisis: { ...analisisOk, intencion: 'queja' } }],
-  ['una reservación', { analisis: { ...analisisOk, intencion: 'reserva' } }],
+  ['una reservación que hay que confirmar', { analisis: { ...analisisOk, intencion: 'reserva', requiere_humano: true, motivo_humano: 'grupo de 25' } }],
   ['sin fuentes citadas', { analisis: { ...analisisOk, fuentes_usadas: [] } }],
   ['confianza bajo el mínimo', { analisis: { ...analisisOk, confianza: 0.6 } }],
   ['tope de respuestas por hora', { respuestasAutoUltimaHora: 3 }],
@@ -121,6 +121,10 @@ for (const [nombre, over] of [
     assert(d.motivo.length > 0);
   });
 }
+
+Deno.test('Automático: "¿cómo reservo?" con la información de la app se contesta solo', () => {
+  assertEquals(decidirEnvio(ctx({ analisis: { ...analisisOk, intencion: 'reserva' } })).accion, 'enviar');
+});
 
 Deno.test('Automático: sin mensaje de transferencia, no envía nada', () => {
   assertEquals(decidirEnvio(ctx({ hayMensajeTransferencia: false, analisis: { ...analisisOk, intencion: 'queja' } })).accion, 'nada');

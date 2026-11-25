@@ -34,7 +34,11 @@ export interface ContextoEnvio {
 export interface Decision { accion: Accion; motivo: string }
 
 // Intenciones que nunca se contestan solas aunque la confianza sea alta.
-const INTENCIONES_SIEMPRE_HUMANO = new Set(['queja', 'reserva']);
+// 'reserva' ya no está aquí (PO, 2026-11-26): explicar cómo reservar con
+// la información publicada (app, enlace) es informar. Confirmar una
+// reservación, disponibilidad o grupos lo marca el modelo como
+// requiere_humano (prompt social-v5) y eso sí transfiere (ADR-022 #7).
+const INTENCIONES_SIEMPRE_HUMANO = new Set(['queja']);
 
 export function decidirEnvio(c: ContextoEnvio): Decision {
   // Paros: ni respuesta ni transferencia automática.
