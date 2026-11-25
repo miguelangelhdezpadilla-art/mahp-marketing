@@ -16,7 +16,10 @@
 - **[Fix]** `generar-calendario` respondía 403 al super_admin: esa cuenta no pertenece a ninguna empresa y trabaja sobre la que abre en `empresa.html?company_id=`. Ahora, solo cuando el rol es `super_admin`, la función acepta `company_id` en el body y carga el gasto al presupuesto de esa empresa. Los demás roles siguen limitados a su empresa activa.
 - **[Fix]** `generar-calendario`: tiempo de espera de 90 s (antes 20 s, el del Social Hub) y hasta 6,000 tokens de salida, para que quepan 31 actividades (≈ $0.003 por calendario con Haiku).
 - **[Fix]** `js/shared/ia.js`: el aviso muestra el mensaje de la función (límite diario, sesión, etc.) en lugar de "Edge Function returned a non-2xx status code".
-- **[Verificación]** Primera llamada real (Social Hub, empresa 2): Anthropic respondió `400 credit balance is too low`. La reserva quedó liquidada como `fallida` sin costo, como debe ser. **Falta cargar saldo** en la cuenta de Anthropic; hasta entonces no hay sugerencias de IA ni calendario. La prueba de punta a punta sigue pendiente.
+- **[Verificación]** Primera llamada real (Social Hub, empresa 2): Anthropic respondió `400 credit balance is too low`. La reserva quedó liquidada como `fallida` sin costo, como debe ser. El Product Owner cargó saldo.
+- **[Verificación]** Prueba de punta a punta (2026-11-25), datos reales en producción:
+  - **Calendario** (super_admin sobre La Casa del Centro): Haiku 5.5, 2,852 tokens de entrada y 832 de salida, 4.2 s, **$0.000701**, `liquidada`.
+  - **Social Hub** (DM real a La Casa del Centro, conversación 285): Haiku 5.5, 1,513 / 212 tokens, 3.0 s, **$0.000257**. Clasificó `consulta`, urgencia media, sentimiento neutro. El borrador no inventó disponibilidad ("En un momento le confirmamos…"); confianza 0.3 y `needs_human` = true, lo esperado sin base de conocimientos. No escaló a Opus (`allow_advanced` apagado). La sugerencia apareció en la bandeja y el equipo la aprobó.
 
 ## 2026-11-20 — Producto: MAHP AI Response Engine con Claude
 
