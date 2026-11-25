@@ -55,6 +55,19 @@ interface Intento {
   error: string | null;
 }
 
+/**
+ * Tokens de salida: el límite de la empresa, pero con espacio para que la
+ * IA copie completa la fuente más larga (respuestas guardadas) más los
+ * demás campos del JSON. Con 400 fijos, una respuesta guardada larga se
+ * cortaba (max_tokens) y no quedaba sugerencia. El tope en dólares
+ * (reserva por costo máximo) sigue aplicando.
+ */
+export const MAX_SALIDA_CON_FUENTES = 1500;
+export function tokensDeSalida(limiteEmpresa: number, fuentes: string[]): number {
+  const fuenteMasLarga = fuentes.reduce((m, f) => Math.max(m, estimarTokens(f)), 0);
+  return Math.max(limiteEmpresa, Math.min(MAX_SALIDA_CON_FUENTES, fuenteMasLarga + 300));
+}
+
 // El conocimiento lo escribe la empresa: también es dato, no instrucción.
 const escaparFuente = (f: string) => escaparDatos(f);
 
@@ -120,7 +133,7 @@ async function intentar(
   deps: { provider: LlmProvider; ledger: UsageLedger },
   acumulado: ResultadoSocial,
 ): Promise<Intento> {
-  const maxSalida = limites.maxOutputTokens;
+  const maxSalida = tokensDeSalida(limites.maxOutputTokens, sol.fuentes);
   const estimado = costoMaximoUsd(
     modelo,
     estimarTokens(SISTEMA_SOCIAL) + estimarTokens(contenido),

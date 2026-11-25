@@ -22,7 +22,8 @@
 - **[Feature]** Modo asistido: la bandeja avisa "📎 Al enviarla se adjuntan N archivos". Al enviar la sugerencia, `meta-send-message` manda texto y archivos con el mismo tipo de mensaje (`RESPONSE` o `HUMAN_AGENT`) y los registra en el historial.
 - **[Feature]** "Probar mi asistente" indica si usó la respuesta guardada y qué archivos se enviarían.
 - **[Infra]** El Product Owner creó el secreto `AI_AUTO_SEND_ENABLED`. Desplegados `meta-webhook`, `meta-send-message` y `asistente-probar`. Sin cambios de base de datos.
-- **[Test]** 56 pruebas de Deno (3 nuevas). No probado en navegador ni con un mensaje real.
+- **[Test]** 56 pruebas de Deno (3 nuevas). No probado en navegador.
+- **[Fix]** Prueba real (La Casa del Centro, "quisiera hacer una reservación"): la respuesta se cortó por `max_tokens` (límite de 400) al copiar una respuesta guardada larga, y no quedó sugerencia. Ahora la salida se amplía según la fuente más larga, hasta 1,500 tokens (`tokensDeSalida`); el tope en dólares no cambia. 60 pruebas.
 
 ## 2026-11-25 — Producto: enlaces y archivos en la información del asistente
 

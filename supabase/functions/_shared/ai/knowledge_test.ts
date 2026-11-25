@@ -198,3 +198,25 @@ Deno.test('Sin citar la pregunta frecuente no hay respuesta guardada', () => {
   assertEquals(respuestaGuardada([fragHorario, fragFaq], ['F1']), null);
   assertEquals(respuestaGuardada([fragMenu], ['F1']), null); // producto, no faq
 });
+
+// ---------- Espacio de salida para respuestas guardadas largas ----------
+import { MAX_SALIDA_CON_FUENTES, tokensDeSalida } from './engine.ts';
+
+Deno.test('Sin fuentes largas se respeta el límite de la empresa', () => {
+  assertEquals(tokensDeSalida(400, ['Horario: 9 a 18']), 400);
+});
+
+Deno.test('Una respuesta guardada larga recibe espacio para copiarse completa', () => {
+  const larga = 'x'.repeat(2400); // ≈ 800 tokens
+  assertEquals(tokensDeSalida(400, [larga]), 1100);
+});
+
+Deno.test('El espacio extra tiene tope', () => {
+  assertEquals(tokensDeSalida(400, ['x'.repeat(30000)]), MAX_SALIDA_CON_FUENTES);
+});
+
+Deno.test('La reserva usa el espacio ampliado (el modelo lo recibe)', async () => {
+  const d = deps([{ text: analisisJson() }]);
+  await sugerirRespuesta(solicitud({ fuentes: ['x'.repeat(2400)] }), d);
+  assertEquals(d.provider.llamadas[0].maxOutputTokens, 1100);
+});
