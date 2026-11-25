@@ -316,7 +316,24 @@ async function contenidoInstagram(ctx: Contexto) {
 }
 
 // ── Una conexión ────────────────────────────────────────────────
+// v30: cada red conectada tiene su canal en social_channels (panel de
+// seguidores y metas). Si la empresa no lo tiene, se crea ligado.
+async function asegurarCanal(service: SupabaseClient, companyId: number, channel: string) {
+  const { data } = await service.from('social_channels').select('id')
+    .eq('company_id', companyId).eq('meta_channel', channel).maybeSingle();
+  if (data) return;
+  const { error } = await service.from('social_channels').insert({
+    company_id: companyId,
+    name: channel === 'facebook' ? 'Facebook' : 'Instagram',
+    icon: channel === 'facebook' ? '📘' : '📸',
+    meta_channel: channel,
+  });
+  // 23505: otra corrida lo creó al mismo tiempo.
+  if (error && error.code !== '23505') console.error('[meta-insights] crear canal', channel, error.message);
+}
+
 async function procesarConexion(service: SupabaseClient, c: any) {
+  await asegurarCanal(service, c.company_id, c.channel);
   const ctx: Contexto = {
     service, companyId: c.company_id, channel: c.channel, pageId: c.page_id,
     token: c.page_access_token, filas: [], noDisponibles: new Set(), errores: [],

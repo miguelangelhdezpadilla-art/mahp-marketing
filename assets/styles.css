@@ -2419,6 +2419,32 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
 .btn-historial:disabled { opacity: .6; cursor: default; }
 
 /* ============================================================
+   Metas de seguidores por periodo (v30)
+   ============================================================ */
+.meta-ayuda { font-size: 12px; color: var(--text-muted); margin: 4px 0 8px; }
+.meta-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.meta-presets button {
+  width: auto; margin: 0; font: inherit; font-size: 12px; padding: .3rem .6rem; min-height: 30px;
+  border: 0.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-secondary); cursor: pointer;
+}
+.meta-presets button:hover { background: var(--indigo-light); color: var(--indigo-dark); }
+.meta-estado { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+.meta-estado-activa { background: #dcfce7; color: #166534; }
+.meta-estado-futura { background: #eef2ff; color: #4338ca; }
+.meta-estado-terminada { background: var(--slate-100); color: var(--slate-500); }
+.meta-detalle { color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+.meta-ritmo { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+.meta-fuente { display: block; font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.meta-pasadas { margin-top: 10px; font-size: 13px; color: var(--text-secondary); }
+.meta-pasadas summary { cursor: pointer; margin-bottom: 8px; }
+.meta-periodo-mini { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+.seg-meta-en-tarjeta { margin-top: 10px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+.seg-meta-titulo { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+.seg-meta-mini + .seg-meta-mini { margin-top: 6px; }
+.seg-meta-mini-cab { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.seg-meta-mini-txt { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+/* ============================================================
    Estadísticas de Meta (js/shared/metaInsights.js, v29)
    Paleta: slot 1 azul #2a78d6 (Facebook), slot 2 naranja #eb6834
    (Instagram), validada con dataviz/validate_palette (todo PASS).

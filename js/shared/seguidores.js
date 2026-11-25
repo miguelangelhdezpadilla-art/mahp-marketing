@@ -1,4 +1,5 @@
 import { sHtml as s } from '../ui.js';
+import { metasActivasPorCanal } from './metasSeguidores.js';
 
 // ── Totales por canal ─────────────────────────────────────────
 export async function cargarTotalesSeguidores(supabase, companyId, campaignId = null) {
@@ -21,6 +22,9 @@ export async function cargarTotalesSeguidores(supabase, companyId, campaignId = 
     (deltas ?? []).forEach(d => { deltasPorCanal[d.channel_id] = d.delta_total; });
   }
 
+  // Metas en curso de cada canal (v30): se comparan aquí mismo.
+  const metas = await metasActivasPorCanal(supabase, companyId);
+
   contenedor.innerHTML = totales.length
     ? totales.map(t => {
         const delta = deltasPorCanal[t.channel_id] ?? null;
@@ -30,18 +34,41 @@ export async function cargarTotalesSeguidores(supabase, companyId, campaignId = 
                ${delta >= 0 ? '+' : ''}${delta.toLocaleString()} esta campaña
              </div>`
           : '';
+        const fuente = t.source === 'meta'
+          ? `De Meta · ${new Date(t.last_updated).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`
+          : 'Último registro manual';
         return `
           <div class="seg-card">
             <div class="seg-header">
               <span class="seg-icon">${s(t.channel_icon ?? '📱')}</span>
               <span class="seg-nombre">${s(t.channel_name)}</span>
             </div>
-            <div class="seg-total">${Number(t.total_actual).toLocaleString()}</div>
-            <div class="seg-sub">seguidores actuales</div>
+            <div class="seg-total">${Number(t.total_actual).toLocaleString('es-MX')}</div>
+            <div class="seg-sub">seguidores actuales · ${fuente}</div>
             ${deltaHtml}
+            ${(metas.get(String(t.channel_id)) ?? []).map(metaEnTarjeta).join('')}
           </div>`;
       }).join('')
-    : '<p style="color:var(--slate-400); font-size:13px;">Sin canales configurados todavía.</p>';
+    : '<p style="color:var(--slate-400); font-size:13px;">Sin canales con cifras todavía. Conecta Facebook o Instagram en Social Hub, o registra un cambio abajo.</p>';
+}
+
+function metaEnTarjeta(m) {
+  const fmt = n => Number(n ?? 0).toLocaleString('es-MX');
+  const fin = m.end_date
+    ? new Date(`${m.end_date}T12:00:00Z`).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+    : null;
+  const fila = (etq, pct, texto) => pct == null ? '' : `
+    <div class="seg-meta-mini">
+      <div class="seg-meta-mini-cab"><span>${etq}</span><span>${pct}%</span></div>
+      <div class="seg-pbar"><div class="seg-pbar-fill ${pct >= 90 ? 'fill-green' : pct >= 60 ? 'fill-blue' : 'fill-amber'}" style="width:${pct}%"></div></div>
+      <div class="seg-meta-mini-txt">${texto}</div>
+    </div>`;
+  return `
+    <div class="seg-meta-en-tarjeta">
+      <div class="seg-meta-titulo">🎯 ${m.name ? s(m.name) : 'Meta'}${fin ? ` · hasta ${fin}` : ''}</div>
+      ${fila('Llegar a', m.pct_total, m.goal_total ? `${fmt(m.total_actual)} de ${fmt(m.goal_total)} · faltan ${fmt(Math.max(0, m.goal_total - m.total_actual))}` : '')}
+      ${fila('Ganancia', m.pct_gain, m.goal_gain ? `${m.gain_actual >= 0 ? '+' : ''}${fmt(m.gain_actual)} de +${fmt(m.goal_gain)}` : '')}
+    </div>`;
 }
 
 // ── Historial de cambios ──────────────────────────────────────
@@ -112,13 +139,23 @@ export async function renderFormSeguidores(supabase, companyId, activityId = nul
   const contenedor = document.getElementById(contenedorId);
   if (!contenedor) return;
 
-  const [{ data: canales }, { data: actividades }] = await Promise.all([
+  const [{ data: todos }, { data: actividades }, { data: deMeta }] = await Promise.all([
     supabase.from('social_channels').select('id, name, icon').eq('company_id', companyId).order('name'),
     supabase.from('actividades').select('id, titulo').eq('company_id', companyId).order('fecha', { ascending: false }),
+    supabase.from('follower_totals').select('channel_id').eq('company_id', companyId).eq('source', 'meta'),
   ]);
 
-  if (!canales?.length) {
-    contenedor.innerHTML = '<p style="color:var(--slate-400); font-size:13px;">Primero configura al menos un canal en "Gestionar canales".</p>';
+  // Los canales que ya reciben la cifra de Meta no se reportan a mano
+  // (v30): el total y el avance de metas salen de Meta.
+  const idsMeta = new Set((deMeta ?? []).map(t => String(t.channel_id)));
+  const canales = (todos ?? []).filter(c => !idsMeta.has(String(c.id)));
+  const nombresMeta = (todos ?? []).filter(c => idsMeta.has(String(c.id))).map(c => c.name);
+  const notaMeta = nombresMeta.length
+    ? `<p class="meta-ayuda">${s(nombresMeta.join(' y '))} se actualiza${nombresMeta.length > 1 ? 'n' : ''} solo${nombresMeta.length > 1 ? 's' : ''} con las cifras de Meta; no hace falta reportarlo${nombresMeta.length > 1 ? 's' : ''} aquí.</p>`
+    : '';
+
+  if (!canales.length) {
+    contenedor.innerHTML = notaMeta || '<p style="color:var(--slate-400); font-size:13px;">Primero configura al menos un canal en "Gestionar canales".</p>';
     return;
   }
 
@@ -133,7 +170,7 @@ export async function renderFormSeguidores(supabase, companyId, activityId = nul
     )
   ].join('');
 
-  contenedor.innerHTML = `
+  contenedor.innerHTML = `${notaMeta}
     <div class="seg-form">
       <div class="seg-form-row">
         <div class="seg-form-group">

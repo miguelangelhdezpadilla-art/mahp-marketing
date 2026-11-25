@@ -28,6 +28,26 @@
   Prueba funcional dentro de una transacción con rollback (sin dejar datos): una reserva de $5 es rechazada por `presupuesto_diario`, un modelo inexistente por `modelo_inactivo`, y una reserva válida liquidada con 2,500 tokens de entrada y 300 de salida registra `cost_usd = 0.0004`.
 - **[Pendiente]** Desplegar `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` cuando exista `ANTHROPIC_API_KEY`. Mientras tanto, producción sigue con Groq. Panel de consumo (E3) pendiente.
 
+## 2026-11-24 — Producto: seguidores desde Meta y metas por periodo (pendiente de aplicar)
+
+- **[Feature]** `supabase_schema_v30.sql`:
+  - **`social_channels.meta_channel`:** liga cada canal con su red. Los canales existentes se ligan por nombre y se crean los que faltan para empresas con Meta conectado.
+  - **`meta_followers_at()`:** seguidores en una fecha. Facebook toma `page_follows` diario. Instagram toma la foto `followers_count`; antes de la primera foto lo estima restando `follower_count` y lo marca como estimado.
+  - **`follower_totals`:** toma la cifra de Meta en canales ligados y conserva el registro manual en los demás. Columna nueva `source`.
+  - **`follower_goals`:** agrega `start_date`, `end_date` y `name`. Ya no hay unique por canal, así que se permiten varias metas por periodo. Meta total y/o ganancia, al menos una.
+  - **`follower_goals_progress`:** avance dentro del periodo, `estado` (activa, futura o terminada) y fuente. Si un canal ligado no tiene datos de Meta, sigue con sus registros manuales.
+  - **Vistas:** ahora son `security_invoker`.
+- **[Feature]** UI:
+  - **"Seguidores actuales":** muestra la cifra de Meta con su fecha y el avance de cada meta en curso del canal.
+  - **Formulario de metas:** nombre, periodo con atajos (este mes, 30 o 90 días, trimestre, año), sugerencia de la cifra faltante a partir de los seguidores actuales y confirmación antes de eliminar.
+  - **Lista de metas:** agrupada por estado, con el ritmo diario necesario para cumplirla.
+  - **Colaborador:** ve solo las metas en curso.
+  - **Reporte manual:** ya no ofrece los canales que se actualizan desde Meta.
+- **[Feature]** `meta-insights` crea el canal ligado si la empresa no lo tiene.
+- **[Verificado]** Prueba en seco de v30 en una transacción revertida:
+  - Meta de Facebook de La Casa del Centro: 3 858 de 3 983, inicio 3 856, +2 de +125.
+  - "ta camaron" conserva sus cifras manuales: Instagram 2 829, +56.
+
 ## 2026-11-21 — Producto: estadísticas de Meta, fase 2 (panel)
 
 - **[Feature]** Tarjeta **📊 Estadísticas de Meta** al inicio de la pestaña Seguidores (`empresa.html` y `directivo.html`), módulo `js/shared/metaInsights.js`:
