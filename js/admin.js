@@ -1,5 +1,6 @@
 import { supabaseClient, requireSession, logout, mensajeInvitacionCreada } from './supabaseClient.js';
-import { showToast, configurarNotificaciones, configurarTabs } from './ui.js';
+import { showToast, configurarNotificaciones, configurarTabs, sHtml } from './ui.js';
+import { renderConsumoGlobal } from './shared/consumoIA.js';
 
 window.cerrarSesion = logout;
 let empresasCache = [];
@@ -78,8 +79,24 @@ const ETIQUETAS_EVENTO = {
   invite_created: 'Invitación creada',
   invite_cancelled: 'Invitación cancelada',
   access_revoked: 'Acceso revocado',
-  access_restored: 'Acceso restaurado'
+  access_restored: 'Acceso restaurado',
+  ai_limites_cambiados: 'Límites de IA cambiados',
+  ai_suspendida: 'IA suspendida',
+  ai_reanudada: 'IA reanudada'
 };
+
+// Los cambios de límites de IA guardan la fila completa antes/después;
+// se muestran solo los campos que cambiaron.
+function detalleEvento(ev) {
+  let d = ev.details;
+  if (!d) return '';
+  if (d.antes && d.despues) {
+    return Object.keys(d.despues)
+      .filter(k => !['updated_at', 'updated_by'].includes(k) && JSON.stringify(d.antes[k]) !== JSON.stringify(d.despues[k]))
+      .map(k => `${sHtml(k)}: ${sHtml(d.antes[k] ?? '—')} → ${sHtml(d.despues[k] ?? '—')}`).join('<br>');
+  }
+  return Object.entries(d).map(([k, v]) => `${sHtml(k)}: ${sHtml(typeof v === 'object' ? JSON.stringify(v) : v)}`).join(', ');
+}
 
 async function cargarAuditoria() {
   let { data, error } = await supabaseClient.from('audit_log').select('*').order('created_at', { ascending: false }).limit(100);
@@ -87,7 +104,7 @@ async function cargarAuditoria() {
 
   document.getElementById('tablaAuditoria').innerHTML = data.map(ev => {
     let empresa = empresasCache.find(e => e.id === ev.company_id);
-    let detalle = ev.details ? Object.entries(ev.details).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
+    let detalle = detalleEvento(ev);
     return `<tr><td>${new Date(ev.created_at).toLocaleString()}</td><td>${empresa ? empresa.name : '—'}</td>
       <td>${ETIQUETAS_EVENTO[ev.action] || ev.action}</td><td>${detalle}</td></tr>`;
   }).join('') || '<tr class="fila-vacia"><td colspan="4">Sin actividad todavía.</td></tr>';
@@ -140,5 +157,6 @@ window.invitarAdminEmpresa = async function() {
   await cargarInvites();
   await cargarUsuarios();
   await cargarAuditoria();
+  await renderConsumoGlobal(supabaseClient, 'consumoIAGlobal');
   await configurarNotificaciones(supabaseClient, resultado.profile.id);
 })();

@@ -83,6 +83,16 @@
       </div>
     </div>
 
+    <div id="tab-consumo-ia" class="tab-panel">
+      <div class="card">
+        <h2>🤖 Consumo de IA</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Gasto en Claude por empresa, límites y paro manual. Al llegar a un límite la IA de esa empresa se pausa sola.
+        </p>
+        <div id="consumoIAGlobal">Cargando...</div>
+      </div>
+    </div>
+
     <div id="tab-actividad" class="tab-panel">
       <div class="card">
         <h2>Actividad reciente</h2>
@@ -105,6 +115,9 @@
     </button>
     <button onclick="cambiarTab('usuarios')" id="navbtn-usuarios">
       <i class="fa-solid fa-users"></i> Usuarios
+    </button>
+    <button onclick="cambiarTab('consumo-ia')" id="navbtn-consumo-ia">
+      <i class="fa-solid fa-robot"></i> Consumo IA
     </button>
     <button onclick="cambiarTab('actividad')" id="navbtn-actividad">
       <i class="fa-solid fa-clock-rotate-left"></i> Actividad

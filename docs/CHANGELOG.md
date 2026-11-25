@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-11-25 — Producto: panel de consumo de IA (MPS-002-004, etapa E3)
+
+- **[Feature]** `admin.html` → pestaña **Consumo IA** (solo super_admin): totales de hoy y del mes, tabla por empresa (estado, gasto contra límite, solicitudes, modelo), edición de límites (diario, mensual, tokens de salida, sugerencias por conversación/hora, permitir modelo avanzado con confirmación), **Suspender/Reanudar** con motivo, y catálogo de modelos (precios y activo; avisa si desactivar deja empresas sin IA).
+- **[Feature]** Social Hub de cada empresa → tarjeta **Mi asistente: consumo de IA**: estado, medidores de gasto de hoy y del mes frente al límite, desglose del mes por uso. Sin precios unitarios del proveedor.
+- **[Feature]** La pestaña Actividad de `admin.html` muestra los eventos `ai_limites_cambiados` / `ai_suspendida` / `ai_reanudada` con solo los campos que cambiaron.
+- **[Código]** Nuevo `js/shared/consumoIA.js`. Lee las vistas de v28 (`ai_usage_status`, `ai_usage_daily`); sin cambios de base de datos.
+- **[Infra]** Secreto `GROQ_API_KEY` borrado de Supabase con autorización del Product Owner (ningún código lo usaba).
+- **[Verificación]** RLS simulada en producción dentro de transacciones de solo lectura con rollback: el company_admin de La Casa del Centro ve solo su empresa (3 solicitudes, US$ 0.000958 en el mes) y 0 filas de `ai_models`; super_admin ve las 2 empresas, sus límites y los 2 modelos. El corte de "hoy" respeta la zona horaria de México. **No probado en navegador** (el perfil de Playwright estaba en uso por otra sesión).
+
 ## 2026-11-24 — Producto: AI Response Engine desplegado (Claude)
 
 - **[Infra]** `ANTHROPIC_API_KEY` guardada por el Product Owner en Supabase Secrets. `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` desplegados con el motor de Claude.

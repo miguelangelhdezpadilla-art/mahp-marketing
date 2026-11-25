@@ -335,7 +335,7 @@ Siguen abiertas D2, D4 y D6 de MPS-002-003.
 |---|---|
 | E1 | ✅ Código y pruebas: `_shared/ai/` (`types`, `models`, `anthropic`, `context`, `validate`, `prompts`, `engine`, `ledger`, `testing/fakes`). `meta-webhook` y `generar-calendario` ya usan el motor y Groq quedó retirado del código. 23 pruebas pasan (`deno test supabase/functions/_shared/ai/`). Desplegado el 2026-11-24. ✅ Prueba de punta a punta el 2026-11-25 (calendario $0.0007, sugerencia del Social Hub $0.00026; detalle en CHANGELOG) |
 | E2 | ✅ `supabase_schema_v28.sql` aplicada el 2026-11-20 |
-| E3 | ⏳ El motor ya reserva y liquida en cada llamada (E1). Falta el panel de consumo (global en `admin.html` y por empresa) |
+| E3 | ✅ 2026-11-25: pestaña Consumo IA en `admin.html` (límites, suspender/reanudar, modelos) y tarjeta "Mi asistente" en el Social Hub (`js/shared/consumoIA.js`). RLS verificada; ⏳ prueba de límite bajo ($0.01) que pausa la IA y lo muestra el panel |
 | E4–E6 | ⏳ Pendientes (base de conocimientos, motor completo con recuperación, cola y modos) |
 
 **Lo que las pruebas no cubren**:
