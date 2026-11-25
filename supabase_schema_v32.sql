@@ -6,7 +6,12 @@
 --      solo con tipos de imagen, video, audio y documentos. Nada de
 --      HTML, SVG ni ejecutables.
 --   2. Políticas de storage: cada empresa solo ve y sube en su carpeta
---      ({company_id}/...). Subir y borrar: company_admin o super_admin.
+--      ({company_id}/...). Ver, subir y borrar: admin, director y
+--      colaborador de la empresa, y super_admin.
+--   4. Decisión D4 del Product Owner (2026-11-25): colaboradores,
+--      directores y admins crean, editan y publican conocimiento sin
+--      aprobación. Se reemplazan las políticas de knowledge_entries de
+--      v31 (solo admin). El modo del asistente sigue siendo solo admin.
 --   3. knowledge_attachments: enlaces y archivos de cada entrada.
 --      La IA comparte los enlaces tal cual; los archivos los adjunta el
 --      envío automático cuando la respuesta usa esa entrada.
@@ -40,7 +45,7 @@ create policy "knowledge_files_insert" on storage.objects
   with check (bucket_id = 'knowledge'
               and (public.my_role() = 'super_admin'
                    or ((storage.foldername(name))[1] = public.my_company_id()::text
-                       and public.my_role() = 'company_admin')));
+                       and public.my_role() in ('company_admin','director','collaborator'))));
 
 drop policy if exists "knowledge_files_delete" on storage.objects;
 create policy "knowledge_files_delete" on storage.objects
@@ -48,7 +53,7 @@ create policy "knowledge_files_delete" on storage.objects
   using (bucket_id = 'knowledge'
          and (public.my_role() = 'super_admin'
               or ((storage.foldername(name))[1] = public.my_company_id()::text
-                  and public.my_role() = 'company_admin')));
+                  and public.my_role() in ('company_admin','director','collaborator'))));
 
 create table knowledge_attachments (
   id           bigint generated always as identity primary key,
@@ -89,15 +94,34 @@ alter table knowledge_attachments enable row level security;
 create policy "knowledge_attachments_select" on knowledge_attachments
   for select to authenticated
   using (my_role() = 'super_admin'
-         or (company_id = my_company_id() and my_role() in ('company_admin','director')));
+         or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')));
 create policy "knowledge_attachments_insert" on knowledge_attachments
   for insert to authenticated
   with check (my_role() = 'super_admin'
-              or (company_id = my_company_id() and my_role() = 'company_admin'));
+              or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')));
 create policy "knowledge_attachments_delete" on knowledge_attachments
   for delete to authenticated
   using (my_role() = 'super_admin'
-         or (company_id = my_company_id() and my_role() = 'company_admin'));
+         or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')));
+
+-- D4: conocimiento editable por admin, director y colaborador.
+drop policy if exists "knowledge_select" on knowledge_entries;
+drop policy if exists "knowledge_insert" on knowledge_entries;
+drop policy if exists "knowledge_update" on knowledge_entries;
+create policy "knowledge_select" on knowledge_entries
+  for select to authenticated
+  using (my_role() = 'super_admin'
+         or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')));
+create policy "knowledge_insert" on knowledge_entries
+  for insert to authenticated
+  with check (my_role() = 'super_admin'
+              or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')));
+create policy "knowledge_update" on knowledge_entries
+  for update to authenticated
+  using (my_role() = 'super_admin'
+         or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')))
+  with check (my_role() = 'super_admin'
+              or (company_id = my_company_id() and my_role() in ('company_admin','director','collaborator')));
 revoke update on knowledge_attachments from anon, authenticated;
 revoke all on knowledge_attachments from anon;
 

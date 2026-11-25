@@ -16,13 +16,15 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
-## 2026-11-25 — Producto: enlaces y archivos en la información del asistente (sin publicar)
+## 2026-11-25 — Producto: enlaces y archivos en la información del asistente
 
 - **[Feature]** Formulario de información del negocio → **Enlaces y archivos**: enlaces (con nombre) e imágenes, videos, audios y documentos de hasta 25 MB (`js/shared/asistenteIA.js`).
 - **[Feature]** La IA comparte los enlaces de la información que usa; se bloquea cualquier enlace que no esté en la información publicada (`enlacesSinFuente`). En modo automático, los archivos de las entradas citadas se adjuntan después del texto (máx. 3, URL firmada de 10 min, solo `RESPONSE`). "Probar mi asistente" muestra qué se adjuntaría. Prompt `social-v3`.
 - **[DB]** `supabase_schema_v32.sql` (aditiva): bucket privado `knowledge` (25 MB, solo imagen/video/audio/documentos; sin HTML ni SVG), políticas por carpeta de empresa, tabla `knowledge_attachments` con RLS.
 - **[Test]** 53 pruebas de Deno (5 nuevas: enlaces, adjuntos citados, tope de 3, enlace inventado bloqueado).
-- **[Pendiente]** v32 **sin aplicar** (requiere autorización explícita del Product Owner). Hasta aplicarla no se publican `meta-webhook`, `asistente-probar` ni la página. No probado en navegador. En modo asistido, el envío humano todavía no adjunta los archivos.
+- **[DB]** v32 también aplica la decisión D4 del Product Owner: colaboradores, directores y admins crean, editan y publican conocimiento y adjuntos (antes solo admin). El modo del asistente sigue siendo solo del admin.
+- **[Infra]** v32 aplicada el 2026-11-26 con autorización del Product Owner. Verificado con rollback: archivo en la carpeta de otra empresa y enlace `javascript:` rechazados (23514); enlace y archivo propios aceptados; la búsqueda devuelve la entrada. `meta-webhook` y `asistente-probar` desplegados; página publicada.
+- **[Pendiente]** No probado en navegador. En modo asistido, el envío humano todavía no adjunta los archivos. La pantalla de colaboradores aún no tiene la tarjeta de información.
 
 ## 2026-11-25 — Producto: base de conocimientos y respuestas automáticas (MPS-002-004 E4–E6)
 
