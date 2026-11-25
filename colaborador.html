@@ -56,6 +56,21 @@
         </div>
       </div>
 
+      <!-- Social Hub para colaboradores: responder, asignar y resolver
+           conversaciones. Conectar páginas y ver el consumo de IA siguen
+           siendo solo de administración (empresa.html). -->
+      <div id="tab-social-hub" class="tab-panel">
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div style="padding:1rem 1.1rem 0;">
+            <h2>💬 Mensajes de clientes</h2>
+            <p style="font-size:0.85em; color:var(--text-muted); margin-top:-4px; margin-bottom:1rem;">
+              Responde los mensajes de Facebook e Instagram de la empresa. La IA te sugiere respuestas; tú decides qué se envía.
+            </p>
+          </div>
+          <div id="socialHubContenedor"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -68,6 +83,9 @@
     </button>
     <button onclick="cambiarTab('estrategias')" id="navbtn-estrategias">
       <i class="fa-solid fa-lightbulb"></i> Estrategias
+    </button>
+    <button onclick="cambiarTab('social-hub')" id="navbtn-social-hub">
+      <i class="fa-solid fa-comments"></i> Mensajes
     </button>
   </div>
 

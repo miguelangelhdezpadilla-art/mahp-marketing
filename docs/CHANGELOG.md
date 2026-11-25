@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-11-25 — Producto: Social Hub para colaboradores
+
+- **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
+
 ## 2026-11-25 — Producto: panel de consumo de IA (MPS-002-004, etapa E3)
 
 - **[Feature]** `admin.html` → pestaña **Consumo IA** (solo super_admin): totales de hoy y del mes, tabla por empresa (estado, gasto contra límite, solicitudes, modelo), edición de límites (diario, mensual, tokens de salida, sugerencias por conversación/hora, permitir modelo avanzado con confirmación), **Suspender/Reanudar** con motivo, y catálogo de modelos (precios y activo; avisa si desactivar deja empresas sin IA).

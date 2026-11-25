@@ -5,6 +5,7 @@
     import { renderZonaEvidencias, subirEvidencias } from './shared/evidencias.js';
     import { renderDetalleTarea, solicitarAutorizacion } from './shared/detalleTarea.js';
     import { renderAvanceSeguidoresColaborador } from './shared/metasSeguidores.js';
+    import { renderSocialHub } from './shared/socialHub.js';
 
     window.cerrarSesion = logout;
     configurarTabs();
@@ -255,10 +256,17 @@
       });
       calendar.render();
 
+      // Social Hub: carga conversaciones + Realtime, así que se
+      // inicializa solo la primera vez que se abre la pestaña.
+      let hubInicializado = false;
       let cambiarTabBase = window.cambiarTab;
       window.cambiarTab = function(nombre) {
         cambiarTabBase(nombre);
         if (nombre === 'calendario') calendar.updateSize();
+        if (nombre === 'social-hub' && !hubInicializado) {
+          hubInicializado = true;
+          renderSocialHub(supabaseClient, miPerfil.company_id, miPerfil, 'socialHubContenedor');
+        }
       };
 
       await Promise.all([
