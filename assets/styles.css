@@ -2224,6 +2224,9 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   margin-top: 2px;
 }
+.conv-ultimo-cliente { font-weight: 700; color: var(--text-primary); }
+.conv-ultimo-ia { color: #047857; font-weight: 500; }
+.conv-ultimo-transferencia { color: #ca8a04; font-weight: 700; }
 .conv-badges {
   display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;
 }

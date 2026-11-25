@@ -79,6 +79,18 @@ async function sugerenciaVigente(supabase, convId, mensajes) {
   return data;
 }
 
+// Color de la vista previa según quién escribió al último:
+//   cliente → negritas (espera respuesta)
+//   IA de MAHP → verde
+//   IA con el mensaje de transferencia (conversación pausada para una
+//   persona, v31) → amarillo fuerte
+function claseUltimo(conv, ultimo) {
+  if (!ultimo) return '';
+  if (ultimo.direction === 'inbound') return 'conv-ultimo-cliente';
+  if (ultimo.sender_type === 'ia') return conv.ai_paused ? 'conv-ultimo-transferencia' : 'conv-ultimo-ia';
+  return '';
+}
+
 // ── Tarjeta de conversación (lista izquierda) ────────────────────
 function conversacionCardHtml(conv, companyId) {
   const nombre = nombreDe(conv);
@@ -97,7 +109,7 @@ function conversacionCardHtml(conv, companyId) {
       </div>
       <div class="conv-info">
         <div class="conv-nombre">${s(nombre)} <span class="conv-hora">${ultimo ? horaCorta(ultimo.sent_at) : ''}</span></div>
-        <div class="conv-ultimo">${ultimo ? s(truncar(textoVistaPrevia(ultimo), 60)) : 'Sin mensajes'}</div>
+        <div class="conv-ultimo ${claseUltimo(conv, ultimo)}">${ultimo ? s(truncar(textoVistaPrevia(ultimo), 60)) : 'Sin mensajes'}</div>
         <div class="conv-badges">
           <span class="conv-badge badge-${claseEstado}">${textoEstado}</span>
           ${conv.ia_urgencia === 'alta' ? '<span class="conv-badge badge-urgente">Urgente</span>' : ''}
