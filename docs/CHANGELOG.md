@@ -28,7 +28,7 @@
   Prueba funcional dentro de una transacción con rollback (sin dejar datos): una reserva de $5 es rechazada por `presupuesto_diario`, un modelo inexistente por `modelo_inactivo`, y una reserva válida liquidada con 2,500 tokens de entrada y 300 de salida registra `cost_usd = 0.0004`.
 - **[Pendiente]** Desplegar `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` cuando exista `ANTHROPIC_API_KEY`. Mientras tanto, producción sigue con Groq. Panel de consumo (E3) pendiente.
 
-## 2026-11-24 — Producto: seguidores desde Meta y metas por periodo (pendiente de aplicar)
+## 2026-11-24 — Producto: seguidores desde Meta y metas por periodo
 
 - **[Feature]** `supabase_schema_v30.sql`:
   - **`social_channels.meta_channel`:** liga cada canal con su red. Los canales existentes se ligan por nombre y se crean los que faltan para empresas con Meta conectado.
@@ -44,6 +44,7 @@
   - **Colaborador:** ve solo las metas en curso.
   - **Reporte manual:** ya no ofrece los canales que se actualizan desde Meta.
 - **[Feature]** `meta-insights` crea el canal ligado si la empresa no lo tiene.
+- **[Infra]** Aplicado con autorización del Product Owner: v30 vía `db query --remote`, `meta-insights` desplegada (`--no-verify-jwt`, 401 sin autorización) y frontend publicado. Resultados en producción iguales a los de la prueba en seco.
 - **[Verificado]** Prueba en seco de v30 en una transacción revertida:
   - Meta de Facebook de La Casa del Centro: 3 858 de 3 983, inicio 3 856, +2 de +125.
   - "ta camaron" conserva sus cifras manuales: Instagram 2 829, +56.
