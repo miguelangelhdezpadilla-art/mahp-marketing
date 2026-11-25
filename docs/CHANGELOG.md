@@ -12,6 +12,8 @@
 
 ## 2026-11-25 — Producto: Social Hub para colaboradores
 
+- **[Decisión]** Base de conocimientos (E4 de `MPS-002-004`): la construye la sesión del motor de IA. **D4 de `MPS-002-003` resuelta** por el Product Owner: colaboradores, directores y admins **publican directo** promociones, precios, horarios, FAQ, políticas e instrucciones, sin aprobación previa. El cambio de modo de IA sigue siendo de company admin.
+
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
 ## 2026-11-25 — Producto: panel de consumo de IA (MPS-002-004, etapa E3)
