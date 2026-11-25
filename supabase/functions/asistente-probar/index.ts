@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { AnthropicProvider } from '../_shared/ai/anthropic.ts';
 import { SupabaseLedger } from '../_shared/ai/ledger.ts';
 import { sugerirRespuesta } from '../_shared/ai/engine.ts';
-import { buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
+import { adjuntosParaEnviar, buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
 import { decidirEnvio } from '../_shared/ai/autopilot.ts';
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
@@ -113,6 +113,9 @@ Deno.serve(async (req) => {
       automatico: decision.accion,          // enviar | transferir | nada
       motivo_automatico: decision.motivo,
       mensaje_transferencia: asistente?.handoff_message ?? null,
+      adjuntos: decision.accion === 'enviar'
+        ? adjuntosParaEnviar(fragmentos, r.analisis.fuentes_usadas).map((x) => x.label || x.file_name)
+        : [],
     });
   } catch (err) {
     console.error('[asistente-probar]', err);

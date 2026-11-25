@@ -7,7 +7,7 @@ import { construirEntrada, escaparDatos, esTrivial, estimarTokens, type Turno } 
 import { costoMaximoUsd, costoUsd } from './models.ts';
 import { SISTEMA_SOCIAL } from './prompts.ts';
 import {
-  type Analisis, cifrasSinFuente, citasInvalidas, ESQUEMA_ANALISIS, etiquetaFuente, filtraInstrucciones, MAX_SUGERENCIA,
+  type Analisis, cifrasSinFuente, citasInvalidas, enlacesSinFuente, ESQUEMA_ANALISIS, etiquetaFuente, filtraInstrucciones, MAX_SUGERENCIA,
   parsearAnalisis,
 } from './validate.ts';
 
@@ -161,6 +161,8 @@ async function intentar(
   if (!borrador) return { analisis, bloqueo: 'respuesta sugerida vacía', error: null };
   if (borrador.length > MAX_SUGERENCIA) return { analisis, bloqueo: `respuesta de ${borrador.length} caracteres`, error: null };
   if (filtraInstrucciones(borrador)) return { analisis, bloqueo: 'la respuesta menciona instrucciones internas', error: null };
+  const enlaces = enlacesSinFuente(borrador, sol.fuentes);
+  if (enlaces.length) return { analisis, bloqueo: `enlaces que no están en la información del negocio: ${enlaces.join(', ')}`, error: null };
   const inventadas = citasInvalidas(analisis.fuentes_usadas, sol.fuentes.length);
   if (inventadas.length) return { analisis, bloqueo: `cita fuentes que no recibió: ${inventadas.join(', ')}`, error: null };
   // Las cifras se comparan contra las fuentes que dice haber usado; si no

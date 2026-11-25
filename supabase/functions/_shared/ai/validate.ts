@@ -122,3 +122,10 @@ export function citasInvalidas(citadas: string[], totalFuentes: number): string[
   const validas = new Set(Array.from({ length: totalFuentes }, (_, i) => etiquetaFuente(i)));
   return citadas.filter((c) => !validas.has(c));
 }
+
+/** Enlaces de la respuesta que no aparecen en las fuentes (enlaces inventados). */
+export function enlacesSinFuente(respuesta: string, fuentes: string[]): string[] {
+  const corpus = fuentes.join('\n');
+  const enlaces = respuesta.match(/(?:https?:\/\/|www\.)[^\s<>"')]+/gi) ?? [];
+  return enlaces.map((e) => e.replace(/[.,;:!?]+$/, '')).filter((e) => !corpus.includes(e));
+}

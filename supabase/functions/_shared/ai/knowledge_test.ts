@@ -125,3 +125,53 @@ for (const [nombre, over] of [
 Deno.test('Automático: sin mensaje de transferencia, no envía nada', () => {
   assertEquals(decidirEnvio(ctx({ hayMensajeTransferencia: false, analisis: { ...analisisOk, intencion: 'queja' } })).accion, 'nada');
 });
+
+// ---------- Enlaces y adjuntos (v32) ----------
+import { adjuntosParaEnviar, type Fragmento, textoFragmento } from './knowledge.ts';
+import { enlacesSinFuente } from './validate.ts';
+
+const fragMenu: Fragmento = {
+  id: 1, kind: 'producto', title: 'Menú', body: 'Tacos y tostadas.', score: 1,
+  adjuntos: [
+    { kind: 'enlace', label: 'Menú en línea', url: 'https://ejemplo.mx/menu', storage_path: null, file_name: null },
+    { kind: 'imagen', label: null, url: null, storage_path: '2/1/menu.jpg', file_name: 'menu.jpg' },
+    { kind: 'archivo', label: 'Carta PDF', url: null, storage_path: '2/1/carta.pdf', file_name: 'carta.pdf' },
+  ],
+};
+const fragHorario: Fragmento = {
+  id: 2, kind: 'horario', title: 'Horario', body: '9:00 a 18:00', score: 1,
+  adjuntos: [{ kind: 'video', label: null, url: null, storage_path: '2/2/local.mp4', file_name: 'local.mp4' }],
+};
+
+Deno.test('El fragmento incluye sus enlaces y nombra sus archivos', () => {
+  const t = textoFragmento(fragMenu);
+  assertStringIncludes(t, 'Menú en línea: https://ejemplo.mx/menu');
+  assertStringIncludes(t, 'menu.jpg (imagen)');
+  assertStringIncludes(t, 'Carta PDF (archivo)');
+});
+
+Deno.test('Solo se adjuntan los archivos de las fuentes citadas', () => {
+  const adj = adjuntosParaEnviar([fragMenu, fragHorario], ['F2']);
+  assertEquals(adj.map((x) => x.file_name), ['local.mp4']);
+  assertEquals(adjuntosParaEnviar([fragMenu, fragHorario], []).length, 0);
+});
+
+Deno.test('Máximo 3 adjuntos por respuesta y nunca enlaces', () => {
+  const adj = adjuntosParaEnviar([fragMenu, fragHorario, fragMenu], ['F1', 'F2', 'F3']);
+  assertEquals(adj.length, 3);
+  assert(adj.every((x) => x.kind !== 'enlace'));
+});
+
+Deno.test('Enlace inventado se detecta; enlace de la fuente se acepta', () => {
+  const fuentes = [textoFragmento(fragMenu)];
+  assertEquals(enlacesSinFuente('Mira el menú: https://ejemplo.mx/menu.', fuentes), []);
+  assertEquals(enlacesSinFuente('Paga aquí: https://pago-falso.com/x', fuentes), ['https://pago-falso.com/x']);
+});
+
+Deno.test('Respuesta con enlace inventado se bloquea', async () => {
+  const r = await sugerirRespuesta(solicitud({ fuentes: [textoFragmento(fragMenu)] }), deps([{ text: analisisJson({
+    respuesta_sugerida: 'Reserva en www.otro-sitio.com', fuentes_usadas: ['F1'],
+  }) }]));
+  assertEquals(r.desenlace, 'bloqueada');
+  assertStringIncludes(r.motivo, 'otro-sitio');
+});

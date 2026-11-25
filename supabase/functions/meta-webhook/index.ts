@@ -16,9 +16,9 @@ import { AnthropicProvider } from '../_shared/ai/anthropic.ts';
 import { SupabaseLedger } from '../_shared/ai/ledger.ts';
 import { sugerirRespuesta } from '../_shared/ai/engine.ts';
 import type { Turno } from '../_shared/ai/context.ts';
-import { buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
+import { adjuntosParaEnviar, buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
 import { type Decision, decidirEnvio } from '../_shared/ai/autopilot.ts';
-import { enviarRespuestaAutomatica } from '../_shared/meta.ts';
+import { enviarAdjuntoAutomatico, enviarRespuestaAutomatica } from '../_shared/meta.ts';
 
 const VERIFY_TOKEN  = Deno.env.get('META_VERIFY_TOKEN') ?? '';
 const APP_SECRET     = Deno.env.get('META_APP_SECRET') ?? '';
@@ -373,6 +373,15 @@ async function analizarConIA(
       await supabase.from('ai_responses').update({
         status: 'enviada', final_text: texto, sent_message_id: mensajeId, reviewed_at: new Date().toISOString(),
       }).eq('id', respuestaId);
+      // v32: archivos de las entradas que la respuesta usó (máx. 3). Meta
+      // los descarga de una URL firmada que vence en 10 minutos.
+      for (const adj of adjuntosParaEnviar(fragmentos, ia?.fuentes_usadas ?? [])) {
+        const { data: firmada } = await supabase.storage.from('knowledge').createSignedUrl(adj.storage_path!, 600);
+        if (!firmada?.signedUrl) continue;
+        const envioAdj = await enviarAdjuntoAutomatico(pagina.page_access_token, clienteId, adj.kind, firmada.signedUrl);
+        if (!envioAdj.ok) { console.error('[IA] Meta rechazó el adjunto', adj.file_name, envioAdj.error, { convId }); continue; }
+        await guardarMensajeIA(convId, companyId, `📎 ${adj.label || adj.file_name}`, envioAdj.messageId);
+      }
       await registrarAuditoria(companyId, 'ai_respuesta_enviada_auto', convId, { ai_response_id: respuestaId, motivo: decision.motivo });
     } else {
       // Transferencia: la IA no vuelve a contestar en esta conversación

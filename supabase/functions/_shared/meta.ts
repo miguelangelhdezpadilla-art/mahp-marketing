@@ -29,3 +29,31 @@ export async function enviarRespuestaAutomatica(
     return { ok: false, messageId: null, error: String(err).slice(0, 300) };
   }
 }
+
+const TIPO_META: Record<string, string> = { imagen: 'image', video: 'video', audio: 'audio', archivo: 'file' };
+
+/** Adjunto por URL (Meta lo descarga de una URL firmada de corta duración). */
+export async function enviarAdjuntoAutomatico(
+  pageAccessToken: string, destinatarioId: string, tipo: string, url: string,
+): Promise<ResultadoEnvio> {
+  const metaTipo = TIPO_META[tipo];
+  if (!metaTipo) return { ok: false, messageId: null, error: `tipo no soportado: ${tipo}` };
+  try {
+    const res = await fetch(`https://graph.facebook.com/v26.0/me/messages?access_token=${pageAccessToken}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient: { id: destinatarioId },
+        messaging_type: 'RESPONSE',
+        message: { attachment: { type: metaTipo, payload: { url, is_reusable: false } } },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      return { ok: false, messageId: null, error: `${data.error?.code ?? res.status} ${data.error?.message ?? ''}`.trim() };
+    }
+    return { ok: true, messageId: data.message_id ?? null, error: null };
+  } catch (err) {
+    return { ok: false, messageId: null, error: String(err).slice(0, 300) };
+  }
+}

@@ -27,7 +27,21 @@ const MODOS = {
 
 const a = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const estado = { supabase: null, companyId: null, perfil: null, idCont: null, entradas: [], asistente: null, editando: null };
+const estado = {
+  supabase: null, companyId: null, perfil: null, idCont: null, entradas: [], asistente: null, editando: null,
+  adjuntos: [],      // knowledge_attachments de la empresa (v32)
+  pendientes: [],    // por guardar: { kind:'enlace', label, url } o { kind, file }
+};
+
+const MAX_ARCHIVO = 25 * 1024 * 1024; // límite de Meta y del bucket
+const ACEPTA = 'image/jpeg,image/png,image/gif,image/webp,video/mp4,video/quicktime,video/webm,audio/mpeg,audio/mp4,audio/ogg,audio/wav,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
+const ICONO = { enlace: '🔗', imagen: '🖼️', video: '🎬', audio: '🎵', archivo: '📄' };
+
+function tipoDeArchivo(file) {
+  const m = file.type || '';
+  return m.startsWith('image/') ? 'imagen' : m.startsWith('video/') ? 'video' : m.startsWith('audio/') ? 'audio' : 'archivo';
+}
+const tamano = b => b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 
 export async function renderAsistenteIA(supabase, companyId, perfil, idCont) {
   Object.assign(estado, { supabase, companyId, perfil, idCont });
@@ -35,6 +49,7 @@ export async function renderAsistenteIA(supabase, companyId, perfil, idCont) {
   if (!cont) return;
   if (!cont.dataset.enlazado) {
     cont.addEventListener('click', manejarClic);
+    cont.addEventListener('change', ev => { if (ev.target.id === 'asArchivos') agregarArchivos(ev.target); });
     cont.addEventListener('keydown', ev => {
       if (ev.key === 'Enter' && ev.target.id === 'asPregunta') { ev.preventDefault(); probar(); }
     });
@@ -45,7 +60,7 @@ export async function renderAsistenteIA(supabase, companyId, perfil, idCont) {
 
 async function recargar() {
   const cont = document.getElementById(estado.idCont);
-  const [ent, asis] = await Promise.all([
+  const [ent, asis, adj] = await Promise.all([
     estado.supabase.from('knowledge_entries')
       .select('id, kind, title, body, status, valid_until, updated_at')
       .eq('company_id', estado.companyId).is('deleted_at', null)
@@ -53,6 +68,9 @@ async function recargar() {
     estado.supabase.from('ai_assistants')
       .select('mode, min_confidence, max_auto_per_conversation_hour, handoff_message, auto_paused_at, knowledge_changed_at, last_playground_at')
       .eq('company_id', estado.companyId).maybeSingle(),
+    estado.supabase.from('knowledge_attachments')
+      .select('id, entry_id, kind, label, url, storage_path, file_name, size_bytes')
+      .eq('company_id', estado.companyId).order('id'),
   ]);
   if (ent.error || asis.error) {
     cont.innerHTML = `<p class="mi-rango">No se pudo cargar el asistente: ${s((ent.error || asis.error).message)}</p>`;
@@ -60,6 +78,7 @@ async function recargar() {
   }
   estado.entradas = ent.data ?? [];
   estado.asistente = asis.data;
+  estado.adjuntos = adj.error ? [] : (adj.data ?? []);
   cont.innerHTML = `
     ${seccionModo()}
     <div class="mi-bloque">
@@ -171,6 +190,19 @@ function formularioEntrada() {
       <label style="font-size:12px;">Respuesta o información (escribe los datos exactos: precios, horarios, direcciones)
         <textarea id="asCuerpo" maxlength="3000" rows="3" placeholder="Ej. Lunes a sábado de 9:00 a 18:00. Domingo cerrado." style="margin:4px 0 0;">${s(e?.body ?? '')}</textarea>
       </label>
+      <fieldset style="border:0.5px dashed var(--border); border-radius:8px; padding:8px; margin:0;">
+        <legend style="font-size:12px; padding:0 4px;">Enlaces y archivos (opcional)</legend>
+        <div id="asAdjuntosLista">${listaAdjuntosForm(e)}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; margin-top:6px;">
+          <input type="url" id="asUrl" placeholder="https://… (menú en línea, ubicación en Maps, catálogo)" style="flex:2; min-width:200px; margin:0;">
+          <input type="text" id="asUrlTexto" maxlength="120" placeholder="Nombre del enlace (opcional)" style="flex:1; min-width:140px; margin:0;">
+          <button class="btn-auto" data-accion="agregar-enlace" style="width:auto; margin:0;">🔗 Agregar enlace</button>
+        </div>
+        <label style="display:block; font-size:12px; margin-top:8px;">Imágenes, videos, audios o documentos (máx. 25 MB cada uno)
+          <input type="file" id="asArchivos" multiple accept="${ACEPTA}" style="margin:4px 0 0;">
+        </label>
+        <p class="mi-tile-nota" style="margin:4px 0 0;">La IA comparte los enlaces en su respuesta. Los archivos se adjuntan solos cuando la IA contesta en modo automático usando esta información.</p>
+      </fieldset>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
         <label style="font-size:12px;">Válido hasta (opcional, para promociones)
           <input type="date" id="asHasta" value="${a(e?.valid_until ? e.valid_until.slice(0, 10) : '')}" style="margin:4px 0 0;">
@@ -184,6 +216,87 @@ function formularioEntrada() {
     </div>`;
 }
 
+function filaAdjunto(x, accion, clave) {
+  const nombre = x.kind === 'enlace' ? (x.label ? `${x.label} — ${x.url}` : x.url) : (x.label || x.file_name || x.file?.name);
+  const bytes = x.size_bytes || x.file?.size;
+  return `<li style="display:flex; gap:6px; align-items:center; font-size:12px; margin:2px 0;">
+    <span aria-hidden="true">${ICONO[x.kind] ?? '📄'}</span>
+    <span style="flex:1; word-break:break-all;">${s(nombre)}${bytes ? ' · ' + s(tamano(bytes)) : ''}${accion === 'quitar-pendiente' ? ' <em>(por guardar)</em>' : ''}</span>
+    <button class="btn-auto" data-accion="${accion}" data-id="${a(clave)}" aria-label="Quitar ${a(nombre)}" style="width:auto; margin:0; padding:2px 8px; background:#e74c3c;">✕</button>
+  </li>`;
+}
+
+function listaAdjuntosForm(e) {
+  const guardados = e ? estado.adjuntos.filter(x => x.entry_id === e.id) : [];
+  if (!guardados.length && !estado.pendientes.length) return '<p class="mi-tile-nota" style="margin:0;">Sin enlaces ni archivos.</p>';
+  return `<ul style="list-style:none; padding:0; margin:0;">
+    ${guardados.map(x => filaAdjunto(x, 'borrar-adjunto', x.id)).join('')}
+    ${estado.pendientes.map((x, i) => filaAdjunto(x, 'quitar-pendiente', i)).join('')}
+  </ul>`;
+}
+
+function refrescarAdjuntosForm() {
+  const cont = document.getElementById('asAdjuntosLista');
+  const e = estado.editando ? estado.entradas.find(x => x.id === estado.editando) : null;
+  if (cont) cont.innerHTML = listaAdjuntosForm(e);
+}
+
+function agregarEnlace() {
+  const url = document.getElementById('asUrl').value.trim();
+  const label = document.getElementById('asUrlTexto').value.trim();
+  if (!/^https?:\/\/\S+\.\S+/i.test(url)) { showToast('Escribe un enlace completo que empiece con https://', 'error'); return; }
+  estado.pendientes.push({ kind: 'enlace', label: label || null, url });
+  document.getElementById('asUrl').value = '';
+  document.getElementById('asUrlTexto').value = '';
+  refrescarAdjuntosForm();
+}
+
+function agregarArchivos(input) {
+  for (const file of input.files) {
+    if (file.size > MAX_ARCHIVO) { showToast(`"${file.name}" pesa más de 25 MB.`, 'error'); continue; }
+    estado.pendientes.push({ kind: tipoDeArchivo(file), file, label: null });
+  }
+  input.value = '';
+  refrescarAdjuntosForm();
+}
+
+// Sube los pendientes de una entrada ya guardada. Devuelve cuántos fallaron.
+async function guardarPendientes(entryId) {
+  let fallidos = 0;
+  for (const p of estado.pendientes) {
+    let fila;
+    if (p.kind === 'enlace') {
+      fila = { entry_id: entryId, company_id: estado.companyId, kind: 'enlace', label: p.label, url: p.url };
+    } else {
+      const limpio = p.file.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_').slice(-80);
+      const ruta = `${estado.companyId}/${entryId}/${Date.now()}-${limpio}`;
+      const { error: errUp } = await estado.supabase.storage.from('knowledge').upload(ruta, p.file, { contentType: p.file.type || undefined });
+      if (errUp) { fallidos++; showToast(`No se subió "${p.file.name}": ${errUp.message}`, 'error'); continue; }
+      fila = { entry_id: entryId, company_id: estado.companyId, kind: p.kind, storage_path: ruta,
+        file_name: p.file.name.slice(0, 200), mime_type: p.file.type || null, size_bytes: p.file.size };
+    }
+    const { error } = await estado.supabase.from('knowledge_attachments').insert(fila);
+    if (error) {
+      fallidos++;
+      showToast('No se guardó un adjunto: ' + error.message, 'error');
+      if (fila.storage_path) await estado.supabase.storage.from('knowledge').remove([fila.storage_path]);
+    }
+  }
+  estado.pendientes = [];
+  return fallidos;
+}
+
+async function borrarAdjunto(id) {
+  const x = estado.adjuntos.find(y => y.id === id);
+  if (!x || !(await showConfirm(`¿Quitar "${s(x.label || x.file_name || x.url)}"?`))) return;
+  const { error } = await estado.supabase.from('knowledge_attachments').delete().eq('id', id);
+  if (error) { showToast('No se quitó: ' + error.message, 'error'); return; }
+  if (x.storage_path) await estado.supabase.storage.from('knowledge').remove([x.storage_path]);
+  estado.adjuntos = estado.adjuntos.filter(y => y.id !== id);
+  refrescarAdjuntosForm();
+  showToast('Adjunto quitado');
+}
+
 function listaEntradas() {
   if (!estado.entradas.length) return '<p class="mi-rango" style="margin-top:8px;">Todavía no hay información. Sin ella, la IA solo puede decir que en un momento le confirman al cliente.</p>';
   const ahora = Date.now();
@@ -195,7 +308,7 @@ function listaEntradas() {
         : vencida ? '<span class="badge badge-amber">Vencida</span>' : '<span class="badge badge-green">Publicado</span>';
       return `<tr>
         <td>${s(TIPOS[e.kind] ?? e.kind)}</td>
-        <td>${s(e.title)}</td>
+        <td>${s(e.title)}${(() => { const n = estado.adjuntos.filter(x => x.entry_id === e.id).length; return n ? `<div class="mi-tile-nota">📎 ${n} adjunto${n > 1 ? 's' : ''}</div>` : ''; })()}</td>
         <td style="max-width:320px; white-space:pre-wrap;">${s(e.body.length > 160 ? e.body.slice(0, 160) + '…' : e.body)}</td>
         <td>${badge}${e.valid_until ? `<div class="mi-tile-nota">hasta ${s(new Date(e.valid_until).toLocaleDateString('es-MX'))}</div>` : ''}</td>
         <td style="white-space:nowrap;">
@@ -219,11 +332,12 @@ async function guardarEntrada() {
     valid_until: hasta ? new Date(`${hasta}T23:59:59`).toISOString() : null,
   };
   const q = estado.editando
-    ? estado.supabase.from('knowledge_entries').update(fila).eq('id', estado.editando)
-    : estado.supabase.from('knowledge_entries').insert({ ...fila, company_id: estado.companyId });
-  const { error } = await q;
+    ? estado.supabase.from('knowledge_entries').update(fila).eq('id', estado.editando).select('id').single()
+    : estado.supabase.from('knowledge_entries').insert({ ...fila, company_id: estado.companyId }).select('id').single();
+  const { data: guardada, error } = await q;
   if (error) { showToast('No se guardó: ' + error.message, 'error'); return; }
-  showToast(estado.editando ? 'Información actualizada' : 'Información agregada');
+  const fallidos = estado.pendientes.length ? await guardarPendientes(guardada.id) : 0;
+  if (!fallidos) showToast(estado.editando ? 'Información actualizada' : 'Información agregada');
   estado.editando = null;
   await recargar();
 }
@@ -272,6 +386,7 @@ async function probar() {
       <div class="mi-tile-nota">${s(data.motivo_automatico)}</div>
       ${data.automatico === 'transferir' && data.mensaje_transferencia ? `<div class="mi-tile-nota">El cliente recibiría: “${s(data.mensaje_transferencia)}”</div>` : ''}
       <div class="mi-tile-nota">Información usada: ${usadas.length ? usadas.map(s).join(', ') : 'ninguna'}</div>
+      ${data.adjuntos?.length ? `<div class="mi-tile-nota">📎 Se adjuntaría: ${data.adjuntos.map(s).join(', ')}</div>` : ''}
     </div>`;
 }
 
@@ -287,8 +402,11 @@ async function manejarClic(ev) {
     else if (accion === 'pausar') await cambiarPausa(true);
     else if (accion === 'reanudar') await cambiarPausa(false);
     else if (accion === 'guardar-entrada') await guardarEntrada();
-    else if (accion === 'editar') { estado.editando = id; await recargar(); document.getElementById('asTitulo')?.focus(); }
-    else if (accion === 'cancelar') { estado.editando = null; await recargar(); }
+    else if (accion === 'editar') { estado.editando = id; estado.pendientes = []; await recargar(); document.getElementById('asTitulo')?.focus(); }
+    else if (accion === 'cancelar') { estado.editando = null; estado.pendientes = []; await recargar(); }
+    else if (accion === 'agregar-enlace') agregarEnlace();
+    else if (accion === 'quitar-pendiente') { estado.pendientes.splice(Number(btn.dataset.id), 1); refrescarAdjuntosForm(); }
+    else if (accion === 'borrar-adjunto') await borrarAdjunto(id);
     else if (accion === 'borrar') await borrarEntrada(id);
     else if (accion === 'probar') await probar();
   } finally {
