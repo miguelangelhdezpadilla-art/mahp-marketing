@@ -112,6 +112,8 @@ function seccionModo() {
         ? (pausado ? '<span class="badge badge-amber">Automático en pausa</span>' : '<span class="badge badge-green">Automático activo</span>')
         : ''}</h3>
       <div style="display:grid; gap:6px;">${opciones}</div>
+      ${estado.avisoModo ? `<p class="mi-aviso" role="alert" style="margin:8px 0 0;">${s(estado.avisoModo)}</p>` : ''}
+      ${as.mode !== 'automatico' ? requisitosAutomatico(as) : ''}
       <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; align-items:flex-end;">
         <label style="flex:1; min-width:240px; font-size:12px;">Mensaje de transferencia a una persona (se envía cuando la IA no puede contestar)
           <textarea id="asHandoff" maxlength="500" rows="2" placeholder="Ej. Gracias por escribirnos. En un momento una persona de nuestro equipo te atiende." style="margin:4px 0 0;">${s(as.handoff_message ?? '')}</textarea>
@@ -131,7 +133,29 @@ function seccionModo() {
     </div>`;
 }
 
+// Lista visible de lo que la base exige para activar el automático
+// (ai_set_mode, v31). La conexión con Meta se valida solo en la base.
+function requisitosAutomatico(as) {
+  const publicado = k => estado.entradas.some(x => x.kind === k && x.status === 'publicado');
+  const probado = as.last_playground_at && (!as.knowledge_changed_at || as.last_playground_at >= as.knowledge_changed_at);
+  const items = [
+    [publicado('negocio'), 'Publicar una entrada de tipo "Información general"'],
+    [publicado('horario'), 'Publicar una entrada de tipo "Horario"'],
+    [!!(as.handoff_message ?? '').trim(), 'Escribir y guardar el mensaje de transferencia a una persona'],
+    [!!probado, 'Hacer una prueba en "Probar mi asistente" después del último cambio de información'],
+    [estado.perfil?.role === 'company_admin', estado.perfil?.role === 'super_admin'
+      ? 'Activarlo con la cuenta del administrador de la empresa (tu cuenta de super_admin no puede encenderlo)'
+      : 'Activarlo con la cuenta del administrador de la empresa'],
+  ];
+  return `<div style="margin-top:8px; font-size:12px;">
+    <strong>Para activar el automático:</strong>
+    <ul style="list-style:none; padding:0; margin:4px 0 0;">
+      ${items.map(([ok, texto]) => `<li>${ok ? '✅' : '⬜'} ${s(texto)}</li>`).join('')}
+    </ul></div>`;
+}
+
 async function guardarModo() {
+  estado.avisoModo = null;
   const modo = document.querySelector('input[name="asModo"]:checked')?.value;
   const handoff = document.getElementById('asHandoff')?.value.trim() ?? '';
   const confianza = Number(document.getElementById('asConfianza')?.value ?? 0.8);
@@ -154,7 +178,7 @@ async function guardarModo() {
     }
     const { data: motivo, error } = await estado.supabase.rpc('ai_set_mode', { p_company_id: estado.companyId, p_mode: modo });
     if (error) { showToast('No se cambió el modo: ' + error.message, 'error'); return; }
-    if (motivo) { showToast(motivo, 'error'); await recargar(); return; }
+    if (motivo) { estado.avisoModo = motivo; showToast(motivo, 'error'); await recargar(); return; }
     showToast(`Modo ${MODOS[modo].titulo} activado`);
   } else {
     showToast('Ajustes guardados');
