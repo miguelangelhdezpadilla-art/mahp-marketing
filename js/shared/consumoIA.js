@@ -54,16 +54,18 @@ function badgeEstado(estado) {
   return `<span class="badge ${e.clase}">${s(e.texto)}</span>`;
 }
 
+// Medidor para la empresa: solo porcentaje del límite, sin montos.
 function medidor(titulo, gasto, limite, nota) {
   const p = pct(gasto, limite);
+  const texto = p > 0 && p < 1 ? 'menos de 1%' : `${Math.round(p)}%`;
   return `<div class="mi-tile">
     <div class="mi-tile-titulo">${s(titulo)}</div>
-    <div class="mi-tile-valor">${usd(gasto)}</div>
+    <div class="mi-tile-valor">${texto}</div>
     <div class="progress-bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p)}"
-         aria-label="${a(titulo)}: ${Math.round(p)}% del límite" style="margin-top:6px;">
+         aria-label="${a(titulo)}: ${a(texto)}" style="margin-top:6px;">
       <div class="progress-fill ${claseMedidor(p)}" style="width:${p.toFixed(1)}%"></div>
     </div>
-    <div class="mi-tile-nota">de ${usd(limite)} · ${Math.round(p)}%${nota ? ' · ' + s(nota) : ''}</div>
+    <div class="mi-tile-nota">${s(nota)}</div>
   </div>`;
 }
 
@@ -90,12 +92,18 @@ function desglosePorUso(filas) {
 
 function tablaDesglose(porUso) {
   const usos = Object.keys(porUso);
+  const total = usos.reduce((acc, u) => acc + porUso[u].costo, 0);
   if (!usos.length) return '<p class="mi-rango">Sin consumo este mes.</p>';
+  const parte = c => {
+    if (!(total > 0)) return '—';
+    const p = (c / total) * 100;
+    return p > 0 && p < 1 ? 'menos de 1%' : `${Math.round(p)}%`;
+  };
   return `<table class="tabla">
-    <thead><tr><th>Uso</th><th>Solicitudes</th><th>Fallidas</th><th>Costo</th></tr></thead>
+    <thead><tr><th>Uso</th><th>Solicitudes</th><th>Fallidas</th><th>Parte del uso del mes</th></tr></thead>
     <tbody>${usos.map(u => `<tr>
       <td>${s(USOS[u] ?? u)}</td><td>${entero(porUso[u].solicitudes)}</td>
-      <td>${entero(porUso[u].fallidas)}</td><td>${usd(porUso[u].costo)}</td></tr>`).join('')}
+      <td>${entero(porUso[u].fallidas)}</td><td>${parte(porUso[u].costo)}</td></tr>`).join('')}
     </tbody></table>`;
 }
 
@@ -128,14 +136,14 @@ export async function renderConsumoEmpresa(supabase, companyId, idCont) {
     </div>
     ${aviso ? `<p class="mi-aviso" role="status" style="margin:6px 0 10px;">${s(aviso)}</p>` : ''}
     <div class="mi-tiles">
-      ${medidor('Gasto de hoy', st.gasto_hoy_usd, st.daily_budget_usd)}
-      ${medidor('Gasto del mes', st.gasto_mes_usd, st.monthly_budget_usd)}
+      ${medidor('Uso de hoy', st.gasto_hoy_usd, st.daily_budget_usd, 'del límite diario')}
+      ${medidor('Uso del mes', st.gasto_mes_usd, st.monthly_budget_usd, 'del límite mensual')}
     </div>
     <div class="mi-bloque">
       <h3>En qué se usó este mes</h3>
       ${tablaDesglose(desglosePorUso(diarias))}
     </div>
-    <p class="mi-rango" style="margin-top:10px;">Los límites los define MAHP. Al llegar al límite la IA se pausa sola; nunca se cobra de más.</p>`;
+    <p class="mi-rango" style="margin-top:10px;">Los límites los define MAHP. Al llegar al 100% la IA se pausa sola y vuelve al día o mes siguiente.</p>`;
 }
 
 // ── Vista global (super_admin) ────────────────────────────────
