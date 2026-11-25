@@ -166,6 +166,18 @@ Suman `points_log.points` por usuario (global y por campaña respectivamente), c
 
 Lectura: igual que `ai_company_limits`. Vistas `ai_usage_daily` y `ai_usage_status` (`security_invoker`) para el panel de consumo.
 
+### `knowledge_entries` (`v31`)
+
+Lo que la empresa le enseña a su asistente: `kind` (`negocio`, `horario`, `producto`, `servicio`, `promocion`, `faq`, `politica`), `title`, `body`, `status` (`borrador` / `publicado` / `archivado`), `valid_from` / `valid_until`, `deleted_at` (borrado lógico). Columnas generadas `texto_norm` (sin acentos, para trigramas) y `fts` (español). Lectura: admin y director de la empresa, y super_admin. Escritura: company_admin de la empresa y super_admin. Sin `delete`.
+
+`match_knowledge(company_id, consulta, k)`: solo service role. Filtra empresa, `publicado`, sin borrar y vigente; ordena por texto completo (términos unidos con OR) más similitud por trigramas.
+
+### `ai_assistants` (`v31`)
+
+Una fila por empresa: `mode` (`manual` / `asistido` / `automatico`; las existentes quedaron en `asistido`, las nuevas nacen en `manual`), `min_confidence`, `max_auto_per_conversation_hour`, `handoff_message`, `auto_paused_at/by`, `knowledge_changed_at`, `last_playground_at`, `activated_by/at`. El navegador solo edita `min_confidence`, `max_auto_per_conversation_hour` y `handoff_message`. El modo y la pausa cambian con `ai_set_mode` y `ai_set_auto_pause`, que validan el rol y los requisitos y escriben en `audit_log`.
+
+`conversations.ai_paused` / `ai_paused_reason` (`v31`): la IA no envía en esa conversación; se limpia al pasar a `resuelto`.
+
 ---
 
 ## 8. Nota sobre la numeración de archivos (v1, v11)

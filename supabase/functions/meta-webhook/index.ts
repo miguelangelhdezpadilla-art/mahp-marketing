@@ -16,12 +16,18 @@ import { AnthropicProvider } from '../_shared/ai/anthropic.ts';
 import { SupabaseLedger } from '../_shared/ai/ledger.ts';
 import { sugerirRespuesta } from '../_shared/ai/engine.ts';
 import type { Turno } from '../_shared/ai/context.ts';
+import { buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
+import { type Decision, decidirEnvio } from '../_shared/ai/autopilot.ts';
+import { enviarRespuestaAutomatica } from '../_shared/meta.ts';
 
 const VERIFY_TOKEN  = Deno.env.get('META_VERIFY_TOKEN') ?? '';
 const APP_SECRET     = Deno.env.get('META_APP_SECRET') ?? '';
 const ANTHROPIC_KEY  = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const SUPABASE_URL   = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+// Interruptor global de plataforma (ADR-022 salvaguarda 17): solo con
+// AI_AUTO_SEND_ENABLED=true se envía algo sin aprobación humana.
+const AUTO_ENVIO_GLOBAL = Deno.env.get('AI_AUTO_SEND_ENABLED') === 'true';
 
 // AI Response Engine (MPS-002-004): proveedor (Claude), presupuesto por
 // empresa y validación viven en _shared/ai/. Sin ANTHROPIC_API_KEY no
@@ -174,17 +180,65 @@ async function resolverConversacion(companyId: number, customerId: number, chann
   return nueva.id;
 }
 
-// Análisis + borrador con el AI Response Engine. Se llama vía
+// Análisis + respuesta con el AI Response Engine. Se llama vía
 // EdgeRuntime.waitUntil() (ver handleWebhook), nunca con await directo
 // en el flujo del webhook: si Meta no recibe el 200 OK en unos
 // segundos, reintenta la entrega y duplicaría mensajes.
 //
 // company_id sale de company_meta_pages (resuelto por page_id), nunca
-// del cliente ni del modelo.
-async function analizarConIA(convId: number, mensaje: string, companyId: number, triggerMessageId: number) {
+// del cliente ni del modelo. El modo lo define ai_assistants (v31):
+//   manual     → no se llama a la IA;
+//   asistido   → borrador para que una persona lo apruebe (como antes);
+//   automatico → se envía solo si pasa todas las salvaguardas de
+//                ADR-022 (_shared/ai/autopilot.ts); si no, se manda el
+//                mensaje de transferencia y la IA se pausa en esa
+//                conversación hasta que una persona la resuelva.
+const ESPERA_RAFAGA_MS = 8_000;
+const VENTANA_META_MS = 24 * 3600_000;
+
+async function registrarAuditoria(companyId: number, action: string, convId: number, details: Record<string, unknown>) {
+  const { error } = await supabase.from('audit_log').insert({
+    actor_id: null, company_id: companyId, action, target_type: 'conversation', target_id: String(convId), details,
+  });
+  if (error) console.error('[IA] audit_log', error.message);
+}
+
+// Guarda en el historial un mensaje que la IA mandó a Meta. Si el eco de
+// Meta llegó antes (23505 por el mismo mid), se corrige el autor.
+async function guardarMensajeIA(convId: number, companyId: number, texto: string, mid: string | null) {
+  const { data, error } = await supabase.from('messages').insert({
+    conversation_id: convId, company_id: companyId, direction: 'outbound', sender_type: 'ia',
+    content: texto, meta_message_id: mid,
+  }).select('id').single();
+  if (error?.code === '23505' && mid) {
+    const { data: eco } = await supabase.from('messages')
+      .update({ sender_type: 'ia' }).eq('meta_message_id', mid).select('id').maybeSingle();
+    return eco?.id ?? null;
+  }
+  if (error) console.error('[IA] No se guardó el mensaje enviado', error.message, { convId });
+  return data?.id ?? null;
+}
+
+async function analizarConIA(
+  convId: number, mensaje: string, companyId: number, triggerMessageId: number,
+  pagina: { page_access_token: string }, clienteId: string,
+) {
   if (!proveedorIA || !mensaje) return;
 
   try {
+    const { data: asistente } = await supabase
+      .from('ai_assistants')
+      .select('mode, min_confidence, max_auto_per_conversation_hour, handoff_message, auto_paused_at')
+      .eq('company_id', companyId)
+      .maybeSingle();
+    // Sin fila (v31 sin aplicar) se conserva el comportamiento anterior.
+    const modo = (asistente?.mode ?? 'asistido') as 'manual' | 'asistido' | 'automatico';
+    if (modo === 'manual') return;
+
+    // Salvaguarda 14 (ráfagas): se espera un poco; si el cliente siguió
+    // escribiendo, la corrida de su último mensaje es la que contesta.
+    if (modo === 'automatico') await new Promise((res) => setTimeout(res, ESPERA_RAFAGA_MS));
+
     // Contexto mínimo: los últimos mensajes con texto, sin el actual.
     const { data: previos } = await supabase
       .from('messages')
@@ -207,62 +261,127 @@ async function analizarConIA(convId: number, mensaje: string, companyId: number,
       .eq('conversation_id', convId)
       .gte('created_at', haceUnaHora);
 
+    // E4: conocimiento publicado y vigente de ESTA empresa.
+    const fragmentos = await buscarConocimiento(supabase, companyId, mensaje);
+
     const ledger = new SupabaseLedger(supabase);
     const r = await sugerirRespuesta({
       companyId, conversationId: convId, mensaje, historial,
       generacionesUltimaHora: count ?? 0,
-      // Aún no existe la base de conocimientos (MPS-002-004 E4): sin
-      // fuentes, la validación bloquea cualquier cifra en el borrador.
-      fuentes: [],
+      fuentes: fragmentos.map(textoFragmento),
     }, { provider: proveedorIA, ledger });
 
-    if (!r.analisis) {
-      const nivel = r.desenlace === 'error_proveedor' || r.desenlace === 'sin_configuracion' ? 'error' : 'info';
-      console[nivel]('[IA]', r.desenlace, r.motivo, { convId, companyId });
-      return;
-    }
-
     const ia = r.analisis;
-    await supabase
-      .from('conversations')
-      .update({
+    if (ia) {
+      await supabase.from('conversations').update({
         ia_intencion: ia.intencion,
         ia_sentimiento: ia.sentimiento,
         ia_urgencia: ia.urgencia,
         ia_oportunidad: ia.oportunidad,
         ia_resumen: ia.resumen,
         ia_explicacion: ia.explicacion,
-      })
-      .eq('id', convId);
-
-    // H1 (v26): la sugerencia NO es un mensaje enviado — vive en
-    // ai_responses hasta que un humano la usa. Las bloqueadas también se
-    // guardan (auditoría), pero la bandeja solo muestra 'propuesta'.
-    const { data: guardada, error } = await supabase.from('ai_responses').insert({
-      company_id: companyId,
-      conversation_id: convId,
-      trigger_message_id: triggerMessageId,
-      source: 'webhook',
-      mode_at_generation: 'asistido',
-      draft: r.borrador ?? '',
-      status: r.desenlace === 'bloqueada' ? 'bloqueada' : 'propuesta',
-      blocked_reason: r.desenlace === 'bloqueada' ? r.motivo : null,
-      intent: ia.intencion,
-      confidence: ia.confianza,
-      needs_human: ia.requiere_humano,
-      decision_reason: r.motivo,
-      model: r.modelo,
-      input_tokens: r.inputTokens,
-      output_tokens: r.outputTokens,
-      latency_ms: r.latencyMs,
-      est_cost_usd: r.costoUsd,
-    }).select('id').single();
-    // 23505 = ya existe una sugerencia para este mensaje (índice
-    // único de v26): ejecución doble, no es un error real.
-    if (error && error.code !== '23505') {
-      console.error('[IA] No se pudo guardar la sugerencia:', error, { convId });
+      }).eq('id', convId);
+    } else {
+      const nivel = r.desenlace === 'error_proveedor' || r.desenlace === 'sin_configuracion' ? 'error' : 'info';
+      console[nivel]('[IA]', r.desenlace, r.motivo, { convId, companyId });
     }
-    if (guardada) await ledger.link(r.usageIds, guardada.id);
+
+    // ── Decisión de envío (solo modo automático) ──
+    let decision: Decision = { accion: 'nada', motivo: `modo ${modo}` };
+    if (modo === 'automatico') {
+      const [{ data: conv }, { count: masNuevos }, { data: trigger }, { count: autoHora }] = await Promise.all([
+        supabase.from('conversations').select('ai_paused').eq('id', convId).maybeSingle(),
+        supabase.from('messages').select('id', { count: 'exact', head: true })
+          .eq('conversation_id', convId).eq('direction', 'inbound').gt('id', triggerMessageId),
+        supabase.from('messages').select('sent_at').eq('id', triggerMessageId).maybeSingle(),
+        supabase.from('ai_responses').select('id', { count: 'exact', head: true })
+          .eq('conversation_id', convId).eq('mode_at_generation', 'automatico').eq('status', 'enviada')
+          .gte('created_at', haceUnaHora),
+      ]);
+      decision = decidirEnvio({
+        modo,
+        interruptorGlobal: AUTO_ENVIO_GLOBAL,
+        pausaEmpresa: !!asistente?.auto_paused_at,
+        pausaConversacion: !!conv?.ai_paused,
+        desenlace: r.desenlace,
+        analisis: ia,
+        minConfianza: Number(asistente?.min_confidence ?? 0.8),
+        dentroDeVentana: !!trigger?.sent_at && Date.now() - Date.parse(trigger.sent_at) < VENTANA_META_MS,
+        respuestasAutoUltimaHora: autoHora ?? 0,
+        maxAutoPorHora: asistente?.max_auto_per_conversation_hour ?? 3,
+        hayMensajeMasNuevo: (masNuevos ?? 0) > 0,
+        hayMensajeTransferencia: !!asistente?.handoff_message?.trim(),
+      });
+    }
+
+    // H1 (v26): la respuesta vive en ai_responses; las bloqueadas también
+    // se guardan (auditoría), pero la bandeja solo muestra 'propuesta'.
+    let respuestaId: number | null = null;
+    if (ia) {
+      const { data: guardada, error } = await supabase.from('ai_responses').insert({
+        company_id: companyId,
+        conversation_id: convId,
+        trigger_message_id: triggerMessageId,
+        source: 'webhook',
+        mode_at_generation: modo,
+        draft: r.borrador ?? '',
+        status: r.desenlace === 'bloqueada' ? 'bloqueada' : 'propuesta',
+        blocked_reason: r.desenlace === 'bloqueada' ? r.motivo : null,
+        intent: ia.intencion,
+        confidence: ia.confianza,
+        needs_human: ia.requiere_humano,
+        decision_reason: modo === 'automatico' ? `${r.motivo} · decisión: ${decision.motivo}` : r.motivo,
+        retrieved: registroFuentes(fragmentos, ia.fuentes_usadas),
+        model: r.modelo,
+        input_tokens: r.inputTokens,
+        output_tokens: r.outputTokens,
+        latency_ms: r.latencyMs,
+        est_cost_usd: r.costoUsd,
+      }).select('id').single();
+      // 23505 = ya existe una respuesta para este mensaje (índice único
+      // de v26): ejecución doble. No se envía nada por segunda vez.
+      if (error?.code === '23505') return;
+      if (error) console.error('[IA] No se pudo guardar la respuesta:', error, { convId });
+      respuestaId = guardada?.id ?? null;
+      if (respuestaId) await ledger.link(r.usageIds, respuestaId);
+    }
+
+    if (decision.accion === 'nada') return;
+    // Sin fila guardada no hay registro de lo enviado (ADR-022 #20): no se envía.
+    if (decision.accion === 'enviar' && !respuestaId) return;
+
+    // Salvaguardas 15 y 17: se vuelve a leer la pausa justo antes de enviar.
+    const { data: ultimo } = await supabase.from('ai_assistants')
+      .select('mode, auto_paused_at').eq('company_id', companyId).maybeSingle();
+    if (!AUTO_ENVIO_GLOBAL || ultimo?.mode !== 'automatico' || ultimo?.auto_paused_at) return;
+
+    const texto = decision.accion === 'enviar' ? (r.borrador ?? '') : (asistente?.handoff_message ?? '').trim();
+    if (!texto) return;
+    const envio = await enviarRespuestaAutomatica(pagina.page_access_token, clienteId, texto);
+    if (!envio.ok) {
+      console.error('[IA] Meta rechazó el envío automático', envio.error, { convId });
+      if (respuestaId) {
+        await supabase.from('ai_responses')
+          .update({ decision_reason: `${decision.motivo} · Meta rechazó el envío: ${envio.error}` })
+          .eq('id', respuestaId);
+      }
+      return;
+    }
+    const mensajeId = await guardarMensajeIA(convId, companyId, texto, envio.messageId);
+
+    if (decision.accion === 'enviar') {
+      await supabase.from('ai_responses').update({
+        status: 'enviada', final_text: texto, sent_message_id: mensajeId, reviewed_at: new Date().toISOString(),
+      }).eq('id', respuestaId);
+      await registrarAuditoria(companyId, 'ai_respuesta_enviada_auto', convId, { ai_response_id: respuestaId, motivo: decision.motivo });
+    } else {
+      // Transferencia: la IA no vuelve a contestar en esta conversación
+      // hasta que una persona la marque como resuelta (trigger de v31).
+      await supabase.from('conversations')
+        .update({ ai_paused: true, ai_paused_reason: decision.motivo.slice(0, 300) })
+        .eq('id', convId);
+      await registrarAuditoria(companyId, 'ai_escalada', convId, { ai_response_id: respuestaId, motivo: decision.motivo });
+    }
   } catch (err) {
     console.error('[IA] Error al analizar:', err);
   }
@@ -360,7 +479,7 @@ async function handleWebhook(req: Request): Promise<Response> {
       // La IA solo analiza texto escrito por el cliente.
       if (esEco || !texto || !primeraId) continue;
       // @ts-ignore -- global del runtime de Supabase Edge Functions
-      EdgeRuntime.waitUntil(analizarConIA(convId, texto, pagina.company_id, primeraId));
+      EdgeRuntime.waitUntil(analizarConIA(convId, texto, pagina.company_id, primeraId, pagina, clienteId));
     }
   }
 

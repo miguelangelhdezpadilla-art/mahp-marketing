@@ -22,6 +22,7 @@ export function analisisJson(over: Record<string, unknown> = {}): string {
     resumen: 'pregunta general', explicacion: 'el cliente hace una pregunta',
     confianza: 0.8, requiere_humano: false, motivo_humano: '',
     respuesta_sugerida: '¡Gracias por escribirnos! En un momento te confirmamos.',
+    fuentes_usadas: [],
     ...over,
   });
 }
@@ -40,7 +41,7 @@ export function limitesDePrueba(over: Partial<CompanyLimits> = {}): CompanyLimit
 
 /** Reproduce la lógica de ai_reserve/ai_settle (v28) en memoria, por empresa. */
 export class MemoryLedger implements UsageLedger {
-  filas: Array<{ id: number; companyId: number; modelId: string; status: string; est: number; costo: number }> = [];
+  filas: Array<{ id: number; companyId: number; useCase: string; modelId: string; status: string; est: number; costo: number }> = [];
   private seq = 0;
   constructor(private porEmpresa: Record<number, CompanyLimits | null>) {}
 
@@ -60,7 +61,7 @@ export class MemoryLedger implements UsageLedger {
       return Promise.resolve({ usageId: null, motivo: 'presupuesto_diario' });
     }
     const id = ++this.seq;
-    this.filas.push({ id, companyId: a.companyId, modelId: a.modelId, status: 'reservada', est: a.estCostUsd, costo: 0 });
+    this.filas.push({ id, companyId: a.companyId, useCase: a.useCase, modelId: a.modelId, status: 'reservada', est: a.estCostUsd, costo: 0 });
     return Promise.resolve({ usageId: id, motivo: null });
   }
 

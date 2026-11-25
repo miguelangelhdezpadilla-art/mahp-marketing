@@ -17,6 +17,8 @@ export interface Analisis {
   requiere_humano: boolean;
   motivo_humano: string;
   respuesta_sugerida: string;
+  /** Etiquetas de las fuentes de <conocimiento> que respaldan la respuesta (p. ej. "F1"). */
+  fuentes_usadas: string[];
 }
 
 /** JSON Schema que se pasa como formato de salida estructurada. */
@@ -24,7 +26,7 @@ export const ESQUEMA_ANALISIS = {
   type: 'object',
   additionalProperties: false,
   required: ['intencion', 'sentimiento', 'urgencia', 'oportunidad', 'resumen', 'explicacion',
-    'confianza', 'requiere_humano', 'motivo_humano', 'respuesta_sugerida'],
+    'confianza', 'requiere_humano', 'motivo_humano', 'respuesta_sugerida', 'fuentes_usadas'],
   properties: {
     intencion: { type: 'string', enum: [...INTENCIONES] },
     sentimiento: { type: 'string', enum: [...SENTIMIENTOS] },
@@ -36,6 +38,10 @@ export const ESQUEMA_ANALISIS = {
     requiere_humano: { type: 'boolean' },
     motivo_humano: { type: 'string', description: 'vacío si requiere_humano es false' },
     respuesta_sugerida: { type: 'string' },
+    fuentes_usadas: {
+      type: 'array', items: { type: 'string' },
+      description: 'etiquetas [F1], [F2]… de <conocimiento> en las que se basa la respuesta; vacío si no usaste ninguna',
+    },
   },
 } as const;
 
@@ -55,7 +61,8 @@ export function parsearAnalisis(texto: string): Analisis | null {
     Number.isFinite(a.confianza) &&
     typeof a.requiere_humano === 'boolean' &&
     typeof a.motivo_humano === 'string' &&
-    typeof a.respuesta_sugerida === 'string';
+    typeof a.respuesta_sugerida === 'string' &&
+    (a.fuentes_usadas === undefined || (Array.isArray(a.fuentes_usadas) && a.fuentes_usadas.every((f: unknown) => typeof f === 'string')));
   if (!ok) return null;
   return {
     ...a,
@@ -63,6 +70,7 @@ export function parsearAnalisis(texto: string): Analisis | null {
     confianza: Math.max(0, Math.min(1, a.confianza)),
     resumen: a.resumen.trim().slice(0, 120),
     respuesta_sugerida: a.respuesta_sugerida.trim(),
+    fuentes_usadas: [...new Set<string>((a.fuentes_usadas ?? []).map((f: string) => f.replace(/[\[\]\s]/g, '').toUpperCase()))],
   };
 }
 
@@ -104,4 +112,13 @@ export function filtraInstrucciones(respuesta: string): boolean {
   const n = respuesta.toLowerCase();
   return n.includes('<conversacion>') || n.includes('<mensaje_actual>') ||
     n.includes('instrucciones del sistema') || n.includes('system prompt');
+}
+
+/** Etiqueta con la que cada fuente entra a <conocimiento>: F1, F2… */
+export const etiquetaFuente = (i: number) => `F${i + 1}`;
+
+/** Fuentes citadas que no estaban entre las recuperadas (citas inventadas). */
+export function citasInvalidas(citadas: string[], totalFuentes: number): string[] {
+  const validas = new Set(Array.from({ length: totalFuentes }, (_, i) => etiquetaFuente(i)));
+  return citadas.filter((c) => !validas.has(c));
 }

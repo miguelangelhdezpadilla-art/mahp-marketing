@@ -19,6 +19,7 @@ import { renderizarGridKpis, cargarSeguidoresParaKpis } from './shared/kpis.js';
 import { renderizarAvanceColaboradores } from './shared/colaboradores.js';
 import { renderSocialHub } from './shared/socialHub.js';
 import { renderConsumoEmpresa } from './shared/consumoIA.js';
+import { renderAsistenteIA } from './shared/asistenteIA.js';
 import { renderConexionesSociales } from './shared/conexionesSociales.js';
 
 window.cerrarSesion = logout;
@@ -467,6 +468,7 @@ window.toggleSeccionIA = function() {
       hubInicializado = true;
       renderConexionesSociales(supabaseClient, companyId, miPerfil, 'conexionesSocialesContenedor');
       renderSocialHub(supabaseClient, companyId, miPerfil, 'socialHubContenedor');
+      renderAsistenteIA(supabaseClient, companyId, miPerfil, 'asistenteIAContenedor');
     }
     // El consumo se relee cada vez que se abre la pestaña (cambia con cada sugerencia).
     if (nombre === 'social-hub') renderConsumoEmpresa(supabaseClient, companyId, 'consumoIAEmpresa');

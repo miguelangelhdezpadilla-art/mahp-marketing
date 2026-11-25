@@ -3,24 +3,28 @@
 // por el modelo) y devuelve un resultado tipado. No envía nada a Meta:
 // quien llama decide según el modo (ADR-022).
 import type { CompanyLimits, LlmProvider, ModelConfig, UsageLedger } from './types.ts';
-import { construirEntrada, esTrivial, estimarTokens, type Turno } from './context.ts';
+import { construirEntrada, escaparDatos, esTrivial, estimarTokens, type Turno } from './context.ts';
 import { costoMaximoUsd, costoUsd } from './models.ts';
 import { SISTEMA_SOCIAL } from './prompts.ts';
 import {
-  type Analisis, cifrasSinFuente, ESQUEMA_ANALISIS, filtraInstrucciones, MAX_SUGERENCIA, parsearAnalisis,
+  type Analisis, cifrasSinFuente, citasInvalidas, ESQUEMA_ANALISIS, etiquetaFuente, filtraInstrucciones, MAX_SUGERENCIA,
+  parsearAnalisis,
 } from './validate.ts';
 
 export const UMBRAL_CONFIANZA_AVANZADO = 0.4;
 
 export interface SolicitudSocial {
   companyId: number;
-  conversationId: number;
+  /** null en "Probar mi asistente" (no hay conversación real). */
+  conversationId: number | null;
   mensaje: string;
   historial: Turno[];
   /** Generaciones de IA en esta conversación durante la última hora. */
   generacionesUltimaHora: number;
-  /** Textos de conocimiento recuperado. Vacío hasta que exista la base (E4). */
+  /** Textos de conocimiento recuperado (match_knowledge), ya filtrados por empresa y vigencia. */
   fuentes: string[];
+  /** Caso de uso para la contabilidad: el webhook o "Probar mi asistente". */
+  useCase?: 'social_respuesta' | 'playground';
 }
 
 export type Desenlace =
@@ -51,6 +55,9 @@ interface Intento {
   error: string | null;
 }
 
+// El conocimiento lo escribe la empresa: también es dato, no instrucción.
+const escaparFuente = (f: string) => escaparDatos(f);
+
 export async function sugerirRespuesta(
   sol: SolicitudSocial,
   deps: { provider: LlmProvider; ledger: UsageLedger },
@@ -70,7 +77,7 @@ export async function sugerirRespuesta(
   }
 
   const conocimiento = sol.fuentes.length
-    ? `<conocimiento>\n${sol.fuentes.join('\n---\n')}\n</conocimiento>`
+    ? `<conocimiento>\n${sol.fuentes.map((f, i) => `[${etiquetaFuente(i)}] ${escaparFuente(f)}`).join('\n---\n')}\n</conocimiento>`
     : '<conocimiento>\n(sin información del negocio)\n</conocimiento>';
   const tokensSistema = estimarTokens(SISTEMA_SOCIAL) + estimarTokens(conocimiento);
   const entrada = construirEntrada(sol.historial, sol.mensaje, limites.maxInputTokens, tokensSistema);
@@ -120,7 +127,7 @@ async function intentar(
     maxSalida + modelo.reasoningAllowance,
   );
   const reserva = await deps.ledger.reserve({
-    companyId: sol.companyId, useCase: 'social_respuesta', modelId: modelo.modelId,
+    companyId: sol.companyId, useCase: sol.useCase ?? 'social_respuesta', modelId: modelo.modelId,
     estCostUsd: estimado, conversationId: sol.conversationId,
   });
   if (reserva.usageId === null) return { analisis: null, bloqueo: null, error: 'sin_presupuesto' };
@@ -154,7 +161,14 @@ async function intentar(
   if (!borrador) return { analisis, bloqueo: 'respuesta sugerida vacía', error: null };
   if (borrador.length > MAX_SUGERENCIA) return { analisis, bloqueo: `respuesta de ${borrador.length} caracteres`, error: null };
   if (filtraInstrucciones(borrador)) return { analisis, bloqueo: 'la respuesta menciona instrucciones internas', error: null };
-  const sinFuente = cifrasSinFuente(borrador, sol.fuentes);
+  const inventadas = citasInvalidas(analisis.fuentes_usadas, sol.fuentes.length);
+  if (inventadas.length) return { analisis, bloqueo: `cita fuentes que no recibió: ${inventadas.join(', ')}`, error: null };
+  // Las cifras se comparan contra las fuentes que dice haber usado; si no
+  // citó ninguna, contra todas (modo asistido: lo revisa una persona).
+  const citadas = analisis.fuentes_usadas.length
+    ? sol.fuentes.filter((_, i) => analisis.fuentes_usadas.includes(etiquetaFuente(i)))
+    : sol.fuentes;
+  const sinFuente = cifrasSinFuente(borrador, citadas);
   if (sinFuente.length) {
     return { analisis, bloqueo: `cifras sin fuente verificada: ${sinFuente.join(', ')}`, error: null };
   }

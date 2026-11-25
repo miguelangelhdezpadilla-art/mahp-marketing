@@ -336,7 +336,7 @@ Siguen abiertas D2, D4 y D6 de MPS-002-003.
 | E1 | ✅ Código y pruebas: `_shared/ai/` (`types`, `models`, `anthropic`, `context`, `validate`, `prompts`, `engine`, `ledger`, `testing/fakes`). `meta-webhook` y `generar-calendario` ya usan el motor y Groq quedó retirado del código. 23 pruebas pasan (`deno test supabase/functions/_shared/ai/`). Desplegado el 2026-11-24. ✅ Prueba de punta a punta el 2026-11-25 (calendario $0.0007, sugerencia del Social Hub $0.00026; detalle en CHANGELOG) |
 | E2 | ✅ `supabase_schema_v28.sql` aplicada el 2026-11-20 |
 | E3 | ✅ 2026-11-25: pestaña Consumo IA en `admin.html` (límites, suspender/reanudar, modelos) y tarjeta "Mi asistente" en el Social Hub (`js/shared/consumoIA.js`). RLS verificada; ⏳ prueba de límite bajo ($0.01) que pausa la IA y lo muestra el panel |
-| E4–E6 | ⏳ Pendientes (base de conocimientos, motor completo con recuperación, cola y modos) |
+| E4–E6 | ✅ 2026-11-25 (versión reducida): v31, búsqueda de texto (no pgvector, decisión del PO), "Probar mi asistente", modos y paros en `ai_assistants`, decisión del automático en `_shared/ai/autopilot.ts`. Sin `ai_jobs`/`pg_cron`: las ráfagas se manejan con una espera de 8 s en el webhook. Sin `ai_human_handoffs`: la transferencia usa `conversations.ai_paused`. ⏳ Interruptor global y prueba real del envío automático |
 
 **Lo que las pruebas no cubren**:
 - Las pruebas usan un proveedor simulado y un registro de consumo en memoria. **No prueban** la API real de Anthropic, la base de datos ni Meta.

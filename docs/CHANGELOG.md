@@ -16,6 +16,16 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-25 — Producto: base de conocimientos y respuestas automáticas (MPS-002-004 E4–E6)
+
+- **[Decisión]** Product Owner, 2026-11-25: búsqueda de **texto** en español (sin proveedor de embeddings), piloto del automático en **La Casa del Centro** (en lugar de una página de prueba, ADR-022 #4) y autorización para aplicar v31.
+- **[DB]** `supabase_schema_v31.sql` (aditiva), aplicada el 2026-11-25: `knowledge_entries`, `match_knowledge`, `ai_assistants`, `ai_set_mode`, `ai_set_auto_pause`, `conversations.ai_paused`. Las dos empresas quedan en `asistido`.
+- **[Feature]** Social Hub → tarjeta **🧠 Asistente de IA**: información del negocio (agregar, editar, borrar, publicar, vigencia), **Probar mi asistente** (Edge Function nueva `asistente-probar`, uso `playground`) y modo de respuesta con mensaje de transferencia, seguridad mínima y pausa de emergencia.
+- **[Feature]** `meta-webhook`: busca en el conocimiento de la empresa antes de responder. En `manual` no llama a la IA; en `asistido` deja el borrador, como antes; en `automatico` envía solo si pasa todas las salvaguardas (`_shared/ai/autopilot.ts`); si no, manda el mensaje de transferencia de la empresa y pausa la IA en esa conversación. Solo `RESPONSE` dentro de 24 h, espera de 8 s para ráfagas, tope por hora, relectura de la pausa justo antes de enviar e interruptor global `AI_AUTO_SEND_ENABLED`.
+- **[Feature]** El motor cita sus fuentes (`[F1]`, `[F2]`…): se bloquean las citas inventadas y las cifras que no están en la fuente citada. Prompt `social-v2`.
+- **[Test]** 48 pruebas de Deno (25 nuevas: citas y cada salvaguarda del automático). En producción, dentro de una transacción con rollback: RLS entre empresas, `match_knowledge` sin permiso para `authenticated`, requisitos de activación, búsqueda con y sin acentos o faltas, exclusión de borradores, vencidos y otra empresa. Esa prueba encontró un error en `ai_set_mode` (lista de requisitos), ya corregido y reaplicado.
+- **[Pendiente]** Prender `AI_AUTO_SEND_ENABLED` (requiere confirmación del Product Owner) y probar en el navegador; prueba real de envío automático.
+
 ## 2026-11-25 — Producto: panel de consumo de IA (MPS-002-004, etapa E3)
 
 - **[Feature]** `admin.html` → pestaña **Consumo IA** (solo super_admin): totales de hoy y del mes, tabla por empresa (estado, gasto contra límite, solicitudes, modelo), edición de límites (diario, mensual, tokens de salida, sugerencias por conversación/hora, permitir modelo avanzado con confirmación), **Suspender/Reanudar** con motivo, y catálogo de modelos (precios y activo; avisa si desactivar deja empresas sin IA).

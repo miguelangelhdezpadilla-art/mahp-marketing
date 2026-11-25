@@ -82,7 +82,12 @@ const ETIQUETAS_EVENTO = {
   access_restored: 'Acceso restaurado',
   ai_limites_cambiados: 'Límites de IA cambiados',
   ai_suspendida: 'IA suspendida',
-  ai_reanudada: 'IA reanudada'
+  ai_reanudada: 'IA reanudada',
+  ai_modo_cambiado: 'Modo del asistente cambiado',
+  ai_pausa_emergencia: 'Respuestas automáticas en pausa',
+  ai_reanudado: 'Respuestas automáticas reanudadas',
+  ai_respuesta_enviada_auto: 'Respuesta automática enviada',
+  ai_escalada: 'Conversación transferida a una persona'
 };
 
 // Los cambios de límites de IA guardan la fila completa antes/después;
@@ -90,7 +95,7 @@ const ETIQUETAS_EVENTO = {
 function detalleEvento(ev) {
   let d = ev.details;
   if (!d) return '';
-  if (d.antes && d.despues) {
+  if (d.antes && d.despues && typeof d.despues === 'object') {
     return Object.keys(d.despues)
       .filter(k => !['updated_at', 'updated_by'].includes(k) && JSON.stringify(d.antes[k]) !== JSON.stringify(d.despues[k]))
       .map(k => `${sHtml(k)}: ${sHtml(d.antes[k] ?? '—')} → ${sHtml(d.despues[k] ?? '—')}`).join('<br>');
