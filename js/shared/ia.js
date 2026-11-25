@@ -172,10 +172,16 @@ Los títulos deben ser concretos y accionables.`;
 
   try {
     const { data, error } = await supabase.functions.invoke('generar-calendario', {
-      body: { prompt }
+      body: { prompt, company_id: companyId }
     });
 
-    if (error) throw new Error(error.message ?? 'Error al llamar a la función de IA');
+    if (error) {
+      // FunctionsHttpError trae la respuesta en error.context: se muestra
+      // el mensaje de la función ("límite diario", etc.) en vez de "non-2xx".
+      let msg = error.message ?? 'Error al llamar a la función de IA';
+      try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* sin cuerpo JSON */ }
+      throw new Error(msg);
+    }
     if (data?.error) throw new Error(data.error);
 
     const texto = data.choices?.[0]?.message?.content ?? '';

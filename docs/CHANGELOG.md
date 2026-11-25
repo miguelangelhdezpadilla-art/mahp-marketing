@@ -10,7 +10,15 @@
 
 ---
 
-## 2026-11-20 — Producto: MAHP AI Response Engine con Claude (sin desplegar)
+## 2026-11-24 — Producto: AI Response Engine desplegado (Claude)
+
+- **[Infra]** `ANTHROPIC_API_KEY` guardada por el Product Owner en Supabase Secrets. `meta-webhook` (`--no-verify-jwt`) y `generar-calendario` desplegados con el motor de Claude.
+- **[Fix]** `generar-calendario` respondía 403 al super_admin: esa cuenta no pertenece a ninguna empresa y trabaja sobre la que abre en `empresa.html?company_id=`. Ahora, solo cuando el rol es `super_admin`, la función acepta `company_id` en el body y carga el gasto al presupuesto de esa empresa. Los demás roles siguen limitados a su empresa activa.
+- **[Fix]** `generar-calendario`: tiempo de espera de 90 s (antes 20 s, el del Social Hub) y hasta 6,000 tokens de salida, para que quepan 31 actividades (≈ $0.003 por calendario con Haiku).
+- **[Fix]** `js/shared/ia.js`: el aviso muestra el mensaje de la función (límite diario, sesión, etc.) en lugar de "Edge Function returned a non-2xx status code".
+- **[Verificación]** Primera llamada real (Social Hub, empresa 2): Anthropic respondió `400 credit balance is too low`. La reserva quedó liquidada como `fallida` sin costo, como debe ser. **Falta cargar saldo** en la cuenta de Anthropic; hasta entonces no hay sugerencias de IA ni calendario. La prueba de punta a punta sigue pendiente.
+
+## 2026-11-20 — Producto: MAHP AI Response Engine con Claude
 
 - **[Docs]** `MPS-002-004` (auditoría y arquitectura del motor, hallazgos H10–H14) y `ADR-023` (Claude como proveedor, Haiku 5.5 económico y Opus 5.5 avanzado), aprobados por el Product Owner.
 - **[Feature]** `supabase/functions/_shared/ai/`: capa de proveedor intercambiable (adaptador de Anthropic con el SDK oficial 1.5.0), motor de sugerencias con escalera de costo (omite mensajes triviales, usa Haiku y recurre a Opus solo si la empresa lo permite), recorte de contexto (últimos 6 mensajes, límite de tokens por empresa), salida JSON estructurada, validación por código (bloquea precios, porcentajes, horas y fechas sin fuente, y respuestas que filtran instrucciones) y contabilidad con reserva y liquidación.

@@ -152,6 +152,20 @@ Suman `points_log.points` por usuario (global y por campaña respectivamente), c
 ### `ai_responses` (`v26`)
 `id` (PK) · `company_id` · `conversation_id` → `conversations` · `trigger_message_id` → `messages` · `source` · `mode_at_generation` · `draft` · `final_text` · `status` (`propuesta`/`aprobada`/`editada`/`descartada`/`enviada`/`bloqueada`/`fallida`/`escalada`/`legacy`) · `intent` · `confidence` · `needs_human` · `decision_reason` · `blocked_reason` · `retrieved` (jsonb) · `model` · `input_tokens` · `output_tokens` · `latency_ms` · `est_cost_usd` · `reviewed_by` → `profiles` · `reviewed_at` · `sent_message_id` → `messages` · `legacy_message_id` · `created_at`. Una fila por cada respuesta que genera la IA (`MPS-002-003` §5.2). Lectura: miembros de la empresa. Escritura: solo service role (`meta-webhook` crea la `propuesta`; `meta-send-message` la marca `aprobada` o `editada` al enviarla). Hay como máximo una sugerencia de webhook por mensaje del cliente (índice único parcial). ⚠️ **Dos FK hacia `messages`** (`trigger_message_id`, `sent_message_id`): un embed implícito falla en silencio. Hay que fijarlo (`messages!trigger_message_id(...)`) o consultar por separado, como hace `socialHub.js`. Publicada en Realtime.
 
+### `ai_models` (`v28`)
+`model_id` (PK) · `provider` (`anthropic`) · `tier` (`economico`/`avanzado`) · `price_input_per_mtok` · `price_output_per_mtok` · `reasoning_allowance` · `active` · `notes` · `updated_at`. Catálogo global y fuente de verdad de los precios: si el proveedor cambia una tarifa, se corrige la fila sin desplegar. Lectura y escritura: solo `super_admin`, porque las empresas no ven las tarifas. Precarga: `claude-haiku-5-5` y `claude-opus-5-5` (`ADR-023`).
+
+### `ai_company_limits` (`v28`)
+`company_id` (PK) · `daily_budget_usd` (default 1.00) · `monthly_budget_usd` (10.00) · `max_input_tokens` (3000) · `max_output_tokens` (400) · `max_gen_per_conversation_hour` (10) · `default_model_id` → `ai_models` · `advanced_model_id` · `allow_advanced` (false) · `timezone` (`America/Mexico_City`) · `suspended_at` · `suspended_reason` · `updated_by` · `updated_at`. Cada empresa tiene una fila: las que ya existían se cargaron con la migración y las nuevas la reciben por el trigger `companies_ai_limits_insert`. Los valores predeterminados son los `default` de las columnas. Lectura: `super_admin`, o `company_admin`/`director` de la empresa activa. Escritura: solo `super_admin`. Cada cambio va a `audit_log` (`ai_limites_cambiados`, `ai_suspendida`, `ai_reanudada`).
+
+### `ai_usage` (`v28`)
+`id` (PK) · `company_id` · `use_case` (`social_respuesta`/`playground`/`calendario`) · `model_id` → `ai_models` · `status` (`reservada`/`liquidada`/`fallida`/`liberada`) · `est_cost_usd` · `input_tokens` · `output_tokens` · `cost_usd` · `latency_ms` · `error_kind` · `ai_response_id` → `ai_responses` · `conversation_id` · `user_id` · `created_at` · `settled_at`. Registro contable, una fila por llamada al proveedor. Lo escriben solo las funciones `security definer`, ejecutables únicamente por `service_role`:
+- `ai_reserve` toma un candado por empresa, compara lo gastado hoy y en el mes contra los límites, aplica el tope por usuario por hora y reserva el costo máximo.
+- `ai_settle` calcula `cost_usd` con los tokens reales.
+- Las reservas sin liquidar después de 10 minutos pasan a `liberada`.
+
+Lectura: igual que `ai_company_limits`. Vistas `ai_usage_daily` y `ai_usage_status` (`security_invoker`) para el panel de consumo.
+
 ---
 
 ## 8. Nota sobre la numeración de archivos (v1, v11)
