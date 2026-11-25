@@ -6,6 +6,8 @@
 // vía supabase.functions.invoke(), que adjunta el JWT de la sesión;
 // aquí se valida esa sesión y se respeta RLS antes de tocar nada.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { archivosDeEntradas } from '../_shared/ai/knowledge.ts';
+import { enviarAdjunto } from '../_shared/meta.ts';
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY       = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -73,11 +75,11 @@ Deno.serve(async (req: Request) => {
   // Si el agente está usando una sugerencia de IA, debe pertenecer a
   // esta conversación (RLS ya garantiza que es de su empresa) y seguir
   // pendiente. Se valida ANTES de enviar.
-  let sugerencia: { id: number; draft: string } | null = null;
+  let sugerencia: { id: number; draft: string; entradasUsadas: number[] } | null = null;
   if (ai_response_id != null) {
     const { data } = await supabaseUser
       .from('ai_responses')
-      .select('id, draft, status, conversation_id')
+      .select('id, draft, status, conversation_id, retrieved')
       .eq('id', ai_response_id)
       .maybeSingle();
     if (!data || data.conversation_id !== conv.id) {
@@ -86,7 +88,12 @@ Deno.serve(async (req: Request) => {
     if (data.status !== 'propuesta' && data.status !== 'legacy') {
       return json({ error: 'Esa sugerencia ya fue usada o descartada' }, 409);
     }
-    sugerencia = { id: data.id, draft: data.draft };
+    // Entradas de conocimiento que la sugerencia usó: sus archivos se
+    // envían junto con el texto (v32).
+    const usadas = Array.isArray(data.retrieved)
+      ? data.retrieved.filter((f: any) => f?.usada && Number.isInteger(f?.id)).map((f: any) => f.id as number)
+      : [];
+    sugerencia = { id: data.id, draft: data.draft, entradasUsadas: usadas };
   }
 
   // Service role solo para dos cosas: leer el token de la página
@@ -119,12 +126,14 @@ Deno.serve(async (req: Request) => {
   // RESPONSE. HUMAN_AGENT (MIP-001 §0, ADR-009) extiende la ventana a
   // 7 días, pero exige la función "Human Agent" aprobada en la app, así
   // que solo se intenta cuando Meta indica que la ventana ya cerró.
-  let metaRes = await enviar({ messaging_type: 'RESPONSE' });
+  let tipoMensaje: Record<string, unknown> = { messaging_type: 'RESPONSE' };
+  let metaRes = await enviar(tipoMensaje);
   let metaData = await metaRes.json();
   const fueraDeVentana = metaData.error?.error_subcode === 2018278
     || /outside of allowed window/i.test(metaData.error?.message ?? '');
   if (fueraDeVentana) {
-    metaRes = await enviar({ messaging_type: 'MESSAGE_TAG', tag: 'HUMAN_AGENT' });
+    tipoMensaje = { messaging_type: 'MESSAGE_TAG', tag: 'HUMAN_AGENT' };
+    metaRes = await enviar(tipoMensaje);
     metaData = await metaRes.json();
   }
 
@@ -177,6 +186,30 @@ Deno.serve(async (req: Request) => {
       sent_message_id: guardado.id,
     }).eq('id', sugerencia.id);
     if (errSugerencia) console.error('[meta-send-message] No se pudo actualizar la sugerencia', errSugerencia);
+
+    // Archivos guardados con la información que usó la sugerencia: se
+    // mandan enseguida del texto, con el mismo tipo de mensaje.
+    const archivos = await archivosDeEntradas(supabaseService, conv.company_id, sugerencia.entradasUsadas);
+    let fallidos = 0;
+    for (const adj of archivos) {
+      const { data: firmada } = await supabaseService.storage.from('knowledge').createSignedUrl(adj.storage_path!, 600);
+      const envioAdj = firmada?.signedUrl
+        ? await enviarAdjunto(pagina.page_access_token, identidad.external_id, adj.kind, firmada.signedUrl, tipoMensaje)
+        : { ok: false, messageId: null, error: 'sin URL firmada' };
+      if (!envioAdj.ok) {
+        fallidos++;
+        console.error('[meta-send-message] Meta rechazó el adjunto', adj.file_name, envioAdj.error);
+        continue;
+      }
+      const { error: errAdj } = await supabaseService.from('messages').insert({
+        conversation_id: conv.id, company_id: conv.company_id, direction: 'outbound', sender_type: 'agente',
+        sender_id: user.id, content: `📎 ${adj.label || adj.file_name}`, meta_message_id: envioAdj.messageId,
+      });
+      if (errAdj && errAdj.code !== '23505') console.error('[meta-send-message] No se guardó el adjunto en messages', errAdj);
+    }
+    if (fallidos) {
+      return json({ ok: true, aviso: `El mensaje se envió, pero ${fallidos} archivo(s) no se pudieron enviar.` });
+    }
   }
 
   return json({ ok: true });

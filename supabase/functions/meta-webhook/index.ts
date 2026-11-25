@@ -16,7 +16,9 @@ import { AnthropicProvider } from '../_shared/ai/anthropic.ts';
 import { SupabaseLedger } from '../_shared/ai/ledger.ts';
 import { sugerirRespuesta } from '../_shared/ai/engine.ts';
 import type { Turno } from '../_shared/ai/context.ts';
-import { adjuntosParaEnviar, buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
+import {
+  adjuntosParaEnviar, buscarConocimiento, registroFuentes, respuestaGuardada, textoFragmento,
+} from '../_shared/ai/knowledge.ts';
 import { type Decision, decidirEnvio } from '../_shared/ai/autopilot.ts';
 import { enviarAdjuntoAutomatico, enviarRespuestaAutomatica } from '../_shared/meta.ts';
 
@@ -272,6 +274,11 @@ async function analizarConIA(
     }, { provider: proveedorIA, ledger });
 
     const ia = r.analisis;
+    // Pregunta frecuente citada: se usa el texto guardado tal cual.
+    if (ia && r.desenlace === 'propuesta') {
+      const guardada = respuestaGuardada(fragmentos, ia.fuentes_usadas);
+      if (guardada) r.borrador = guardada;
+    }
     if (ia) {
       await supabase.from('conversations').update({
         ia_intencion: ia.intencion,

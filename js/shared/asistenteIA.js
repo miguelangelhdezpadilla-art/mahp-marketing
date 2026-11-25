@@ -15,7 +15,7 @@ const TIPOS = {
   producto: 'Producto / menú',
   servicio: 'Servicio',
   promocion: 'Promoción',
-  faq: 'Pregunta frecuente',
+  faq: 'Pregunta frecuente (respuesta guardada)',
   politica: 'Política (envíos, pagos, cambios)',
 };
 
@@ -201,7 +201,7 @@ function formularioEntrada() {
         <label style="display:block; font-size:12px; margin-top:8px;">Imágenes, videos, audios o documentos (máx. 25 MB cada uno)
           <input type="file" id="asArchivos" multiple accept="${ACEPTA}" style="margin:4px 0 0;">
         </label>
-        <p class="mi-tile-nota" style="margin:4px 0 0;">La IA comparte los enlaces en su respuesta. Los archivos se adjuntan solos cuando la IA contesta en modo automático usando esta información.</p>
+        <p class="mi-tile-nota" style="margin:4px 0 0;">Los archivos se envían junto con la respuesta cada vez que se usa esta información: solos en modo automático, o al enviar la sugerencia desde la bandeja. En una <strong>Pregunta frecuente</strong> el texto se envía tal cual lo escribiste.</p>
       </fieldset>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
         <label style="font-size:12px;">Válido hasta (opcional, para promociones)
@@ -386,7 +386,8 @@ async function probar() {
       <div class="mi-tile-nota">${s(data.motivo_automatico)}</div>
       ${data.automatico === 'transferir' && data.mensaje_transferencia ? `<div class="mi-tile-nota">El cliente recibiría: “${s(data.mensaje_transferencia)}”</div>` : ''}
       <div class="mi-tile-nota">Información usada: ${usadas.length ? usadas.map(s).join(', ') : 'ninguna'}</div>
-      ${data.adjuntos?.length ? `<div class="mi-tile-nota">📎 Se adjuntaría: ${data.adjuntos.map(s).join(', ')}</div>` : ''}
+      ${data.respuesta_guardada ? '<div class="mi-tile-nota">✅ Usa tu respuesta guardada tal cual.</div>' : ''}
+      ${data.adjuntos?.length ? `<div class="mi-tile-nota">📎 Se enviaría junto con la respuesta: ${data.adjuntos.map(s).join(', ')}</div>` : ''}
     </div>`;
 }
 

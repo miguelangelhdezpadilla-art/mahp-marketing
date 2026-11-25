@@ -49,10 +49,42 @@ export function textoFragmento(f: Fragmento): string {
     .map((x) => `${x.label ? x.label + ': ' : ''}${x.url}`);
   const archivos = f.adjuntos.filter((x) => x.kind !== 'enlace')
     .map((x) => `${x.label || x.file_name} (${x.kind})`);
-  let t = `${f.title}: ${f.body}`;
+  // Pregunta frecuente = respuesta guardada: si contesta la pregunta, se
+  // envía tal cual con sus archivos (ver respuestaGuardada).
+  let t = f.kind === 'faq'
+    ? `RESPUESTA GUARDADA para "${f.title}": ${f.body}`
+    : `${f.title}: ${f.body}`;
   if (enlaces.length) t += `\nEnlaces: ${enlaces.join(' | ')}`;
   if (archivos.length) t += `\nArchivos que se adjuntan solos al usar esta información: ${archivos.join(', ')}`;
   return t.slice(0, MAX_CARACTERES_FRAGMENTO);
+}
+
+/**
+ * Si la respuesta usó una pregunta frecuente, su texto guardado se envía
+ * tal cual (sin que la IA lo reescriba). Devuelve el texto de la primera
+ * pregunta frecuente citada, o null.
+ */
+export function respuestaGuardada(fragmentos: Fragmento[], usadas: string[]): string | null {
+  const f = fragmentos.find((x, i) => x.kind === 'faq' && usadas.includes(`F${i + 1}`));
+  return f ? f.body.trim() : null;
+}
+
+/** Archivos (no enlaces) guardados con estas entradas, en orden, con tope. */
+export async function archivosDeEntradas(supabase: any, companyId: number, entryIds: number[]): Promise<Adjunto[]> {
+  if (!entryIds.length) return [];
+  const { data, error } = await supabase
+    .from('knowledge_attachments')
+    .select('entry_id, kind, label, url, storage_path, file_name')
+    .in('entry_id', entryIds)
+    .eq('company_id', companyId)
+    .neq('kind', 'enlace')
+    .order('id');
+  if (error) { console.error('[IA] knowledge_attachments', error.message); return []; }
+  // Respeta el orden de las entradas.
+  const orden = new Map(entryIds.map((id, i) => [id, i]));
+  return (data ?? [])
+    .sort((a: any, b: any) => (orden.get(a.entry_id) ?? 0) - (orden.get(b.entry_id) ?? 0))
+    .slice(0, MAX_ADJUNTOS_POR_RESPUESTA);
 }
 
 /** Archivos (no enlaces) de los fragmentos citados, en orden, con tope. */
@@ -68,5 +100,6 @@ export function registroFuentes(fragmentos: Fragmento[], usadas: string[] = []) 
   return fragmentos.map((f, i) => ({
     etiqueta: `F${i + 1}`, id: f.id, titulo: f.title, score: Number(f.score.toFixed(3)), usada: usadas.includes(`F${i + 1}`),
     adjuntos: f.adjuntos.length,
+    archivos: f.adjuntos.filter((x) => x.kind !== 'enlace').length,
   }));
 }

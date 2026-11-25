@@ -67,7 +67,7 @@ function mensajesOrdenados(conv) {
 async function sugerenciaVigente(supabase, convId, mensajes) {
   const { data } = await supabase
     .from('ai_responses')
-    .select('id, draft, created_at')
+    .select('id, draft, created_at, retrieved')
     .eq('conversation_id', convId)
     .in('status', ['propuesta', 'legacy'])
     .order('created_at', { ascending: false })
@@ -362,6 +362,12 @@ async function abrirConversacion(supabase, convId, companyId, perfil, { sinSincr
         ${sugerenciaIA ? `
         <div class="ia-sugerencia" onclick="window.usarSugerenciaIA('${convId}','${sugerenciaIA.id}')">
           <span>${s(sugerenciaIA.draft)}</span>
+          ${(() => {
+            const n = Array.isArray(sugerenciaIA.retrieved)
+              ? sugerenciaIA.retrieved.filter(f => f?.usada).reduce((t, f) => t + (Number(f.archivos) || 0), 0) : 0;
+            const tope = Math.min(n, 3);
+            return tope ? `<div style="font-size:11px;color:#4338ca;margin-top:4px;">📎 Al enviarla se adjuntan ${tope} archivo${tope > 1 ? 's' : ''} guardado${tope > 1 ? 's' : ''} con esta respuesta</div>` : '';
+          })()}
           <span class="ia-sugerencia-usar">Usar respuesta →</span>
         </div>` : ''}
       </div>

@@ -175,3 +175,26 @@ Deno.test('Respuesta con enlace inventado se bloquea', async () => {
   assertEquals(r.desenlace, 'bloqueada');
   assertStringIncludes(r.motivo, 'otro-sitio');
 });
+
+// ---------- Respuestas guardadas (preguntas frecuentes) ----------
+import { respuestaGuardada } from './knowledge.ts';
+
+const fragFaq: Fragmento = {
+  id: 3, kind: 'faq', title: 'que incluye el paquete para parejas', score: 1,
+  body: 'Claro, te envío nuestros paquetes con precios y lo que incluyen.',
+  adjuntos: [{ kind: 'imagen', label: null, url: null, storage_path: '2/3/paquete.jpg', file_name: 'paquete.jpg' }],
+};
+
+Deno.test('Pregunta frecuente entra marcada como respuesta guardada', () => {
+  assertStringIncludes(textoFragmento(fragFaq), 'RESPUESTA GUARDADA para "que incluye el paquete para parejas"');
+});
+
+Deno.test('Si la IA cita la pregunta frecuente, se usa el texto guardado tal cual y sus archivos', () => {
+  assertEquals(respuestaGuardada([fragHorario, fragFaq], ['F2']), fragFaq.body);
+  assertEquals(adjuntosParaEnviar([fragHorario, fragFaq], ['F2']).map((x) => x.file_name), ['paquete.jpg']);
+});
+
+Deno.test('Sin citar la pregunta frecuente no hay respuesta guardada', () => {
+  assertEquals(respuestaGuardada([fragHorario, fragFaq], ['F1']), null);
+  assertEquals(respuestaGuardada([fragMenu], ['F1']), null); // producto, no faq
+});

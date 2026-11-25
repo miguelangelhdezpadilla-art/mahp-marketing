@@ -16,6 +16,14 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-26 — Producto: respuestas guardadas con sus archivos
+
+- **[Feature]** Una **Pregunta frecuente** funciona como respuesta guardada: si la IA la cita, se envía el texto tal cual lo escribió la empresa (no reescrito), y enseguida sus archivos (máx. 3). Prompt `social-v4`.
+- **[Feature]** Modo asistido: la bandeja avisa "📎 Al enviarla se adjuntan N archivos". Al enviar la sugerencia, `meta-send-message` manda texto y archivos con el mismo tipo de mensaje (`RESPONSE` o `HUMAN_AGENT`) y los registra en el historial.
+- **[Feature]** "Probar mi asistente" indica si usó la respuesta guardada y qué archivos se enviarían.
+- **[Infra]** El Product Owner creó el secreto `AI_AUTO_SEND_ENABLED`. Desplegados `meta-webhook`, `meta-send-message` y `asistente-probar`. Sin cambios de base de datos.
+- **[Test]** 56 pruebas de Deno (3 nuevas). No probado en navegador ni con un mensaje real.
+
 ## 2026-11-25 — Producto: enlaces y archivos en la información del asistente
 
 - **[Feature]** Formulario de información del negocio → **Enlaces y archivos**: enlaces (con nombre) e imágenes, videos, audios y documentos de hasta 25 MB (`js/shared/asistenteIA.js`).

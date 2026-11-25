@@ -7,7 +7,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { AnthropicProvider } from '../_shared/ai/anthropic.ts';
 import { SupabaseLedger } from '../_shared/ai/ledger.ts';
 import { sugerirRespuesta } from '../_shared/ai/engine.ts';
-import { adjuntosParaEnviar, buscarConocimiento, registroFuentes, textoFragmento } from '../_shared/ai/knowledge.ts';
+import {
+  adjuntosParaEnviar, buscarConocimiento, registroFuentes, respuestaGuardada, textoFragmento,
+} from '../_shared/ai/knowledge.ts';
 import { decidirEnvio } from '../_shared/ai/autopilot.ts';
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
@@ -78,6 +80,8 @@ Deno.serve(async (req) => {
       return json({ omitido: true, motivo: 'Es un saludo o un agradecimiento: en una conversación real la IA no lo contesta.' });
     }
     if (!r.analisis) return json({ error: MENSAJES[r.desenlace] ?? 'No se pudo probar. Intenta de nuevo.' }, 429);
+    const guardada = r.desenlace === 'propuesta' ? respuestaGuardada(fragmentos, r.analisis.fuentes_usadas) : null;
+    if (guardada) r.borrador = guardada;
 
     const decision = decidirEnvio({
       modo: 'automatico', interruptorGlobal: true, pausaEmpresa: false, pausaConversacion: false,
@@ -113,7 +117,9 @@ Deno.serve(async (req) => {
       automatico: decision.accion,          // enviar | transferir | nada
       motivo_automatico: decision.motivo,
       mensaje_transferencia: asistente?.handoff_message ?? null,
-      adjuntos: decision.accion === 'enviar'
+      respuesta_guardada: !!guardada,
+      // Archivos que acompañan la respuesta (en automático y al aprobarla en la bandeja).
+      adjuntos: r.desenlace === 'propuesta'
         ? adjuntosParaEnviar(fragmentos, r.analisis.fuentes_usadas).map((x) => x.label || x.file_name)
         : [],
     });

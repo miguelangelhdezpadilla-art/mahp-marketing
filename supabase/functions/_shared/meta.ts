@@ -33,8 +33,19 @@ export async function enviarRespuestaAutomatica(
 const TIPO_META: Record<string, string> = { imagen: 'image', video: 'video', audio: 'audio', archivo: 'file' };
 
 /** Adjunto por URL (Meta lo descarga de una URL firmada de corta duración). */
-export async function enviarAdjuntoAutomatico(
+export function enviarAdjuntoAutomatico(
   pageAccessToken: string, destinatarioId: string, tipo: string, url: string,
+): Promise<ResultadoEnvio> {
+  return enviarAdjunto(pageAccessToken, destinatarioId, tipo, url, { messaging_type: 'RESPONSE' });
+}
+
+/**
+ * Igual, con el mismo tipo de mensaje que usó el texto que acompaña
+ * (RESPONSE, o la etiqueta HUMAN_AGENT del envío humano fuera de 24 h).
+ */
+export async function enviarAdjunto(
+  pageAccessToken: string, destinatarioId: string, tipo: string, url: string,
+  tipoMensaje: Record<string, unknown>,
 ): Promise<ResultadoEnvio> {
   const metaTipo = TIPO_META[tipo];
   if (!metaTipo) return { ok: false, messageId: null, error: `tipo no soportado: ${tipo}` };
@@ -44,7 +55,7 @@ export async function enviarAdjuntoAutomatico(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: destinatarioId },
-        messaging_type: 'RESPONSE',
+        ...tipoMensaje,
         message: { attachment: { type: metaTipo, payload: { url, is_reusable: false } } },
       }),
     });
