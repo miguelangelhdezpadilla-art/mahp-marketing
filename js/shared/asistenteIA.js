@@ -86,6 +86,7 @@ async function recargar() {
       ${formularioEntrada()}
       ${listaEntradas()}
     </div>
+    ${['company_admin', 'super_admin'].includes(estado.perfil?.role) ? `
     <div class="mi-bloque">
       <h3>2. Probar mi asistente <span class="mi-sub">· escribe como si fueras un cliente; no se envía nada</span></h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -93,12 +94,24 @@ async function recargar() {
         <button class="btn-auto" data-accion="probar" style="width:auto; margin:0;">Probar</button>
       </div>
       <div id="asResultado" aria-live="polite" style="margin-top:10px;"></div>
-    </div>`;
+    </div>` : `
+    <p class="mi-rango">Probar el asistente lo hace el administrador de la empresa (asistente-probar solo lo permite a ese rol).</p>`}`;
 }
 
 // ── Modo ───────────────────────────────────────────────────────
 function seccionModo() {
   const as = estado.asistente;
+  // Directores y colaboradores editan la información del negocio (D4,
+  // 2026-11-25), pero el modo solo lo cambia el administrador
+  // (ai_assistants_update / ai_set_mode). El colaborador ni siquiera
+  // puede leer ai_assistants: no se le muestra esta sección.
+  const rol = estado.perfil?.role;
+  const esAdmin = rol === 'company_admin' || rol === 'super_admin';
+  if (!esAdmin) {
+    if (!as) return '';
+    return `<p class="mi-rango" style="margin:0 0 8px;">Modo de respuesta actual: <strong>${s(MODOS[as.mode]?.titulo ?? as.mode)}</strong>${
+      as.mode === 'automatico' && as.auto_paused_at ? ' (en pausa)' : ''}. Solo el administrador de la empresa lo cambia.</p>`;
+  }
   if (!as) return '<p class="mi-aviso">El asistente aún no está configurado para esta empresa.</p>';
   const pausado = !!as.auto_paused_at;
   const opciones = Object.entries(MODOS).map(([clave, m]) => `

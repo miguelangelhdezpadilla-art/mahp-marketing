@@ -174,6 +174,29 @@
       </div>
     </div>
 
+    <!-- Social Hub para directores: bandeja e información del negocio
+         para la IA. Conectar páginas, cambiar el modo de la IA y el
+         consumo siguen siendo del administrador (empresa.html). -->
+    <div id="tab-social-hub" class="tab-panel">
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="padding:1rem 1.1rem 0;">
+          <h2>💬 Mensajes de clientes</h2>
+          <p style="font-size:0.85em; color:var(--text-muted); margin-top:-4px; margin-bottom:1rem;">
+            Responde los mensajes de Facebook e Instagram de la empresa. La IA te sugiere respuestas.
+          </p>
+        </div>
+        <div id="socialHubContenedor"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧠 Información para la IA</h2>
+        <p style="font-size:0.85em; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+          Promociones, horarios, menú y respuestas frecuentes. Lo que publiques aquí la IA lo usa al momento.
+        </p>
+        <div id="asistenteIAContenedor"></div>
+      </div>
+    </div>
+
     </div>
   </div>
 
@@ -195,6 +218,9 @@
     </button>
     <button onclick="cambiarTab('seguidores')" id="navbtn-seguidores">
       <i class="fa-solid fa-users"></i> Redes sociales
+    </button>
+    <button onclick="cambiarTab('social-hub')" id="navbtn-social-hub">
+      <i class="fa-solid fa-comments"></i> Mensajes
     </button>
   </div>
 

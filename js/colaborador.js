@@ -6,6 +6,7 @@
     import { renderDetalleTarea, solicitarAutorizacion } from './shared/detalleTarea.js';
     import { renderAvanceSeguidoresColaborador } from './shared/metasSeguidores.js';
     import { renderSocialHub } from './shared/socialHub.js';
+    import { renderAsistenteIA } from './shared/asistenteIA.js';
 
     window.cerrarSesion = logout;
     configurarTabs();
@@ -266,6 +267,7 @@
         if (nombre === 'social-hub' && !hubInicializado) {
           hubInicializado = true;
           renderSocialHub(supabaseClient, miPerfil.company_id, miPerfil, 'socialHubContenedor');
+          renderAsistenteIA(supabaseClient, miPerfil.company_id, miPerfil, 'asistenteIAContenedor');
         }
       };
 

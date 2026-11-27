@@ -16,6 +16,8 @@ import {
 import { renderFormMetas, cargarListaMetas } from './shared/metasSeguidores.js';
 import { renderPanelMetaInsights } from './shared/metaInsights.js';
 import { renderPanelMetaAds } from './shared/metaAds.js';
+import { renderSocialHub } from './shared/socialHub.js';
+import { renderAsistenteIA } from './shared/asistenteIA.js';
 import { cargarTablaAvances } from './shared/avances.js';
 
 window.cerrarSesion = logout;
@@ -117,10 +119,18 @@ window.toggleCampania = (campaignId) => toggleCampania(supabaseClient, campaignI
   });
   calendar.render();
 
+  // Social Hub: conversaciones + Realtime, se inicializa la primera
+  // vez que se abre la pestaña.
+  let hubInicializado = false;
   let cambiarTabBase = window.cambiarTab;
   window.cambiarTab = function(nombre) {
     cambiarTabBase(nombre);
     if (nombre === 'calendario') calendar.updateSize();
+    if (nombre === 'social-hub' && !hubInicializado) {
+      hubInicializado = true;
+      renderSocialHub(supabaseClient, companyId, resultado.profile, 'socialHubContenedor');
+      renderAsistenteIA(supabaseClient, companyId, resultado.profile, 'asistenteIAContenedor');
+    }
   };
 
   await Promise.all([

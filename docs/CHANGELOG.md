@@ -10,6 +10,14 @@
 
 ---
 
+## 2026-11-27 — Producto: Social Hub e información para la IA en director y colaborador
+
+- **[Feature]** `directivo.html` tiene una pestaña nueva, **Mensajes**: la bandeja (`renderSocialHub`) y la tarjeta **Información para la IA** (`renderAsistenteIA`). `colaborador.html` suma esa tarjeta a su pestaña Mensajes. Cumple D4: directores y colaboradores publican directo. El RLS de `knowledge_entries` y `knowledge_attachments` ya lo permitía.
+- **[Fix]** `asistenteIA.js` con roles que no son administrador:
+  - La sección de modo se muestra solo como lectura, porque `ai_set_mode` y `ai_assistants_update` son de company_admin. Al colaborador no se le muestra, porque no puede leer `ai_assistants`.
+  - "Probar mi asistente" se oculta, porque `asistente-probar` responde 403 a otros roles.
+- **[Nota]** Se publicaron solo estos cambios. El trabajo sin publicar de la sesión del motor de IA (aprendizaje, v34) quedó fuera del commit.
+
 ## 2026-11-25 — Producto: Social Hub para colaboradores
 
 - **[Decisión]** Base de conocimientos (E4 de `MPS-002-004`): la construye la sesión del motor de IA. **D4 de `MPS-002-003` resuelta** por el Product Owner: colaboradores, directores y admins **publican directo** promociones, precios, horarios, FAQ, políticas e instrucciones, sin aprobación previa. El cambio de modo de IA sigue siendo de company admin.
