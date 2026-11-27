@@ -30,7 +30,7 @@
 - **[Feature]** Edge Function nueva `ia-aprendizaje` (`--no-verify-jwt`; valida `x-cron-secret` o la sesión de admin/director/colaborador): cada noche junta los pares pregunta del cliente → respuesta humana de 30 días (`_shared/ai/aprendizaje.ts`), Claude Haiku detecta las preguntas repetidas en ≥2 conversaciones distintas (validado en código) y propone la respuesta con el estilo del equipo. Se guardan como **pendientes** en `knowledge_suggestions`; la IA no las usa hasta que alguien las publica.
 - **[Feature]** Tarjeta Asistente de IA → **🎓 Lo que la IA aprendió de tu equipo**: editar, publicar, guardar como borrador o descartar; botón "Buscar aprendizajes ahora".
 - **[DB]** `supabase_schema_v34.sql`, aplicada el 2026-11-27 con autorización del Product Owner: `knowledge_suggestions` (RLS admin/director/colaborador, solo la función inserta), `ai_usage.use_case` admite `aprendizaje`, pg_cron `ia-aprendizaje-diario` 10:00 UTC.
-- **[Verificación]** Primer análisis real (La Casa del Centro): 19 pares, 3 propuestas del modelo, 2 aceptadas por el filtro, US$0.000544. 73 pruebas de Deno (6 nuevas). No probado en navegador.
+- **[Verificación]** Primer análisis real (La Casa del Centro): 19 pares, 3 propuestas del modelo, 2 aceptadas por el filtro, US$0.000544. 67 pruebas de Deno (6 nuevas). No probado en navegador.
 - **[Pendiente]** Opción 3 (copiar el estilo del equipo en las respuestas) para después.
 
 ## 2026-11-26 — Producto: tendencias de campañas de Meta Ads
