@@ -121,10 +121,16 @@ function avisoConexion(c) {
   }
   if (c.status === 'sin_cuentas') return '<p class="mi-aviso">Meta no devolvió ninguna cuenta publicitaria. Al reconectar Facebook, marca tu cuenta publicitaria en la ventana de Meta.</p>';
   if (c.status === 'token_invalido') return '<p class="mi-aviso">La conexión con Meta Ads venció o fue revocada. Vuelve a conectar Facebook en Social Hub → Conexiones.</p>';
+  // Con varias cuentas autorizadas, el admin puede cambiar cuál se muestra.
+  const cambiar = admin && (c.accounts ?? []).length > 1
+    ? `<div class="mi-filtros" style="margin:0 0 8px; font-size:12px;">Cuenta publicitaria:
+        <select id="adsCuenta" style="margin:0; width:auto;">${c.accounts.map(a => `<option value="${s(a.id)}" ${a.id === c.ad_account_id ? 'selected' : ''}>${s(a.name)} (${s(a.id)})</option>`).join('')}</select>
+        <button class="btn-auto" data-accion="elegir" style="width:auto; margin:0;">Cambiar</button></div>`
+    : '';
   const vence = c.token_expires_at ? (Date.parse(c.token_expires_at) - Date.now()) / 86400000 : null;
-  if (vence != null && vence < 7) return `<p class="mi-aviso" style="margin:0 0 8px;">La conexión con Meta Ads vence ${vence < 1 ? 'hoy' : `en ${Math.ceil(vence)} días`}. Vuelve a conectar Facebook en Social Hub → Conexiones para no perder la actualización diaria.</p>`;
-  if (c.status === 'error') return `<p class="mi-aviso" style="margin:0 0 8px;">La última actualización falló: ${s(c.last_error ?? 'error de Meta')}</p>`;
-  return '';
+  if (vence != null && vence < 7) return cambiar + `<p class="mi-aviso" style="margin:0 0 8px;">La conexión con Meta Ads vence ${vence < 1 ? 'hoy' : `en ${Math.ceil(vence)} días`}. Vuelve a conectar Facebook en Social Hub → Conexiones para no perder la actualización diaria.</p>`;
+  if (c.status === 'error') return cambiar + `<p class="mi-aviso" style="margin:0 0 8px;">La última actualización falló: ${s(c.last_error ?? 'error de Meta')}</p>`;
+  return cambiar;
 }
 
 function dinero(moneda) {

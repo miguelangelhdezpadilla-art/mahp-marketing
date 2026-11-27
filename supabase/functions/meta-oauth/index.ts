@@ -223,6 +223,29 @@ async function guardarCuentaPublicitaria(
       access_token: userToken, fields: 'id,name,currency,account_status', limit: '100',
     });
     const cuentas = (data ?? []).map((a: any) => ({ id: String(a.id), name: a.name, currency: a.currency ?? null }));
+    // Igual que con las páginas: con Facebook Login for Business, una
+    // cuenta publicitaria de un portfolio comercial elegida en la ventana
+    // de Meta puede no salir en /me/adaccounts; sus IDs vienen en
+    // granular_scopes de ads_read.
+    try {
+      const dep = await graph('/debug_token', { input_token: userToken, access_token: `${APP_ID}|${APP_SECRET}` });
+      const ids = new Set<string>();
+      for (const g of dep.data?.granular_scopes ?? []) {
+        if (g.scope === 'ads_read' || g.scope === 'ads_management') for (const id of g.target_ids ?? []) ids.add(String(id));
+      }
+      for (const id of ids) {
+        const act = id.startsWith('act_') ? id : `act_${id}`;
+        if (cuentas.some((c: any) => c.id === act)) continue;
+        try {
+          const a = await graph(`/${act}`, { access_token: userToken, fields: 'id,name,currency' });
+          cuentas.push({ id: String(a.id), name: a.name, currency: a.currency ?? null });
+        } catch (e) {
+          console.warn('[meta-oauth] cuenta publicitaria de granular_scopes:', (e as Error).message);
+        }
+      }
+    } catch (e) {
+      console.warn('[meta-oauth] granular_scopes de anuncios:', (e as Error).message);
+    }
     const { data: actual } = await service.from('company_meta_ads')
       .select('ad_account_id').eq('company_id', companyId).maybeSingle();
     const sigue = cuentas.find((c: any) => c.id === actual?.ad_account_id);
