@@ -127,10 +127,19 @@ function avisoConexion(c) {
         <select id="adsCuenta" style="margin:0; width:auto;">${c.accounts.map(a => `<option value="${s(a.id)}" ${a.id === c.ad_account_id ? 'selected' : ''}>${s(a.name)} (${s(a.id)})</option>`).join('')}</select>
         <button class="btn-auto" data-accion="elegir" style="width:auto; margin:0;">Cambiar</button></div>`
     : '';
+  // Cuenta que Meta no listó (p. ej. de un portfolio comercial): por ID.
+  const agregar = admin
+    ? `<details style="margin:0 0 8px; font-size:12px;"><summary style="cursor:pointer; color:var(--text-secondary);">¿No ves tu cuenta publicitaria? Agrégala por su ID</summary>
+        <div class="mi-filtros" style="margin-top:6px;">
+          <input type="text" id="adsCuentaId" inputmode="numeric" placeholder="ID de la cuenta, p. ej. 1075918470432741" style="margin:0; width:auto; min-width:240px;">
+          <button class="btn-auto" data-accion="agregar" style="width:auto; margin:0;">Agregar y usar</button>
+        </div>
+        <div class="mi-tile-nota">El ID está en Meta Ads Manager, en el selector de cuentas de arriba.</div></details>`
+    : '';
   const vence = c.token_expires_at ? (Date.parse(c.token_expires_at) - Date.now()) / 86400000 : null;
-  if (vence != null && vence < 7) return cambiar + `<p class="mi-aviso" style="margin:0 0 8px;">La conexión con Meta Ads vence ${vence < 1 ? 'hoy' : `en ${Math.ceil(vence)} días`}. Vuelve a conectar Facebook en Social Hub → Conexiones para no perder la actualización diaria.</p>`;
-  if (c.status === 'error') return cambiar + `<p class="mi-aviso" style="margin:0 0 8px;">La última actualización falló: ${s(c.last_error ?? 'error de Meta')}</p>`;
-  return cambiar;
+  if (vence != null && vence < 7) return cambiar + agregar + `<p class="mi-aviso" style="margin:0 0 8px;">La conexión con Meta Ads vence ${vence < 1 ? 'hoy' : `en ${Math.ceil(vence)} días`}. Vuelve a conectar Facebook en Social Hub → Conexiones para no perder la actualización diaria.</p>`;
+  if (c.status === 'error') return cambiar + agregar + `<p class="mi-aviso" style="margin:0 0 8px;">La última actualización falló: ${s(c.last_error ?? 'error de Meta')}</p>`;
+  return cambiar + agregar;
 }
 
 function dinero(moneda) {
@@ -201,14 +210,15 @@ async function manejarClic(ev) {
   if (accion === 'periodo') { estado.dias = Number(btn.dataset.dias); await recargar(); return; }
   btn.disabled = true;
   try {
-    const body = { company_id: estado.companyId, action: accion === 'elegir' ? 'choose' : 'sync' };
+    const body = { company_id: estado.companyId, action: accion === 'elegir' ? 'choose' : accion === 'agregar' ? 'add' : 'sync' };
     if (accion === 'elegir') body.ad_account_id = document.getElementById('adsCuenta')?.value;
+    if (accion === 'agregar') body.ad_account_id = document.getElementById('adsCuentaId')?.value;
     const { error } = await estado.supabase.functions.invoke('meta-ads', { body });
     if (error) {
       let msg = error.message;
       try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* sin cuerpo */ }
       showToast(msg, 'error');
-    } else showToast(accion === 'elegir' ? 'Cuenta publicitaria conectada' : 'Campañas actualizadas');
+    } else showToast(accion === 'sync' ? 'Campañas actualizadas' : 'Cuenta publicitaria conectada');
     await recargar();
   } finally {
     if (btn.isConnected) btn.disabled = false;

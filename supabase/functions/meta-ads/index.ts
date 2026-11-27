@@ -155,6 +155,29 @@ Deno.serve(async (req: Request) => {
     .select('company_id, ad_account_id, user_token, accounts').eq('company_id', companyId).maybeSingle();
   if (!fila) return json({ error: 'Esta empresa no tiene una cuenta publicitaria conectada.' }, 404);
 
+  // Agregar por ID una cuenta que Meta no listó: se comprueba que la
+  // llave guardada pueda leerla antes de aceptarla.
+  if (body.action === 'add') {
+    if (!puedeElegir) return json({ error: 'Solo el administrador puede agregar cuentas publicitarias.' }, 403);
+    const limpio = String(body.ad_account_id ?? '').trim().replace(/^act_/, '');
+    if (!/^\d{5,25}$/.test(limpio)) return json({ error: 'Escribe el ID numérico de la cuenta publicitaria.' }, 400);
+    let cuenta: any;
+    try {
+      const a = await graph(`${GRAPH}/act_${limpio}?fields=id,name,currency&access_token=${encodeURIComponent(fila.user_token)}`);
+      cuenta = { id: String(a.id), name: a.name, currency: a.currency ?? null };
+    } catch (e) {
+      console.warn('[meta-ads] agregar cuenta', limpio, (e as GraphError).code, (e as Error).message);
+      return json({
+        error: 'La conexión actual no tiene acceso a esa cuenta. Vuelve a conectar Facebook y, en la ventana de Meta, marca esa cuenta publicitaria.',
+      }, 403);
+    }
+    const cuentas = [...(fila.accounts ?? []).filter((a: any) => a.id !== cuenta.id), cuenta];
+    await service.from('company_meta_ads').update({ accounts: cuentas, updated_at: new Date().toISOString() }).eq('company_id', companyId);
+    fila.accounts = cuentas;
+    body.ad_account_id = cuenta.id;
+    body.action = 'choose';
+  }
+
   if (body.action === 'choose') {
     if (!puedeElegir) return json({ error: 'Solo el administrador puede elegir la cuenta publicitaria.' }, 403);
     const cuenta = (fila.accounts ?? []).find((a: any) => a.id === String(body.ad_account_id));
