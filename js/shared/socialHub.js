@@ -18,6 +18,30 @@ function horaCorta(iso) {
   return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 }
 
+// Día en palabras para fechas cercanas: Hoy, Ayer, Antier; las demás con
+// fecha ("23 nov", y el año si no es el actual). Compara días de
+// calendario en la hora local, no periodos de 24 h.
+function diaRelativo(iso) {
+  const d = new Date(iso);
+  const inicio = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dias = Math.round((inicio(new Date()) - inicio(d)) / 86400000);
+  if (dias === 0) return 'Hoy';
+  if (dias === 1) return 'Ayer';
+  if (dias === 2) return 'Antier';
+  return d.toLocaleDateString('es-MX', {
+    day: 'numeric', month: 'short',
+    ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}),
+  });
+}
+
+// Lista de conversaciones: "Hoy 12:46 p.m.", "Ayer 9:10 a.m.", "Antier
+// 6:05 p.m."; más atrás solo la fecha.
+function fechaCortaLista(iso) {
+  if (!iso) return '';
+  const dia = diaRelativo(iso);
+  return ['Hoy', 'Ayer', 'Antier'].includes(dia) ? `${dia} ${horaCorta(iso)}` : dia;
+}
+
 function truncar(texto, n) {
   if (!texto) return '';
   return texto.length > n ? texto.slice(0, n) + '…' : texto;
@@ -108,7 +132,7 @@ function conversacionCardHtml(conv, companyId) {
         <span class="conv-canal-dot ${conv.channel === 'facebook' ? 'dot-fb' : 'dot-ig'}">${conv.channel === 'facebook' ? 'f' : 'i'}</span>
       </div>
       <div class="conv-info">
-        <div class="conv-nombre">${s(nombre)} <span class="conv-hora">${ultimo ? horaCorta(ultimo.sent_at) : ''}</span></div>
+        <div class="conv-nombre">${s(nombre)} <span class="conv-hora">${ultimo ? fechaCortaLista(ultimo.sent_at) : ''}</span></div>
         <div class="conv-ultimo ${claseUltimo(conv, ultimo)}">${ultimo ? s(truncar(textoVistaPrevia(ultimo), 60)) : 'Sin mensajes'}</div>
         <div class="conv-badges">
           <span class="conv-badge badge-${claseEstado}">${textoEstado}</span>
@@ -190,14 +214,11 @@ function mensajeHtml(m) {
     </div>`;
 }
 
-// En el historial importado hay mensajes de otros días: la hora sola
-// no basta.
+// Burbujas del chat: siempre día + hora ("Hoy 12:46 p.m.", "Ayer …",
+// "Antier …", "23 nov 9:10 a.m.").
 function fechaHora(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
-  const hoy = new Date();
-  if (d.toDateString() === hoy.toDateString()) return horaCorta(iso);
-  return d.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return `${diaRelativo(iso)} ${horaCorta(iso)}`;
 }
 
 function agregarMensajeAlChat(mensaje) {

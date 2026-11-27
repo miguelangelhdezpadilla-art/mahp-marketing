@@ -2218,7 +2218,7 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   color: var(--text-primary);
   display: flex; justify-content: space-between;
 }
-.conv-hora { font-size: 10px; color: var(--text-muted); font-weight: 400; }
+.conv-hora { font-size: 10px; color: var(--text-muted); font-weight: 400; white-space: nowrap; }
 .conv-ultimo {
   font-size: 11px; color: var(--text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
