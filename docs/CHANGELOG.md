@@ -24,6 +24,15 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-27 — Producto: la IA aprende de las respuestas del equipo
+
+- **[Feature]** Chat del Social Hub: cada respuesta enviada por el equipo tiene **💾 Guardar como respuesta**. Abre la pregunta del cliente (mensajes previos) y la respuesta para editarlas y se guarda como Pregunta frecuente (respuesta guardada), publicada o en borrador.
+- **[Feature]** Edge Function nueva `ia-aprendizaje` (`--no-verify-jwt`; valida `x-cron-secret` o la sesión de admin/director/colaborador): cada noche junta los pares pregunta del cliente → respuesta humana de 30 días (`_shared/ai/aprendizaje.ts`), Claude Haiku detecta las preguntas repetidas en ≥2 conversaciones distintas (validado en código) y propone la respuesta con el estilo del equipo. Se guardan como **pendientes** en `knowledge_suggestions`; la IA no las usa hasta que alguien las publica.
+- **[Feature]** Tarjeta Asistente de IA → **🎓 Lo que la IA aprendió de tu equipo**: editar, publicar, guardar como borrador o descartar; botón "Buscar aprendizajes ahora".
+- **[DB]** `supabase_schema_v34.sql`, aplicada el 2026-11-27 con autorización del Product Owner: `knowledge_suggestions` (RLS admin/director/colaborador, solo la función inserta), `ai_usage.use_case` admite `aprendizaje`, pg_cron `ia-aprendizaje-diario` 10:00 UTC.
+- **[Verificación]** Primer análisis real (La Casa del Centro): 19 pares, 3 propuestas del modelo, 2 aceptadas por el filtro, US$0.000544. 73 pruebas de Deno (6 nuevas). No probado en navegador.
+- **[Pendiente]** Opción 3 (copiar el estilo del equipo en las respuestas) para después.
+
 ## 2026-11-26 — Producto: tendencias de campañas de Meta Ads
 
 - **[Feature]** Pestaña **Redes sociales** (admin y director) → tarjeta **📣 Tendencias de campañas**: conversaciones con mensajes iniciadas, costo por conversación e importe gastado (últimos 7 o 30 días, terminando ayer como Meta, con % contra el periodo anterior), y cada campaña con estado, costo por conversación, % de cambio y mini gráfica diaria. `js/shared/metaAds.js`.

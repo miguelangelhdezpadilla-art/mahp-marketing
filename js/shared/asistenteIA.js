@@ -30,6 +30,7 @@ const a = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').re
 const estado = {
   supabase: null, companyId: null, perfil: null, idCont: null, entradas: [], asistente: null, editando: null,
   adjuntos: [],      // knowledge_attachments de la empresa (v32)
+  aprendidas: [],    // knowledge_suggestions pendientes (v34)
   pendientes: [],    // por guardar: { kind:'enlace', label, url } o { kind, file }
 };
 
@@ -60,7 +61,7 @@ export async function renderAsistenteIA(supabase, companyId, perfil, idCont) {
 
 async function recargar() {
   const cont = document.getElementById(estado.idCont);
-  const [ent, asis, adj] = await Promise.all([
+  const [ent, asis, adj, apr] = await Promise.all([
     estado.supabase.from('knowledge_entries')
       .select('id, kind, title, body, status, valid_until, updated_at')
       .eq('company_id', estado.companyId).is('deleted_at', null)
@@ -71,6 +72,9 @@ async function recargar() {
     estado.supabase.from('knowledge_attachments')
       .select('id, entry_id, kind, label, url, storage_path, file_name, size_bytes')
       .eq('company_id', estado.companyId).order('id'),
+    estado.supabase.from('knowledge_suggestions')
+      .select('id, question, answer, times_asked, reason, created_at')
+      .eq('company_id', estado.companyId).eq('status', 'pendiente').order('times_asked', { ascending: false }),
   ]);
   if (ent.error || asis.error) {
     cont.innerHTML = `<p class="mi-rango">No se pudo cargar el asistente: ${s((ent.error || asis.error).message)}</p>`;
@@ -79,8 +83,10 @@ async function recargar() {
   estado.entradas = ent.data ?? [];
   estado.asistente = asis.data;
   estado.adjuntos = adj.error ? [] : (adj.data ?? []);
+  estado.aprendidas = apr.error ? [] : (apr.data ?? []);
   cont.innerHTML = `
     ${seccionModo()}
+    ${seccionAprendidas()}
     <div class="mi-bloque">
       <h3>1. Información del negocio <span class="mi-sub">· la IA solo contesta con lo que esté publicado aquí</span></h3>
       ${formularioEntrada()}
@@ -204,6 +210,72 @@ async function cambiarPausa(pausar) {
   const { data: motivo, error } = await estado.supabase.rpc('ai_set_auto_pause', { p_company_id: estado.companyId, p_pausar: pausar });
   if (error || motivo) { showToast(motivo || error.message, 'error'); return; }
   showToast(pausar ? 'Respuestas automáticas en pausa' : 'Respuestas automáticas reanudadas');
+  await recargar();
+}
+
+// ── Lo que la IA aprendió (v34) ────────────────────────────────
+// Propuestas nocturnas de ia-aprendizaje: preguntas que varios clientes
+// repiten y la respuesta que les dio el equipo. Nada se usa hasta que
+// una persona la publica.
+function seccionAprendidas() {
+  const lista = estado.aprendidas;
+  return `<div class="mi-bloque" style="margin-top:0;">
+    <h3>🎓 Lo que la IA aprendió de tu equipo <span class="mi-sub">· revisa antes de publicar; la IA no las usa hasta entonces</span></h3>
+    ${lista.length ? `<div style="display:grid; gap:8px;">${lista.map(it => `
+      <div style="padding:10px; border:0.5px solid var(--border); border-radius:10px; background:var(--surface-2); display:grid; gap:6px;">
+        <div class="mi-tile-nota" style="margin:0;">Preguntado en ${it.times_asked} conversaciones${it.reason ? ' · ' + s(it.reason) : ''}</div>
+        <label style="font-size:12px;">Pregunta
+          <input type="text" id="aprP-${it.id}" maxlength="200" value="${a(it.question)}" style="margin:2px 0 0;"></label>
+        <label style="font-size:12px;">Respuesta (con las palabras de tu equipo)
+          <textarea id="aprR-${it.id}" maxlength="3000" rows="3" style="margin:2px 0 0;">${s(it.answer)}</textarea></label>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn-auto" data-accion="apr-publicar" data-id="${it.id}" style="width:auto; margin:0;">✅ Publicar</button>
+          <button class="btn-auto" data-accion="apr-borrador" data-id="${it.id}" style="width:auto; margin:0; background:#64748b;">Guardar como borrador</button>
+          <button class="btn-auto" data-accion="apr-descartar" data-id="${it.id}" style="width:auto; margin:0; background:#e74c3c;">Descartar</button>
+        </div>
+      </div>`).join('')}</div>`
+      : '<p class="mi-rango" style="margin:0;">Cada noche la IA revisa lo que tu equipo contestó a mano y te propone aquí las preguntas que se repiten. También puedes guardar una respuesta desde el chat con "💾 Guardar como respuesta".</p>'}
+    <button class="mi-actualizar" data-accion="apr-buscar" style="margin-top:8px;">🔎 Buscar aprendizajes ahora</button>
+  </div>`;
+}
+
+async function resolverAprendida(id, destino) {
+  const a = estado.aprendidas.find(x => x.id === id);
+  if (!a) return;
+  let entryId = null;
+  if (destino !== 'descartada') {
+    const title = document.getElementById(`aprP-${id}`)?.value.trim() ?? a.question;
+    const body = document.getElementById(`aprR-${id}`)?.value.trim() ?? a.answer;
+    if (title.length < 2 || body.length < 2) { showToast('Escribe la pregunta y la respuesta.', 'error'); return; }
+    const { data, error } = await estado.supabase.from('knowledge_entries').insert({
+      company_id: estado.companyId, kind: 'faq', title, body,
+      status: destino === 'publicada' ? 'publicado' : 'borrador',
+    }).select('id').single();
+    if (error) { showToast('No se guardó: ' + error.message, 'error'); return; }
+    entryId = data.id;
+  }
+  const { data: { user } } = await estado.supabase.auth.getUser();
+  const { error } = await estado.supabase.from('knowledge_suggestions').update({
+    status: destino, entry_id: entryId, reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString(),
+  }).eq('id', id);
+  if (error) { showToast('No se actualizó la propuesta: ' + error.message, 'error'); return; }
+  showToast({ publicada: 'Publicada: la IA ya la puede usar', borrador: 'Guardada como borrador', descartada: 'Propuesta descartada' }[destino]);
+  await recargar();
+}
+
+async function buscarAprendizajes() {
+  const { data, error } = await estado.supabase.functions.invoke('ia-aprendizaje', { body: { company_id: estado.companyId } });
+  if (error) {
+    let msg = error.message;
+    try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* sin cuerpo */ }
+    showToast(msg, 'error');
+    return;
+  }
+  showToast(data?.nuevas
+    ? `La IA encontró ${data.nuevas} respuesta${data.nuevas > 1 ? 's' : ''} nueva${data.nuevas > 1 ? 's' : ''} para revisar`
+    : data?.motivo === 'pocos pares'
+      ? 'Todavía hay pocas respuestas de tu equipo en los últimos 30 días para aprender.'
+      : 'No hay preguntas nuevas que se repitan por ahora.');
   await recargar();
 }
 
@@ -447,6 +519,10 @@ async function manejarClic(ev) {
     else if (accion === 'borrar-adjunto') await borrarAdjunto(id);
     else if (accion === 'borrar') await borrarEntrada(id);
     else if (accion === 'probar') await probar();
+    else if (accion === 'apr-publicar') await resolverAprendida(id, 'publicada');
+    else if (accion === 'apr-borrador') await resolverAprendida(id, 'borrador');
+    else if (accion === 'apr-descartar') await resolverAprendida(id, 'descartada');
+    else if (accion === 'apr-buscar') await buscarAprendizajes();
   } finally {
     if (btn.isConnected) btn.disabled = false;
   }

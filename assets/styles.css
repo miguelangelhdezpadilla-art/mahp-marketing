@@ -2528,6 +2528,8 @@ a.volver-link:hover { color: #fff; background: rgba(255,255,255,.08); }
   .mi-barra-fila { grid-template-columns: 80px 1fr 44px; }
 }
 
+.msg-guardar { background: none; border: none; padding: 0; margin: 0; width: auto; font-size: 10px; color: var(--indigo-dark); cursor: pointer; text-decoration: underline; }
+.msg-guardar:hover { color: var(--indigo); }
 .msg.agente .msg-hora,
 .msg.ia-msg .msg-hora { text-align: right; }
 

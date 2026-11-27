@@ -216,7 +216,9 @@ function mensajeHtml(m) {
         ${clase === 'ia-msg' ? '<div class="msg-ia-badge">✨ IA</div>' : ''}
         ${adjunto}
         ${m.content ? `<div class="msg-burbuja">${s(m.content)}</div>` : ''}
-        <div class="msg-hora">${fechaHora(m.sent_at)}</div>
+        <div class="msg-hora">${fechaHora(m.sent_at)}${clase === 'agente' && m.content && Number(m.id)
+          ? ` · <button class="msg-guardar" onclick="window.guardarComoRespuesta(${Number(m.id)}, ${Number(m.conversation_id)})" title="Guardar como respuesta para que la IA la use con otros clientes">💾 Guardar como respuesta</button>`
+          : ''}</div>
       </div>
     </div>`;
 }
@@ -550,6 +552,59 @@ window.cambiarCanalHub = function (canal, companyId) {
   const btn = [...document.querySelectorAll('.hub-tab')].find(b => b.getAttribute('onclick')?.includes(`'${canal}'`));
   if (btn) btn.classList.add('activo');
   cargarConversaciones(window._supabaseHub, companyId, canal);
+};
+
+// ── Guardar una respuesta del equipo como Pregunta frecuente (v34) ──
+// La pregunta son los mensajes del cliente justo antes de esa respuesta.
+// Se guarda en la base de conocimientos como respuesta guardada: la IA
+// la usa tal cual con otros clientes (publicada) o queda como borrador.
+const escAttr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+window.guardarComoRespuesta = async function (msgId, convId) {
+  const supabase = window._supabaseHub;
+  const { data: msgs, error } = await supabase.from('messages')
+    .select('id, company_id, direction, sender_type, content, sent_at')
+    .eq('conversation_id', convId).eq('legacy_ai_suggestion', false)
+    .order('sent_at', { ascending: true });
+  if (error || !msgs) { showToast('No se pudo leer la conversación.', 'error'); return; }
+  const i = msgs.findIndex(x => x.id === msgId);
+  if (i < 0) return;
+  const respuesta = msgs[i];
+  const preguntas = [];
+  for (let j = i - 1; j >= 0 && preguntas.length < 4; j--) {
+    if (msgs[j].direction !== 'inbound') { if (preguntas.length) break; continue; }
+    if (msgs[j].content?.trim()) preguntas.unshift(msgs[j].content.trim());
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal-caja" style="max-width:560px; width:calc(100% - 32px);">
+    <h3 style="margin-top:0;">💾 Guardar como respuesta</h3>
+    <p style="font-size:12px; color:var(--text-secondary); margin-top:-6px;">Cuando otro cliente pregunte algo parecido, la IA enviará esta respuesta tal cual. Quita nombres o datos de este cliente en particular.</p>
+    <label style="font-size:12px;">Pregunta del cliente
+      <input type="text" id="gcrPregunta" maxlength="200" value="${escAttr(preguntas.join(' ').slice(0, 200))}" style="margin:4px 0 8px;"></label>
+    <label style="font-size:12px;">Respuesta
+      <textarea id="gcrRespuesta" maxlength="3000" rows="5" style="margin:4px 0 8px;">${s(respuesta.content ?? '')}</textarea></label>
+    <label style="display:flex; gap:6px; align-items:center; font-size:12px;">
+      <input type="checkbox" id="gcrPublicar" checked style="width:auto; margin:0;"> Publicar ya (si no, queda como borrador en "Asistente de IA")</label>
+    <div class="modal-botones">
+      <button class="modal-btn-cancelar">Cancelar</button>
+      <button class="modal-btn-aceptar">Guardar</button>
+    </div></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.modal-btn-cancelar').onclick = () => overlay.remove();
+  overlay.querySelector('.modal-btn-aceptar').onclick = async () => {
+    const title = overlay.querySelector('#gcrPregunta').value.trim();
+    const body = overlay.querySelector('#gcrRespuesta').value.trim();
+    if (title.length < 2 || body.length < 2) { showToast('Escribe la pregunta y la respuesta.', 'error'); return; }
+    const publicar = overlay.querySelector('#gcrPublicar').checked;
+    const { error: errIns } = await supabase.from('knowledge_entries').insert({
+      company_id: respuesta.company_id, kind: 'faq', title, body, status: publicar ? 'publicado' : 'borrador',
+    });
+    if (errIns) { showToast('No se guardó: ' + errIns.message, 'error'); return; }
+    overlay.remove();
+    showToast(publicar ? 'Respuesta guardada: la IA ya la puede usar' : 'Guardada como borrador en Asistente de IA');
+  };
 };
 
 window.abrirConversacion = function (convId, companyId) {
