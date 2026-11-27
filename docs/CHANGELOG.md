@@ -16,6 +16,12 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-26 — Producto: bandeja más clara (colores, fechas y conversaciones antiguas)
+
+- **[UX]** Lista de conversaciones: el último mensaje va en **negritas** si es del cliente, en verde si lo contestó la IA de MAHP y en amarillo fuerte si fue el mensaje de transferencia a una persona.
+- **[UX]** Fechas relativas en la lista y en el chat: "Hoy", "Ayer", "Antier"; más atrás, la fecha.
+- **[UX]** Las conversaciones con más de 20 días sin mensajes se ocultan de la bandeja (Facebook e Instagram), con un botón para verlas. Decisión del Product Owner: ocultar, no borrar; si el cliente vuelve a escribir, reaparecen con su historial. Los contadores de las pestañas cuentan solo los últimos 20 días.
+
 ## 2026-11-26 — Producto: modo automático verificado en producción; ajuste de reservaciones
 
 - **[Verificación]** La Casa del Centro en `automatico` (activado por su admin el 2026-11-25 21:07 UTC). Respuestas automáticas reales: horario (confianza 0.90, citando la entrada de horario) y paquete para parejas (respuesta guardada tal cual + 2 imágenes).

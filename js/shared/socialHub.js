@@ -4,6 +4,13 @@ const COLORES_AVATAR = ['#6366f1', '#8b5cf6', '#a78bfa', '#ec4899', '#f59e0b'];
 
 let _canalActivo = 'facebook';
 
+// Conversaciones sin mensajes en 20 días se ocultan de la bandeja (PO,
+// 2026-11-26). No se borra nada: si el cliente vuelve a escribir,
+// last_message_at avanza y reaparece con todo su historial.
+const DIAS_VISIBLES = 20;
+let _verAntiguas = false;
+const limiteAntiguas = () => new Date(Date.now() - DIAS_VISIBLES * 86400000).toISOString();
+
 function iniciales(nombre) {
   return (nombre || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
@@ -293,12 +300,19 @@ async function cargarConversaciones(supabase, companyId, canal) {
   const lista = document.getElementById(`conv-list-${companyId}`);
   if (!lista) return;
 
-  const { data: conversaciones, error } = await supabase
+  let consulta = supabase
     .from('conversations')
     .select('*, customers(full_name), messages(content, sent_at, sender_type, direction, message_type, legacy_ai_suggestion)')
     .eq('company_id', companyId)
     .eq('channel', canal)
     .order('last_message_at', { ascending: false });
+  if (!_verAntiguas) consulta = consulta.gte('last_message_at', limiteAntiguas());
+  const [{ data: conversaciones, error }, { count: ocultas }] = await Promise.all([
+    consulta,
+    supabase.from('conversations').select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId).eq('channel', canal)
+      .or(`last_message_at.lt.${limiteAntiguas()},last_message_at.is.null`),
+  ]);
 
   if (error) {
     lista.innerHTML = '<div class="hub-empty"><p>Error al cargar conversaciones.</p></div>';
@@ -306,9 +320,16 @@ async function cargarConversaciones(supabase, companyId, canal) {
   }
 
   const convs = conversaciones ?? [];
-  lista.innerHTML = convs.length
+  const botonAntiguas = ocultas
+    ? `<button class="hub-ver-antiguas" onclick="window.alternarAntiguas('${companyId}')"
+         style="display:block; width:calc(100% - 16px); margin:8px; padding:8px; font-size:12px; background:var(--surface-2); color:var(--text-secondary); border:0.5px solid var(--border); border-radius:8px; cursor:pointer;">
+         ${_verAntiguas ? `Ocultar las de más de ${DIAS_VISIBLES} días sin mensajes` : `Ver ${ocultas} conversación${ocultas === 1 ? '' : 'es'} con más de ${DIAS_VISIBLES} días sin mensajes`}
+       </button>`
+    : '';
+  lista.innerHTML = (convs.length
     ? convs.map(c => conversacionCardHtml(c, companyId)).join('')
-    : '<div class="hub-empty"><p>No hay conversaciones todavía.</p></div>';
+    : `<div class="hub-empty"><p>${ocultas && !_verAntiguas ? `Sin conversaciones en los últimos ${DIAS_VISIBLES} días.` : 'No hay conversaciones todavía.'}</p></div>`)
+    + botonAntiguas;
 
   // Nombre del contacto asignado como propiedad del DOM (no como
   // atributo HTML): sHtml() escapa para contenido de texto, no para
@@ -320,17 +341,25 @@ async function cargarConversaciones(supabase, companyId, canal) {
     if (conv) item.dataset.nombre = nombreDe(conv).toLowerCase();
   });
 
+  // Los contadores de pestaña cuentan solo lo visible (últimos 20 días).
   const [{ count: countFb }, { count: countIg }] = await Promise.all([
     supabase.from('conversations').select('id', { count: 'exact', head: true })
-      .eq('company_id', companyId).eq('channel', 'facebook').eq('status', 'nuevo'),
+      .eq('company_id', companyId).eq('channel', 'facebook').eq('status', 'nuevo')
+      .gte('last_message_at', limiteAntiguas()),
     supabase.from('conversations').select('id', { count: 'exact', head: true })
-      .eq('company_id', companyId).eq('channel', 'instagram').eq('status', 'nuevo'),
+      .eq('company_id', companyId).eq('channel', 'instagram').eq('status', 'nuevo')
+      .gte('last_message_at', limiteAntiguas()),
   ]);
   const badgeFb = document.getElementById(`badge-fb-${companyId}`);
   const badgeIg = document.getElementById(`badge-ig-${companyId}`);
   if (badgeFb) badgeFb.textContent = countFb ?? 0;
   if (badgeIg) badgeIg.textContent = countIg ?? 0;
 }
+
+window.alternarAntiguas = function (companyId) {
+  _verAntiguas = !_verAntiguas;
+  cargarConversaciones(window._supabaseHub, companyId, _canalActivo);
+};
 
 // ── Abrir conversación (panel derecho) ────────────────────────────
 async function abrirConversacion(supabase, convId, companyId, perfil, { sinSincronizar = false } = {}) {
