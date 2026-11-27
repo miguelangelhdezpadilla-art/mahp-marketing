@@ -208,6 +208,44 @@ async function conectarPagina(
   });
 }
 
+// v33: si el usuario aceptó ads_read, se guarda su llave larga (≈60
+// días) para que meta-ads lea las campañas. Nunca vuelve al navegador.
+// Si hay una sola cuenta publicitaria se elige sola; si hay varias, el
+// admin la elige en el panel de campañas. No bloquea la conexión de la
+// página si algo falla aquí.
+async function guardarCuentaPublicitaria(
+  service: SupabaseClient, companyId: number, userId: string,
+  userToken: string, expiraEnSeg: number | undefined, permisos: string[],
+) {
+  if (!permisos.includes('ads_read')) return;
+  try {
+    const { data } = await graph('/me/adaccounts', {
+      access_token: userToken, fields: 'id,name,currency,account_status', limit: '100',
+    });
+    const cuentas = (data ?? []).map((a: any) => ({ id: String(a.id), name: a.name, currency: a.currency ?? null }));
+    const { data: actual } = await service.from('company_meta_ads')
+      .select('ad_account_id').eq('company_id', companyId).maybeSingle();
+    const sigue = cuentas.find((c: any) => c.id === actual?.ad_account_id);
+    const elegida = sigue ?? (cuentas.length === 1 ? cuentas[0] : null);
+    const { error } = await service.from('company_meta_ads').upsert({
+      company_id: companyId,
+      user_token: userToken,
+      token_expires_at: expiraEnSeg ? new Date(Date.now() + expiraEnSeg * 1000).toISOString() : null,
+      accounts: cuentas,
+      ad_account_id: elegida?.id ?? null,
+      ad_account_name: elegida?.name ?? null,
+      currency: elegida?.currency ?? null,
+      status: !cuentas.length ? 'sin_cuentas' : elegida ? 'conectada' : 'elegir_cuenta',
+      last_error: null,
+      connected_by: userId,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'company_id' });
+    if (error) console.error('[meta-oauth] guardar cuenta publicitaria:', error.message);
+  } catch (e) {
+    console.warn('[meta-oauth] cuentas publicitarias:', (e as Error).message);
+  }
+}
+
 async function accionExchange(
   service: SupabaseClient,
   companyId: number,
@@ -238,6 +276,7 @@ async function accionExchange(
     listarPaginas(largo.access_token),
     permisosConcedidos(largo.access_token),
   ]);
+  await guardarCuentaPublicitaria(service, companyId, userId, largo.access_token, largo.expires_in, permisos);
 
   if (!paginas.length) {
     return json({

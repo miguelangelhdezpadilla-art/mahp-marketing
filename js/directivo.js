@@ -15,6 +15,7 @@ import {
 } from './shared/seguidores.js';
 import { renderFormMetas, cargarListaMetas } from './shared/metasSeguidores.js';
 import { renderPanelMetaInsights } from './shared/metaInsights.js';
+import { renderPanelMetaAds } from './shared/metaAds.js';
 import { cargarTablaAvances } from './shared/avances.js';
 
 window.cerrarSesion = logout;
@@ -140,6 +141,7 @@ window.toggleCampania = (campaignId) => toggleCampania(supabaseClient, campaignI
     }),
     cargarHistorialSeguidores(supabaseClient, companyId),
     renderPanelMetaInsights(supabaseClient, companyId, 'metaInsightsPanel'),
+    renderPanelMetaAds(supabaseClient, companyId, resultado.profile, 'metaAdsPanel'),
     renderHistorialTareas(supabaseClient, companyId, 'historialTareas'),
     renderTablaPuntos('tablaPuntos'),
     renderRanking(supabaseClient, companyId, 'rankingColaboradores'),

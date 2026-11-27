@@ -16,6 +16,14 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-26 — Producto: tendencias de campañas de Meta Ads
+
+- **[Feature]** Pestaña **Redes sociales** (admin y director) → tarjeta **📣 Tendencias de campañas**: conversaciones con mensajes iniciadas, costo por conversación e importe gastado (últimos 7 o 30 días, terminando ayer como Meta, con % contra el periodo anterior), y cada campaña con estado, costo por conversación, % de cambio y mini gráfica diaria. `js/shared/metaAds.js`.
+- **[Feature]** Edge Function nueva `meta-ads` (`--no-verify-jwt`; valida `x-cron-secret` o la sesión): lee `/{act}/campaigns` y `/{act}/insights` por campaña y día (62 días), resultado = `onsite_conversion.messaging_conversation_started_7d`. Acciones `sync` (admin/director) y `choose` (admin) para elegir la cuenta publicitaria.
+- **[Feature]** `meta-oauth`: si el usuario acepta `ads_read`, guarda su llave larga (≈60 días) y sus cuentas publicitarias en `company_meta_ads`; con una sola cuenta se elige sola. El panel avisa 7 días antes de que venza.
+- **[DB]** `supabase_schema_v33.sql`, aplicada el 2026-11-26 con autorización del Product Owner: `company_meta_ads` (la llave no es legible para `authenticated`, verificado), `meta_ads_campaigns`, `meta_ads_daily`, RLS solo admin/director/super_admin (decisión del PO), pg_cron `meta-ads-diario` 09:30 UTC.
+- **[Pendiente]** Agregar `ads_read` a la configuración de Facebook Login for Business (`config_id` 1683981806659523) en el panel de Meta y reconectar Facebook. Sin eso no hay datos. Para empresas de terceros, `ads_read` requiere revisión de la app. No probado con datos reales.
+
 ## 2026-11-26 — Producto: bandeja más clara (colores, fechas y conversaciones antiguas)
 
 - **[UX]** Lista de conversaciones: el último mensaje va en **negritas** si es del cliente, en verde si lo contestó la IA de MAHP y en amarillo fuerte si fue el mensaje de transferencia a una persona.
