@@ -11,6 +11,7 @@ import {
   adjuntosParaEnviar, buscarConocimiento, registroFuentes, respuestaGuardada, textoFragmento,
 } from '../_shared/ai/knowledge.ts';
 import { decidirEnvio } from '../_shared/ai/autopilot.ts';
+import { cargarParesRecientes, elegirEjemplosEstilo } from '../_shared/ai/aprendizaje.ts';
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -69,11 +70,12 @@ Deno.serve(async (req) => {
       .eq('company_id', companyId).eq('source', 'playground').gte('created_at', haceUnaHora);
 
     const fragmentos = await buscarConocimiento(svc, companyId, pregunta);
+    const estilo = elegirEjemplosEstilo(await cargarParesRecientes(svc, companyId), pregunta);
     const r = await sugerirRespuesta({
       companyId, conversationId: null, mensaje: pregunta.trim(), historial: [],
       // Las pruebas usan un tope propio y más amplio que el de conversación.
       generacionesUltimaHora: Math.max(0, (count ?? 0) - 20),
-      fuentes: fragmentos.map(textoFragmento), useCase: 'playground',
+      fuentes: fragmentos.map(textoFragmento), estilo, useCase: 'playground',
     }, { provider: new AnthropicProvider(ANTHROPIC_KEY), ledger: new SupabaseLedger(svc) });
 
     if (r.desenlace === 'omitido') {

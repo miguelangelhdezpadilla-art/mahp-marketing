@@ -237,6 +237,14 @@ function agregarMensajeAlChat(mensaje) {
   // Llega tarde por Realtime algo que ya se pintó (p. ej. tras importar historial).
   if (cont.querySelector(`[data-msg-id="${Number(mensaje.id)}"]`)) return;
   cont.insertAdjacentHTML('beforeend', mensajeHtml(mensaje));
+  // El cliente volvió a escribir: se reabre la ventana de 24 h.
+  if (mensaje.direction === 'inbound') {
+    document.getElementById(`ventana-${mensaje.conversation_id}`)?.remove();
+    const ta = document.getElementById(`resp-${mensaje.conversation_id}`);
+    const bt = document.getElementById(`enviar-${mensaje.conversation_id}`);
+    if (ta) { ta.disabled = false; ta.placeholder = 'Escribe una respuesta...'; }
+    if (bt) bt.disabled = false;
+  }
   cont.scrollTop = cont.scrollHeight;
   hidratarMedios(window._supabaseHub, cont);
 }
@@ -440,10 +448,21 @@ async function abrirConversacion(supabase, convId, companyId, perfil, { sinSincr
     <div class="mensajes" id="mensajes-${convId}">
       ${mensajes.map(mensajeHtml).join('')}
     </div>
+    ${(() => {
+      // Meta solo deja responder dentro de 24 h desde el último mensaje del
+      // cliente; la extensión a 7 días (HUMAN_AGENT) requiere aprobación de
+      // Meta que la app aún no tiene. Se avisa antes de escribir.
+      const ultimoCliente = [...mensajes].reverse().find(m => m.direction === 'inbound');
+      const cerrada = ultimoCliente && Date.now() - Date.parse(ultimoCliente.sent_at) > 24 * 3600 * 1000;
+      return `
+    ${cerrada ? `<div class="resp-ventana-cerrada" id="ventana-${convId}" role="status" style="margin:6px 12px 0; padding:8px 10px; border-radius:8px; background:var(--amber-light); color:#92400E; font-size:12px;">
+      ⏰ Pasaron más de 24 horas desde el último mensaje del cliente (${fechaHora(ultimoCliente.sent_at)}). Meta no permite responder hasta que vuelva a escribir. Si es urgente, contéstale desde la app de Facebook o Instagram.
+    </div>` : ''}
     <div class="resp-box">
-      <textarea class="resp-input" id="resp-${convId}" placeholder="Escribe una respuesta..."></textarea>
-      <button class="btn-enviar" onclick="window.enviarRespuesta('${convId}','${companyId}')">Enviar →</button>
+      <textarea class="resp-input" id="resp-${convId}" placeholder="${cerrada ? 'Esperando a que el cliente vuelva a escribir…' : 'Escribe una respuesta...'}" ${cerrada ? 'disabled' : ''}></textarea>
+      <button class="btn-enviar" id="enviar-${convId}" onclick="window.enviarRespuesta('${convId}','${companyId}')" ${cerrada ? 'disabled' : ''}>Enviar →</button>
     </div>`;
+    })()}`;
 
   const contMensajes = document.getElementById(`mensajes-${convId}`);
   if (contMensajes) {

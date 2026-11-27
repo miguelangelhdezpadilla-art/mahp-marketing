@@ -23,6 +23,8 @@ export interface SolicitudSocial {
   generacionesUltimaHora: number;
   /** Textos de conocimiento recuperado (match_knowledge), ya filtrados por empresa y vigencia. */
   fuentes: string[];
+  /** Respuestas reales del equipo, solo para imitar el tono (opción 3). Nunca son fuente de datos. */
+  estilo?: { pregunta: string; respuesta: string }[];
   /** Caso de uso para la contabilidad: el webhook o "Probar mi asistente". */
   useCase?: 'social_respuesta' | 'playground';
 }
@@ -92,9 +94,15 @@ export async function sugerirRespuesta(
   const conocimiento = sol.fuentes.length
     ? `<conocimiento>\n${sol.fuentes.map((f, i) => `[${etiquetaFuente(i)}] ${escaparFuente(f)}`).join('\n---\n')}\n</conocimiento>`
     : '<conocimiento>\n(sin información del negocio)\n</conocimiento>';
-  const tokensSistema = estimarTokens(SISTEMA_SOCIAL) + estimarTokens(conocimiento);
+  // Tono del equipo: datos escapados y fuera de <conocimiento>, así que
+  // sus cifras no cuentan como fuente (cifrasSinFuente solo mira fuentes).
+  const estilo = sol.estilo?.length
+    ? `<estilo_del_equipo>\n${sol.estilo.map((e, i) =>
+      `Ejemplo ${i + 1}\nCliente: ${escaparDatos(e.pregunta)}\nEquipo: ${escaparDatos(e.respuesta)}`).join('\n---\n')}\n</estilo_del_equipo>\n`
+    : '';
+  const tokensSistema = estimarTokens(SISTEMA_SOCIAL) + estimarTokens(conocimiento) + estimarTokens(estilo);
   const entrada = construirEntrada(sol.historial, sol.mensaje, limites.maxInputTokens, tokensSistema);
-  const contenido = `${conocimiento}\n${entrada}`;
+  const contenido = `${conocimiento}\n${estilo}${entrada}`;
 
   // Nivel 2: modelo económico.
   const primero = await intentar(limites.defaultModel, limites, contenido, sol, deps, r);

@@ -20,6 +20,7 @@ import {
   adjuntosParaEnviar, buscarConocimiento, registroFuentes, respuestaGuardada, textoFragmento,
 } from '../_shared/ai/knowledge.ts';
 import { type Decision, decidirEnvio } from '../_shared/ai/autopilot.ts';
+import { cargarParesRecientes, elegirEjemplosEstilo } from '../_shared/ai/aprendizaje.ts';
 import { enviarAdjuntoAutomatico, enviarRespuestaAutomatica } from '../_shared/meta.ts';
 
 const VERIFY_TOKEN  = Deno.env.get('META_VERIFY_TOKEN') ?? '';
@@ -265,12 +266,15 @@ async function analizarConIA(
 
     // E4: conocimiento publicado y vigente de ESTA empresa.
     const fragmentos = await buscarConocimiento(supabase, companyId, mensaje);
+    // Opción 3: respuestas reales del equipo para imitar el tono.
+    const estilo = elegirEjemplosEstilo(await cargarParesRecientes(supabase, companyId), mensaje);
 
     const ledger = new SupabaseLedger(supabase);
     const r = await sugerirRespuesta({
       companyId, conversationId: convId, mensaje, historial,
       generacionesUltimaHora: count ?? 0,
       fuentes: fragmentos.map(textoFragmento),
+      estilo,
     }, { provider: proveedorIA, ledger });
 
     const ia = r.analisis;

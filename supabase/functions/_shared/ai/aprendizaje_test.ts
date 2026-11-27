@@ -67,3 +67,38 @@ Deno.test('Descarta índices inventados y preguntas que ya existen', () => {
   assertEquals(filtrarPropuestas([{ pregunta: '¿Tienen estacionamiento?', respuesta: 'Sí', ejemplos: [0, 1], motivo: '' }],
     pares, ['¿tienen ESTACIONAMIENTO?']).length, 0);
 });
+
+// ---------- Estilo del equipo (opción 3) ----------
+import { elegirEjemplosEstilo } from './aprendizaje.ts';
+import { sugerirRespuesta } from './engine.ts';
+import { analisisJson, FakeProvider, limitesDePrueba, MemoryLedger } from './testing/fakes.ts';
+import { assertStringIncludes } from 'jsr:@std/assert@1.0.13';
+
+const paresEstilo = [
+  { conversationId: 1, messageId: 1, pregunta: '¿tienen terraza?', respuesta: '¡Hola! 😊 Sí, tenemos terraza' },
+  { conversationId: 2, messageId: 2, pregunta: '¿cuál es el precio del paquete parejas?', respuesta: 'Buen día ✨ el paquete cuesta $999' },
+  { conversationId: 3, messageId: 3, pregunta: 'hola', respuesta: 'Buen día ✨' },
+];
+
+Deno.test('Estilo: prefiere ejemplos con palabras en común', () => {
+  const e = elegirEjemplosEstilo(paresEstilo, 'qué incluye el paquete para parejas', 1);
+  assertEquals(e[0].respuesta, 'Buen día ✨ el paquete cuesta $999');
+});
+
+Deno.test('Estilo: los ejemplos llegan al modelo en su propio bloque', async () => {
+  const provider = new FakeProvider([{ text: analisisJson() }]);
+  await sugerirRespuesta({
+    companyId: 1, conversationId: 1, mensaje: '¿tienen terraza?', historial: [], generacionesUltimaHora: 0,
+    fuentes: [], estilo: elegirEjemplosEstilo(paresEstilo, '¿tienen terraza?'),
+  }, { provider, ledger: new MemoryLedger({ 1: limitesDePrueba() }) });
+  assertStringIncludes(provider.llamadas[0].messages[0].content, '<estilo_del_equipo>');
+});
+
+Deno.test('Estilo: un precio copiado de un ejemplo (no de <conocimiento>) se bloquea', async () => {
+  const provider = new FakeProvider([{ text: analisisJson({ respuesta_sugerida: 'Buen día ✨ el paquete cuesta $999' }) }]);
+  const r = await sugerirRespuesta({
+    companyId: 1, conversationId: 1, mensaje: '¿precio del paquete parejas?', historial: [], generacionesUltimaHora: 0,
+    fuentes: ['Paquete parejas: incluye cena'], estilo: paresEstilo,
+  }, { provider, ledger: new MemoryLedger({ 1: limitesDePrueba() }) });
+  assertEquals(r.desenlace, 'bloqueada');
+});

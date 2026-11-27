@@ -24,6 +24,12 @@
 
 - **[Feature]** `colaborador.html` / `js/colaborador.js` tienen una pestaña nueva, **Mensajes**, con la misma bandeja (`renderSocialHub`): leer, responder, usar sugerencias de IA, asignar y resolver. Se carga la primera vez que se abre. Conectar páginas y el consumo de IA siguen siendo solo de `empresa.html`. Sin cambios de permisos: el RLS ya daba a todo miembro de la empresa lectura y escritura sobre `conversations` y lectura de `messages`/`ai_responses`. Responder pasa por `meta-send-message`, que valida la sesión.
 
+## 2026-11-27 — Producto: la IA imita el estilo del equipo; aviso de la ventana de 24 h
+
+- **[Feature]** Opción 3 del aprendizaje: en cada respuesta (webhook y "Probar mi asistente") la IA recibe hasta 3 respuestas reales del equipo a preguntas parecidas (`elegirEjemplosEstilo`, últimos 30 días) en un bloque `<estilo_del_equipo>`, solo para imitar el tono. Los datos siguen saliendo solo de `<conocimiento>`: una cifra o enlace copiado de un ejemplo bloquea la respuesta (verificado con prueba). Prompt `social-v6`. 70 pruebas.
+- **[UX]** Bandeja: si pasaron más de 24 h desde el último mensaje del cliente, se muestra un aviso y se desactiva el envío (Meta lo rechaza; la etiqueta `HUMAN_AGENT` requiere aprobación de Meta que la app no tiene: error 2018276). Se reactiva en vivo cuando el cliente vuelve a escribir.
+- **[Pendiente]** Solicitar a Meta la función "Agente humano" (Human Agent) en la revisión de la app para responder hasta 7 días.
+
 ## 2026-11-27 — Producto: la IA aprende de las respuestas del equipo
 
 - **[Feature]** Chat del Social Hub: cada respuesta enviada por el equipo tiene **💾 Guardar como respuesta**. Abre la pregunta del cliente (mensajes previos) y la respuesta para editarlas y se guarda como Pregunta frecuente (respuesta guardada), publicada o en borrador.
