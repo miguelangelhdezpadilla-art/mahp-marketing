@@ -399,8 +399,13 @@ Deno.serve(async (req: Request) => {
     if (!user) return json({ error: 'Sesión inválida' }, 401);
     const companyId = Number(body.company_id);
     if (!companyId) return json({ error: 'Falta company_id' }, 400);
-    const { data: mias } = await supabaseUser.rpc('my_companies');
-    const permitida = (mias ?? []).some((c: any) => Number(c.company_id ?? c.id) === companyId);
+    // super_admin ve cualquier empresa (mismo criterio que meta-ads);
+    // el resto, solo empresas donde tiene membresía activa.
+    const [{ data: rol }, { data: mias }] = await Promise.all([
+      supabaseUser.rpc('my_role'), supabaseUser.rpc('my_companies'),
+    ]);
+    const permitida = rol === 'super_admin'
+      || (mias ?? []).some((c: any) => Number(c.company_id ?? c.id) === companyId);
     if (!permitida) return json({ error: 'No autorizado' }, 403);
     companyIds = [companyId];
   }

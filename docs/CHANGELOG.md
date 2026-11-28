@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-11-27 — Producto: super_admin puede actualizar las estadísticas de Meta
+
+- `meta-insights` rechazaba con 403 "No autorizado" al super_admin que abría una empresa donde no tiene membresía (solo revisaba `my_companies()`). Ahora acepta también `my_role() = 'super_admin'`, el mismo criterio que `meta-ads`. Sin cambios para los demás roles.
+
 ## 2026-11-27 — Producto: Social Hub e información para la IA en director y colaborador
 
 - **[Feature]** `directivo.html` tiene una pestaña nueva, **Mensajes**: la bandeja (`renderSocialHub`) y la tarjeta **Información para la IA** (`renderAsistenteIA`). `colaborador.html` suma esa tarjeta a su pestaña Mensajes. Cumple D4: directores y colaboradores publican directo. El RLS de `knowledge_entries` y `knowledge_attachments` ya lo permitía.
