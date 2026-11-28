@@ -32,6 +32,8 @@ const estado = {
   adjuntos: [],      // knowledge_attachments de la empresa (v32)
   aprendidas: [],    // knowledge_suggestions pendientes (v34)
   pendientes: [],    // por guardar: { kind:'enlace', label, url } o { kind, file }
+  listaAbierta: false, // lista de información desplegada
+  filtro: '',          // texto del buscador de la lista
 };
 
 const MAX_ARCHIVO = 25 * 1024 * 1024; // límite de Meta y del bucket
@@ -54,6 +56,13 @@ export async function renderAsistenteIA(supabase, companyId, perfil, idCont) {
     cont.addEventListener('keydown', ev => {
       if (ev.key === 'Enter' && ev.target.id === 'asPregunta') { ev.preventDefault(); probar(); }
     });
+    cont.addEventListener('input', ev => {
+      if (ev.target.id === 'asBuscar') { estado.filtro = ev.target.value; filtrarEntradas(); }
+    });
+    // 'toggle' no burbujea: se escucha en captura.
+    cont.addEventListener('toggle', ev => {
+      if (ev.target.classList?.contains('as-lista')) estado.listaAbierta = ev.target.open;
+    }, true);
     cont.dataset.enlazado = '1';
   }
   await recargar();
@@ -102,6 +111,8 @@ async function recargar() {
       <div id="asResultado" aria-live="polite" style="margin-top:10px;"></div>
     </div>` : `
     <p class="mi-rango">Probar el asistente lo hace el administrador de la empresa (asistente-probar solo lo permite a ese rol).</p>`}`;
+  // Tras guardar/borrar se repinta todo: se reaplica la búsqueda.
+  filtrarEntradas();
 }
 
 // ── Modo ───────────────────────────────────────────────────────
@@ -406,16 +417,44 @@ async function borrarAdjunto(id) {
   showToast('Adjunto quitado');
 }
 
+// Texto sin acentos y en minúsculas para buscar coincidencias.
+const normalizar = t => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+// Filtra las filas ya pintadas (sin volver a pintar, para no perder
+// el foco del buscador).
+function filtrarEntradas() {
+  const q = normalizar(estado.filtro).trim();
+  const filas = document.querySelectorAll(`#${estado.idCont} tr[data-buscar]`);
+  let visibles = 0;
+  filas.forEach(tr => {
+    const ok = !q || tr.dataset.buscar.includes(q);
+    tr.style.display = ok ? '' : 'none';
+    if (ok) visibles++;
+  });
+  const aviso = document.getElementById('asSinCoincidencias');
+  if (aviso) aviso.style.display = q && !visibles ? '' : 'none';
+  const cuenta = document.getElementById('asCuentaFiltro');
+  if (cuenta) cuenta.textContent = q ? `${visibles} de ${filas.length}` : '';
+}
+
 function listaEntradas() {
   if (!estado.entradas.length) return '<p class="mi-rango" style="margin-top:8px;">Todavía no hay información. Sin ella, la IA solo puede decir que en un momento le confirman al cliente.</p>';
   const ahora = Date.now();
-  return `<div style="overflow-x:auto; margin-top:8px;"><table class="tabla">
+  const n = estado.entradas.length;
+  return `<details class="as-lista" ${estado.listaAbierta ? 'open' : ''} style="margin-top:10px;">
+    <summary style="cursor:pointer; font-weight:600; padding:6px 0;">📚 Información guardada (${n} ${n === 1 ? 'entrada' : 'entradas'})</summary>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+      <input type="search" id="asBuscar" value="${a(estado.filtro)}" placeholder="🔎 Buscar por título, texto o tipo…" aria-label="Buscar en la información guardada" style="flex:1; min-width:220px; margin:0;">
+      <span id="asCuentaFiltro" class="mi-sub"></span>
+    </div>
+    <p id="asSinCoincidencias" class="mi-rango" style="display:none; margin-top:8px;">Nada coincide con tu búsqueda.</p>
+    <div style="overflow-x:auto; margin-top:8px;"><table class="tabla">
     <thead><tr><th>Tipo</th><th>Título</th><th>Información</th><th>Estado</th><th></th></tr></thead>
     <tbody>${estado.entradas.map(e => {
       const vencida = e.valid_until && Date.parse(e.valid_until) <= ahora;
       const badge = e.status !== 'publicado' ? `<span class="badge badge-slate">${e.status === 'archivado' ? 'Archivado' : 'Borrador'}</span>`
         : vencida ? '<span class="badge badge-amber">Vencida</span>' : '<span class="badge badge-green">Publicado</span>';
-      return `<tr>
+      return `<tr data-buscar="${a(normalizar(`${TIPOS[e.kind] ?? e.kind} ${e.title} ${e.body}`))}">
         <td>${s(TIPOS[e.kind] ?? e.kind)}</td>
         <td>${s(e.title)}${(() => { const n = estado.adjuntos.filter(x => x.entry_id === e.id).length; return n ? `<div class="mi-tile-nota">📎 ${n} adjunto${n > 1 ? 's' : ''}</div>` : ''; })()}</td>
         <td style="max-width:320px; white-space:pre-wrap;">${s(e.body.length > 160 ? e.body.slice(0, 160) + '…' : e.body)}</td>
@@ -424,7 +463,8 @@ function listaEntradas() {
           <button class="btn-auto" data-accion="editar" data-id="${e.id}" style="width:auto; margin:0;">Editar</button>
           <button class="btn-auto" data-accion="borrar" data-id="${e.id}" style="width:auto; margin:0; background:#e74c3c;">Borrar</button>
         </td></tr>`;
-    }).join('')}</tbody></table></div>`;
+    }).join('')}</tbody></table></div>
+  </details>`;
 }
 
 async function guardarEntrada() {
