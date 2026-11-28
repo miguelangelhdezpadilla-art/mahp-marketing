@@ -16,6 +16,8 @@ const USOS = {
   social_respuesta: 'Sugerencias del Social Hub',
   calendario: 'Calendario con IA',
   playground: 'Pruebas',
+  aprendizaje: 'Aprendizaje de respuestas',
+  campanas: 'Sugerencias de campaña',
 };
 
 const ESTADOS = {

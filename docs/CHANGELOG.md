@@ -10,6 +10,23 @@
 
 ---
 
+## 2026-11-28 — Producto: Sugerencias de campaña (v35)
+
+- **[Feature]** Bajo 📣 Tendencias de campañas (pestaña Redes sociales) hay un recuadro nuevo, **💡 Sugerencias de campaña**. Lo ven admin, director y super_admin (decisión del PO, 2026-11-28).
+  - **Lo que dice Meta:** el puntaje de oportunidad (0–100) y las recomendaciones de rendimiento de la cuenta publicitaria (`/act_X/recommendations` y el campo `opportunity_score`). `meta-ads` las trae en cada sincronización. Si Meta no las da, se anota el motivo y las cifras se guardan igual.
+  - **Análisis de la IA de MAHP (Claude):** botón "✨ Analizar con IA" (acción `analizar` de `meta-ads`). Compara los últimos 7 días con los 7 anteriores, por cuenta y por campaña, y entrega resumen, hallazgos, sugerencias con prioridad y una proyección de los próximos 7 días.
+- **[Decisión]** El texto que escribe la IA de Meta (beta) dentro del Administrador de anuncios no está disponible por API. Por eso se usan las recomendaciones oficiales y un análisis propio.
+- **[Seguridad/calidad]**
+  - La proyección la calcula el código (`_shared/ai/campanas.ts`, `proyectar`): el mismo ritmo de los últimos 7 días con el mismo presupuesto. Claude solo la explica.
+  - Toda frase del análisis con una cifra que no aparezca en el bloque `<datos>` se descarta (`validarAnalisisCampanas`, que usa `cifrasSinFuente`).
+  - Los enlaces "Ver en Meta" solo se aceptan si son de facebook.com.
+  - Se permite un análisis cada 10 minutos por empresa. El costo se cobra al presupuesto de IA con use_case `campanas`.
+- **[DB]** `supabase_schema_v35.sql`:
+  - tabla `meta_ads_analysis` (solo lectura para admin, director y super; solo escribe la función);
+  - `ai_usage_use_case_check` admite `campanas`.
+- **[UI]** El consumo de IA muestra las etiquetas "Aprendizaje de respuestas" y "Sugerencias de campaña".
+- **[Tests]** `campanas_test.ts`, 6 pruebas nuevas (76 en total).
+
 ## 2026-11-27 — Producto: super_admin puede actualizar las estadísticas de Meta
 
 - `meta-insights` rechazaba con 403 "No autorizado" al super_admin que abría una empresa donde no tiene membresía (solo revisaba `my_companies()`). Ahora acepta también `my_role() = 'super_admin'`, el mismo criterio que `meta-ads`. Sin cambios para los demás roles.

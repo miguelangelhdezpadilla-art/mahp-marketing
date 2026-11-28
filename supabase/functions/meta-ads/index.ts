@@ -7,6 +7,12 @@
 //       - 'sync'   → actualiza ahora (admin, director o super_admin)
 //       - 'choose' → { ad_account_id } elige la cuenta publicitaria
 //                    entre las que Meta devolvió (admin o super_admin)
+//       - 'add'    → { ad_account_id } agrega una cuenta por su ID
+//       - 'analizar' → Claude escribe el análisis con proyección (v35;
+//                    admin, director o super_admin; se cobra a la IA)
+// Cada sincronización trae además las recomendaciones de Meta y el
+// puntaje de oportunidad (meta_ads_analysis, v35); si Meta no las da,
+// las cifras se guardan igual.
 // Se despliega con --no-verify-jwt (pg_cron no tiene JWT); la
 // autorización se valida aquí.
 //
@@ -15,10 +21,20 @@
 // el estado pasa a token_invalido y el panel pide reconectar.
 // deno-lint-ignore-file no-explicit-any
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { AnthropicProvider } from '../_shared/ai/anthropic.ts';
+import { SupabaseLedger } from '../_shared/ai/ledger.ts';
+import { costoMaximoUsd } from '../_shared/ai/models.ts';
+import { escaparDatos, estimarTokens } from '../_shared/ai/context.ts';
+import {
+  armarDatos, ESQUEMA_CAMPANAS, normalizarRecomendaciones, proyectar, SISTEMA_CAMPANAS, validarAnalisisCampanas,
+} from '../_shared/ai/campanas.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+const MAX_SALIDA_ANALISIS = 1500;
+const ESPERA_ANALISIS_MS = 10 * 60_000; // un análisis cada 10 minutos por empresa
 const GRAPH        = 'https://graph.facebook.com/v26.0';
 const DIAS         = 62; // dos periodos de 30 días + margen para comparar
 const ACCION_CONVERSACION = 'onsite_conversion.messaging_conversation_started_7d';
@@ -100,6 +116,8 @@ async function sincronizar(service: SupabaseClient, fila: any) {
       if (error) throw new Error(`guardar cifras: ${error.message}`);
     }
 
+    await guardarRecomendaciones(service, company_id, act, t);
+
     await service.from('company_meta_ads').update({
       status: 'conectada', last_error: null, last_synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }).eq('company_id', company_id);
@@ -113,6 +131,85 @@ async function sincronizar(service: SupabaseClient, fila: any) {
     console.error('[meta-ads]', company_id, err.code, err.message);
     return { company_id, error: err.message };
   }
+}
+
+// Recomendaciones de Meta y puntaje de oportunidad. Opcional: si Meta
+// no las da (permiso, versión, cuenta sin datos) se anota el motivo y la
+// sincronización sigue.
+async function guardarRecomendaciones(service: SupabaseClient, companyId: number, act: string, t: string) {
+  const fila: Record<string, unknown> = { company_id: companyId, ad_account_id: act, updated_at: new Date().toISOString() };
+  const errores: string[] = [];
+  try {
+    fila.recommendations = normalizarRecomendaciones(await graph(`${GRAPH}/${act}/recommendations?access_token=${t}`));
+    fila.recommendations_at = new Date().toISOString();
+  } catch (e) { errores.push(`recomendaciones: ${(e as Error).message}`); }
+  try {
+    const c = await graph(`${GRAPH}/${act}?fields=opportunity_score&access_token=${t}`);
+    const n = Number(c.opportunity_score);
+    fila.opportunity_score = c.opportunity_score != null && Number.isFinite(n) ? n : null;
+  } catch (e) { errores.push(`puntaje: ${(e as Error).message}`); }
+  fila.recommendations_error = errores.length ? errores.join(' · ').slice(0, 500) : null;
+  if (errores.length) console.warn('[meta-ads] recomendaciones', companyId, fila.recommendations_error);
+  const { error } = await service.from('meta_ads_analysis').upsert(fila, { onConflict: 'company_id' });
+  if (error) console.error('[meta-ads] guardar recomendaciones', companyId, error.message);
+}
+
+const ayerEnMexico = () => new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+
+async function analizar(service: SupabaseClient, fila: any, userId: string): Promise<{ status: number; body: unknown }> {
+  const companyId = fila.company_id;
+  const { data: previo } = await service.from('meta_ads_analysis')
+    .select('recommendations, opportunity_score, analysis_at').eq('company_id', companyId).maybeSingle();
+  if (previo?.analysis_at && Date.now() - Date.parse(previo.analysis_at) < ESPERA_ANALISIS_MS) {
+    return { status: 429, body: { error: 'El análisis se actualizó hace unos minutos. Intenta de nuevo en un rato.' } };
+  }
+  const ayer = ayerEnMexico();
+  const desde = new Date(Date.parse(`${ayer}T12:00:00Z`) - 13 * 86_400_000).toISOString().slice(0, 10);
+  const [{ data: campanas }, { data: diarias }] = await Promise.all([
+    service.from('meta_ads_campaigns').select('campaign_id, name, effective_status').eq('company_id', companyId),
+    service.from('meta_ads_daily').select('campaign_id, fecha, spend, conversations, impressions, clicks')
+      .eq('company_id', companyId).gte('fecha', desde).lte('fecha', ayer),
+  ]);
+  if (!(diarias ?? []).some((d: any) => Number(d.spend) > 0)) {
+    return { status: 409, body: { error: 'No hay gasto en las últimas 2 semanas: no hay nada que analizar.' } };
+  }
+  const proyeccion = proyectar((diarias ?? []) as any, ayer);
+  const datos = armarDatos((campanas ?? []) as any, (diarias ?? []) as any, ayer,
+    previo?.recommendations ?? [], previo?.opportunity_score ?? null, proyeccion);
+  const contenido = `<datos>\n${escaparDatos(datos)}\n</datos>`;
+
+  const ledger = new SupabaseLedger(service);
+  const limites = await ledger.limits(companyId);
+  if (!limites || limites.suspended) return { status: 503, body: { error: 'La IA está suspendida para esta empresa.' } };
+  const modelo = limites.defaultModel;
+  const reserva = await ledger.reserve({
+    companyId, useCase: 'campanas', modelId: modelo.modelId, userId,
+    estCostUsd: costoMaximoUsd(modelo, estimarTokens(SISTEMA_CAMPANAS + contenido), MAX_SALIDA_ANALISIS + modelo.reasoningAllowance),
+  });
+  if (reserva.usageId === null) return { status: 402, body: { error: 'Se agotó el presupuesto de IA de hoy.' } };
+  const res = await new AnthropicProvider(ANTHROPIC_KEY, { timeoutMs: 60_000, maxRetries: 1 }).complete({
+    model: modelo, system: SISTEMA_CAMPANAS, messages: [{ role: 'user', content: contenido }],
+    maxOutputTokens: MAX_SALIDA_ANALISIS, jsonSchema: ESQUEMA_CAMPANAS as unknown as Record<string, unknown>,
+  });
+  await ledger.settle({
+    usageId: reserva.usageId, inputTokens: res.inputTokens, outputTokens: res.outputTokens,
+    latencyMs: res.latencyMs, status: res.ok ? 'liquidada' : 'fallida', errorKind: res.error?.kind ?? null,
+  });
+  if (!res.ok) {
+    console.error('[meta-ads] analizar', companyId, res.error?.kind, res.error?.detail);
+    return { status: 502, body: { error: 'No se pudo analizar ahora. Intenta más tarde.' } };
+  }
+  const analisis = validarAnalisisCampanas(res.text, datos);
+  if (!analisis) return { status: 502, body: { error: 'El análisis salió incompleto. Intenta de nuevo.' } };
+  if (analisis.quitadas) console.warn('[meta-ads] analizar: frases con cifras sin fuente descartadas', companyId, analisis.quitadas);
+  const { error } = await service.from('meta_ads_analysis').upsert({
+    company_id: companyId, ad_account_id: fila.ad_account_id,
+    analysis: { ...analisis, proyeccion_cifras: proyeccion, periodo_hasta: ayer },
+    analysis_model: modelo.modelId, analysis_at: new Date().toISOString(), analysis_by: userId,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'company_id' });
+  if (error) return { status: 500, body: { error: `No se pudo guardar: ${error.message}` } };
+  return { status: 200, body: { ok: true } };
 }
 
 Deno.serve(async (req: Request) => {
@@ -190,6 +287,7 @@ Deno.serve(async (req: Request) => {
     if (fila.ad_account_id && fila.ad_account_id !== cuenta.id) {
       await service.from('meta_ads_daily').delete().eq('company_id', companyId);
       await service.from('meta_ads_campaigns').delete().eq('company_id', companyId);
+      await service.from('meta_ads_analysis').delete().eq('company_id', companyId);
     }
     return json(await sincronizar(service, { ...fila, ad_account_id: cuenta.id }));
   }
@@ -199,6 +297,14 @@ Deno.serve(async (req: Request) => {
     if (!fila.ad_account_id) return json({ error: 'Primero elige la cuenta publicitaria.' }, 409);
     const r = await sincronizar(service, fila);
     return r.error ? json({ error: `Meta rechazó la consulta: ${r.error}` }, 502) : json(r);
+  }
+
+  if (body.action === 'analizar') {
+    if (!puedeVer) return json({ error: 'No autorizado' }, 403);
+    if (!fila.ad_account_id) return json({ error: 'Primero elige la cuenta publicitaria.' }, 409);
+    if (!ANTHROPIC_KEY) return json({ error: 'La IA no está configurada' }, 503);
+    const r = await analizar(service, fila, user.id);
+    return json(r.body, r.status);
   }
 
   return json({ error: 'Acción no válida' }, 400);

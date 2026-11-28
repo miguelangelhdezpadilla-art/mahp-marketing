@@ -51,10 +51,14 @@ async function recargar() {
 
   const n = estado.dias;
   const desde = diaLocal(-2 * n);
-  const [{ data: campanas }, { data: diarias }] = await Promise.all([
+  const [{ data: campanas }, { data: diarias }, resAnalisis] = await Promise.all([
     sb.from('meta_ads_campaigns').select('campaign_id, name, effective_status').eq('company_id', estado.companyId),
     sb.from('meta_ads_daily').select('campaign_id, fecha, spend, conversations')
       .eq('company_id', estado.companyId).gte('fecha', desde).lte('fecha', diaLocal(-1)),
+    // v35; si aún no existe la tabla, el recuadro simplemente no aparece.
+    sb.from('meta_ads_analysis')
+      .select('opportunity_score, recommendations, recommendations_at, recommendations_error, analysis, analysis_at')
+      .eq('company_id', estado.companyId).maybeSingle(),
   ]);
 
   const inicioActual = diaLocal(-n);
@@ -90,7 +94,8 @@ async function recargar() {
       <h3>Tendencias de la campaña <span class="mi-sub">· costo por conversación iniciada</span></h3>
       ${filasCampana.length ? `<div style="display:grid; gap:6px;">${filasCampana.map(c => filaCampana(c, fmt, n)).join('')}</div>`
         : '<p class="mi-rango">Sin campañas activas ni gasto en este periodo.</p>'}
-    </div>`;
+    </div>
+    ${resAnalisis.error ? '' : bloqueSugerencias(resAnalisis.data, fmt)}`;
 
   // Mini gráficas: costo diario por conversación de cada campaña.
   cont.querySelectorAll('[data-spark]').forEach(el => {
@@ -103,6 +108,67 @@ async function recargar() {
     }
     el.innerHTML = sparkline(serie);
   });
+}
+
+// ── Sugerencias de campaña (v35) ──
+// Arriba lo que dice Meta (puntaje de oportunidad y recomendaciones);
+// abajo el análisis de Claude con la proyección que calcula el sistema.
+const PRIORIDAD = { alta: ['Alta', 'badge-red'], media: ['Media', 'badge-amber'], baja: ['Baja', 'badge-slate'] };
+const fechaHora = f => new Date(f).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+function bloqueSugerencias(fila, fmt) {
+  const recs = fila?.recommendations ?? [];
+  const puntaje = fila?.opportunity_score;
+  const a = fila?.analysis;
+
+  const meta = `
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
+      <div class="mi-tile" style="flex:0 0 170px;">
+        <div class="mi-tile-titulo">Puntaje de oportunidad de Meta</div>
+        <div class="mi-tile-valor">${puntaje == null ? '—' : `${Math.round(puntaje)}<span class="mi-sub"> / 100</span>`}</div>
+        <div class="mi-tile-nota">${puntaje == null ? 'Meta no lo dio para esta cuenta' : 'Qué tan optimizada está la cuenta, según Meta'}</div>
+      </div>
+      <div style="flex:1 1 260px; min-width:0;">
+        <div class="mi-tile-titulo" style="margin-bottom:6px;">Recomendaciones de Meta</div>
+        ${recs.length ? `<ul style="margin:0; padding-left:18px; display:grid; gap:6px;">${recs.slice(0, 8).map(r => `
+          <li>${s(r.texto)}${r.mejora ? ` <span class="mi-tile-nota">· ${s(r.mejora)}</span>` : ''}${r.puntos ? ` <span class="badge badge-green">+${s(String(r.puntos))} pts</span>` : ''}
+            ${r.url ? ` <a href="${s(r.url)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;">Ver en Meta ↗</a>` : ''}</li>`).join('')}</ul>`
+          : `<p class="mi-rango" style="margin:0;">${fila?.recommendations_error ? 'Meta no entregó recomendaciones para esta cuenta.' : fila?.recommendations_at ? 'Meta no tiene recomendaciones por ahora.' : 'Se cargan en la próxima actualización (↻ Actualizar).'}</p>`}
+      </div>
+    </div>`;
+
+  const p = a?.proyeccion_cifras;
+  const claude = a ? `
+    ${a.resumen ? `<p style="margin:0 0 8px; font-weight:500;">${s(a.resumen)}</p>` : ''}
+    ${a.hallazgos?.length ? `<ul style="margin:0 0 10px; padding-left:18px; display:grid; gap:4px;">${a.hallazgos.map(h => `<li>${s(h)}</li>`).join('')}</ul>` : ''}
+    ${a.sugerencias?.length ? `<div style="display:grid; gap:6px; margin-bottom:10px;">${a.sugerencias.map(x => {
+      const [txt, clase] = PRIORIDAD[x.prioridad] ?? PRIORIDAD.media;
+      return `<div style="padding:10px; border:0.5px solid var(--border); border-radius:10px; background:var(--surface-2);">
+        <div style="font-weight:600;">${s(x.titulo)} <span class="badge ${clase}">${txt}</span></div>
+        <div class="mi-tile-nota" style="margin-top:2px;">${s(x.detalle)}</div></div>`;
+    }).join('')}</div>` : ''}
+    ${p ? `<div class="mi-tile-titulo" style="margin-bottom:6px;">Proyección · próximos ${p.dias} días con el mismo presupuesto</div>
+      <div class="mi-tiles">
+        ${tile('Conversaciones estimadas', `≈ ${Number(p.conversaciones).toLocaleString('es-MX')}`, '')}
+        ${tile('Gasto estimado', `≈ ${fmt(p.gasto)}`, '')}
+        ${tile('Costo por conversación', p.costo_por_conversacion == null ? '—' : `≈ ${fmt(p.costo_por_conversacion)}`, '')}
+      </div>` : ''}
+    ${a.proyeccion ? `<p class="mi-tile-nota" style="margin:6px 0 0;">${s(a.proyeccion)}</p>` : ''}
+    <p class="mi-tile-nota" style="margin:8px 0 0;">Análisis de la IA del ${s(fechaHora(fila.analysis_at))} con datos hasta ${s(fechaCorta(a.periodo_hasta))}. Es una estimación, no una garantía; revisa antes de cambiar presupuestos.</p>`
+    : '<p class="mi-rango" style="margin:0;">Aún no hay análisis. Pulsa <strong>✨ Analizar con IA</strong> para obtener sugerencias y una proyección de la próxima semana.</p>';
+
+  return `
+    <div class="mi-bloque">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h3 style="margin:0;">💡 Sugerencias de campaña</h3>
+        <button class="mi-actualizar" data-accion="analizar">✨ ${a ? 'Volver a analizar' : 'Analizar con IA'}</button>
+      </div>
+      <div style="margin-top:10px;">${meta}</div>
+      <div style="margin-top:14px; padding-top:12px; border-top:0.5px solid var(--border);">
+        <div class="mi-tile-titulo" style="margin-bottom:6px;">Análisis y proyección de la IA de MAHP</div>
+        ${claude}
+      </div>
+    </div>`;
 }
 
 function avisoConexion(c) {
@@ -210,7 +276,9 @@ async function manejarClic(ev) {
   if (accion === 'periodo') { estado.dias = Number(btn.dataset.dias); await recargar(); return; }
   btn.disabled = true;
   try {
-    const body = { company_id: estado.companyId, action: accion === 'elegir' ? 'choose' : accion === 'agregar' ? 'add' : 'sync' };
+    const acciones = { elegir: 'choose', agregar: 'add', analizar: 'analizar' };
+    const body = { company_id: estado.companyId, action: acciones[accion] ?? 'sync' };
+    if (accion === 'analizar') btn.textContent = '⏳ Analizando…';
     if (accion === 'elegir') body.ad_account_id = document.getElementById('adsCuenta')?.value;
     if (accion === 'agregar') body.ad_account_id = document.getElementById('adsCuentaId')?.value;
     const { error } = await estado.supabase.functions.invoke('meta-ads', { body });
@@ -218,7 +286,7 @@ async function manejarClic(ev) {
       let msg = error.message;
       try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch { /* sin cuerpo */ }
       showToast(msg, 'error');
-    } else showToast(accion === 'sync' ? 'Campañas actualizadas' : 'Cuenta publicitaria conectada');
+    } else showToast(accion === 'sync' ? 'Campañas actualizadas' : accion === 'analizar' ? 'Análisis listo' : 'Cuenta publicitaria conectada');
     await recargar();
   } finally {
     if (btn.isConnected) btn.disabled = false;
