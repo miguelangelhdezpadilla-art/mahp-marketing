@@ -10,6 +10,10 @@
 
 ---
 
+## 2026-11-28 — Producto: lista de información de la IA desplegable y con buscador
+
+- En la tarjeta del asistente (`js/shared/asistenteIA.js`), la tabla de "Información del negocio" va dentro de un desplegable cerrado por defecto ("📚 Información guardada (N entradas)") y tiene un buscador que filtra al escribir por tipo, título o texto, sin distinguir acentos ni mayúsculas. El estado abierto/cerrado y la búsqueda se conservan al editar, guardar o borrar. Solo cliente; sin cambios de base de datos.
+
 ## 2026-11-28 — Producto: Sugerencias de campaña (v35)
 
 - **[Feature]** Bajo 📣 Tendencias de campañas (pestaña Redes sociales) hay un recuadro nuevo, **💡 Sugerencias de campaña**. Lo ven admin, director y super_admin (decisión del PO, 2026-11-28).
